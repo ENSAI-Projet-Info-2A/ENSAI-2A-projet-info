@@ -247,4 +247,3 @@ You can check how this pipeline is progressing on your repository's GitHub page,
 
 
 
-modif de Gab 
