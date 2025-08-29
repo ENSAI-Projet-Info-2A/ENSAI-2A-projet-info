@@ -244,3 +244,7 @@ When you *push* on GitHub, it triggers a pipeline that will perform the followin
   - If the score is less than 7.5, the step will fail
 
 You can check how this pipeline is progressing on your repository's GitHub page, *Actions* tab.
+
+
+
+modif de Gab 
