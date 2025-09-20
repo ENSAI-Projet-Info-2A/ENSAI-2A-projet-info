@@ -1,0 +1,50 @@
+flowchart TD
+    Start(( ))
+    Portail{ }
+    Dashboard[Afficher tableau de bord]
+    Access[accéder aux anciennes conversations]
+    Démarrer[démarrer une nouvelle conversation]
+    1[...]
+    2[...]
+    A{ }
+    Recherche[recherche avancée]
+    Afficher[afficher les dernières conversations]
+    Nom(entrer nom de conversation)
+   B{ }
+   C{ }
+   D{ }
+ Date(entrer date)
+ Mot(entrer mots-clés)
+  E{ }
+
+
+Start-->Portail
+Portail-->Dashboard
+Portail-->Access
+Portail-->Démarrer
+
+Démarrer-->1
+Dashboard-->2
+Access-->A
+A-->Start
+A-->Recherche
+A-->Afficher
+Afficher --entrer un entier n-->B
+B--Si l'entrée est invalide--> Afficher 
+
+Recherche-->Nom
+Nom-->C
+C--Si le nom de conversation n'existe pas-->Date
+Date-->D
+D--Si aucune date ne correspond-->Mot
+Mot-->E
+E--Si aucune conversation n'est trouvée-->Access
+
+
+
+
+
+       
+    
+
+
