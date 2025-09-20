@@ -1,28 +1,41 @@
-@startuml
 ' à coller ici pour visualiser : https://www.plantuml.com/plantuml/uml/SyfFKj2rKt3CoKnELR1Io4ZDoSa70000
 ' doc : https://plantuml.com/fr/use-case-diagram
 
-
+@startuml
 left to right direction
+:Utilisateur: as user
+:Utilisateur connecté: as connected 
 
-actor "Utilisateur"      as user
-actor "Administrateur"   as admin
-actor "Joueur"           as joueur
-
-rectangle {
-  usecase "S'inscrire"        as inscription
-  usecase "S'authentifier"    as authentification
-  usecase "Quitter"           as quitter
-  usecase "Lister joueurs"    as lister_joueurs
+rectangle fonctionnalités{ 
+usecase "se connecter"as connect
+usecase "créer un compte" as creer
+usecase "afficher tableau de bord" as  table
+usecase "démarrer une nouvelle conversation" as demarrer
+usecase "accéder aux anciennes conversations" as accéder
+usecase "rechercher une conversation" as recherche
+usecase "reprendre une conversation" as  reprendre
+usecase "supprimmer une conversation" as supprimmer
+usecase " exporter une conversation" as export
 }
 
-joueur --> quitter
+note "une fois connecté, l'utilisateur a accès \n aux fonctionnalités de l'application" as N1
+user .. N1 
+N1 ..|> connected
 
-user --> inscription
-user --> authentification
-user --> quitter
+user -->connect
+user -->creer
 
-admin --> quitter
-admin --> lister_joueurs
+
+connected --> table
+connected --> demarrer
+connected -->accéder
+
+accéder <.. recherche
+accéder <.. reprendre
+accéder <.. supprimmer
+accéder <.. export
+
+demarrer <.. export
+ 
 
 @enduml
