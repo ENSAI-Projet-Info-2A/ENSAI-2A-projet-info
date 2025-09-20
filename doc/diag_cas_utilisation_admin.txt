@@ -1,0 +1,27 @@
+' à coller ici pour visualiser : https://www.plantuml.com/plantuml/uml/SyfFKj2rKt3CoKnELR1Io4ZDoSa70000
+
+@startuml
+left to right direction
+skinparam actorStyle awesome
+:administrateur: as admin 
+
+rectangle "fonctionnalités administrateur"{
+usecase "accéder aux conversations utilisateur" as access
+usecase "rechercher une conversation" as rechercher 
+usecase "supprimmer une conversation" as supprimmer
+usecase "lire une conversation" as lire 
+}
+
+rectangle "fonctionnalités utilisateur" as rect
+
+note "l'administrateur est un utilisateur \n avec des pouvoirs supplémentaires" as N1
+admin -- N1
+N1 --> rect
+
+admin --> access
+
+access <..rechercher
+access <.. supprimmer
+access <.. lire
+
+@enduml
