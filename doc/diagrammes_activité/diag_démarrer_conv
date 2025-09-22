@@ -16,10 +16,6 @@ flowchart TD
  Date(entrer date)
  Mot(entrer mots-clés)
   E{ }
-Export[exporter conversation]
-reprendre[reprendre conversation]
-supprimer[supprimmer conversation]
-f{ }
 
 
 Start-->Portail
@@ -33,24 +29,22 @@ Access-->A
 A-->Start
 A-->Recherche
 A-->Afficher
-Afficher -->B
+Afficher --entrer un entier n-->B
 B--Si l'entrée est invalide--> Afficher 
-B--si on trouve la conversation-->E
 
 Recherche-->Nom
 Nom-->C
-C--Si le nom correspond à une conversation-->E
 C--Si le nom de conversation n'existe pas-->Date
 Date-->D
-D--Si la date est invalide-->Date
-D--affiner recherche-->Mot
 D--Si aucune date ne correspond-->Mot
 Mot-->E
 E--Si aucune conversation n'est trouvée-->Access
-E-->Export
-E--> reprendre
-E-->supprimer
-supprimer -->Start
-reprendre -->f
-f-->Export
-f-->Start
+
+
+
+
+
+       
+    
+
+
