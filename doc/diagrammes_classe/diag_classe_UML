@@ -1,0 +1,83 @@
+à copier-coller ici pour visualiser : https://www.processon.io/mermaid/?utm_source=google&utm_medium=sem-en-mermaid&utm_term=mermaid&utm_content=761216450354&uc_pagenum=%7Bpagenum%7D&uc_adposition=&gad_source=1&gad_campaignid=22718778855&gbraid=0AAAAA-PYQFZstxk1Qe_6keh0U7Yh9GNYb&gclid=Cj0KCQjw58PGBhCkARIsADbDilyKili846DKar00rBSuo--vD71zTRAkNHd1FOLsC1aOuGotwkB_7fkaAiYnEALw_wcB
+
+
+classDiagram
+
+class Conversation{
++id :: int
++Nom :: str
++Date :: Date
++liste_echange :: list[ech]
++personnalisation :: str
++lisi_id_utilisateur
++Afficher_conv()
+}
+    class Conversation_Service {
+        +Créer(str) Conversation
+        +rechercher(str) Conversation
+        +Accéder(str) Conversation
+        +lister_conv(str)  list[conv]
+        + Recherche_message(str) ech
+        + Envoyer_requête(str, list[ech])  str
+        + Ajouter_utilisateur(str)  str
+        + Exporter_conversation() Conversation
+    }
+
+class Conversation_DAO{
++Creer(str) Conversation
++trouver_par_id_conv(int) Conversation
++rechercher_echange() Echange
++lister_conversation() list[Conv]
++parametre_conv() Conversation
++recherche_date(Date) Ech
++Rechercher_mat_clef() Ech}
+
+class Echange{
++id :: int
++id_conv :: int
++Agent :: str
++Message :: str
++Date :: Date
++afficher_echange()
+
+}
+
+class Utilisateur{
+-id : int
+- pseudo : str
+- mdp : str
+-age
+-list_conv :: list[Conv]
+}
+
+class Utilisateur_Service{
++creer_compte(str) :: Utilisateur
++se_connecter(str,str) :: Utilisateur
++supprimer(Conv) :: bool
++Afficher_statistiques :: Statistiques
+}
+
+class Utilisateur_DAO{
++creer(str) :: Utilisateur
++se_connecter(str, str) :: Utilisateur
++supprimer(str) :: Utilisateur
++trouver_par_nom(str) :: list[User]
+}
+
+class Statistiques{
++nombre_conv :: int
++nombre_message :: int
++sujet_plus_freq :: list[str]
++tps_passé :: int
++[à compléter]
+}
+
+Utilisateur --|>Conversation
+Conversation --|>Echange
+Conversation_Service ..>Conversation : utilise
+Conversation_Service .. Conversation_DAO
+
+Utilisateur_Service .. Utilisateur_DAO
+Utilisateur <.. Utilisateur_DAO:utilise
+Utilisateur_Service ..>Utilisateur :utilise
+Statistique <.. Utilisateur_Service
