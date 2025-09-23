@@ -7,7 +7,7 @@ Ce diagramme est codé avec [mermaid](https://mermaid.js.org/syntax/stateDiagram
 - avantage : facile à coder
 - inconvénient : on ne maîtrise pas bien l'affichage
 
-Pour afficher ce diagramme dans VScode :
+Pour afficher ce diagramme dans VScode : 
 
 - à gauche aller dans **Extensions** (ou CTRL + SHIFT + X)
 - rechercher `mermaid`
