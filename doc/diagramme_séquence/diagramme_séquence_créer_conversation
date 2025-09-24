@@ -1,0 +1,22 @@
+sequenceDiagram
+  actor U as Utilisateur
+  participant UI as View
+  participant CS as Conversation_Service
+  participant CDAO as Conversation_DAO
+
+  autonumber
+  U ->> UI: Clique "Nouvelle conversation" (titre, personnalisation)
+  UI ->>+ CS: creer(titre, personnalisation) : Conversation
+  Note right of CS: Récupère id_user depuis la session
+  CS ->>+ CDAO: creer_conv(titre, personnalisation, owner_id)
+  CDAO -->>- CS: Conversation (id, nom_conv, ...)
+  CS ->> CDAO: ajouter_utilisateur(id_conv, owner_id)
+  CDAO -->> CS: true
+  opt personnalisation non vide
+    CS ->> CDAO: parametre_conv(id_conv, personnalisation)
+    CDAO -->> CS: true
+  end
+  CS -->>- UI: Conversation (id, titre, date_creation, ...)
+  UI -->> U: Affiche la conversation créée
+
+
