@@ -1,0 +1,40 @@
+classDiagram
+direction LR
+
+%% ================== Couche Métier ==================
+class Utilisateur {
+  +id : int
+  +pseudo : string
+  -mdp : string
+  +list_conv : list~Conversation~
+}
+
+class Statistiques {
+  +nb_conversations : int
+  +nb_messages : int
+  +heures_utilisation : double
+  +sujets_plus_frequents : list~string~
+}
+
+class Conversation {
+  +id : int
+  +nom_conv : string
+  +date_creation : date
+  +liste_echanges : list~Echange~
+  +personnalisation : string   %% style LLM pour cette conversation
+  +liste_id_utilisateurs : list~int~
+  +afficher_conv() : string
+}
+
+class Echange {
+  +id : int
+  +id_conv : int
+  +agent : string      %% "system" | "user" | "assistant"
+  +message : string
+  +date_msg : date
+  +afficher_echange() : string
+}
+
+%% Relations métier
+Utilisateur "0..*" -- "0..*" Conversation : participe
+Conversation "1" o-- "0..*" Echange : contient
