@@ -1,0 +1,46 @@
+---
+config:
+  layout: dagre
+---
+classDiagram
+direction LR
+    class Utilisateur_Service {
+	    +creer_compte(pseudo: string, mdp: string) : Utilisateur
+	    +se_connecter(pseudo: string, mdp: string) : Utilisateur
+	    +supprimer(u: Utilisateur) : bool
+	    +afficher_statistique(u: Utilisateur) : Statistiques
+    }
+    class Conversation_Service {
+	    +creer(titre: string, personnalisation: string) : Conversation
+	    +acceder(id_conv: int) : Conversation
+	    +lister_conv(id_user: int) : List
+	    +rechercher(query: string, date: date) : List
+	    +rechercher_message(id_conv: int, motcle: string, date: date) : List
+	    +envoyer_message(id_conv: int, contenu: string) : Echange
+	    +demander_assistant(id_conv: int, temperature: double, top_p: double, max_tokens: int, stop: List) : Echange
+	    +ajouter_utilisateur(id_conv: int, id_user: int) : bool
+	    +exporter_conversation(id_conv: int) : string
+    }
+    class Utilisateur_DAO {
+	    +creer_utilisateur(pseudo: string, hash: string) : Utilisateur
+	    +se_connecter(pseudo: string, hash: string) : Utilisateur
+	    +supprimer(id: int) : bool
+	    +trouver_par_nom(pseudo: string) : Utilisateur
+    }
+    class Conversation_DAO {
+	    +creer_conv(titre: string, personnalisation: string, owner_id: int) : Conversation
+	    +trouver_par_id_conv(id_conv: int) : Conversation
+	    +lister_conversation(id_user: int) : List
+	    +rechercher_mot_clef(id_user: int, motcle: string) : List
+	    +rechercher_date(id_user: int, date: date) : List
+	    +rechercher_echange(id_conv: int, motcle: string, date: date) : List
+	    +ajouter_utilisateur(id_conv: int, id_user: int) : bool
+	    +ajouter_echange(id_conv: int, e: Echange) : bool
+	    +parametre_conv(id_conv: int, personnalisation: string) : bool
+    }
+    class LLM_API {
+	    +generate(history: List, temperature: double, top_p: double, max_tokens: int, stop: List) : Echange
+    }
+    Utilisateur_Service ..> Utilisateur_DAO : appelle
+    Conversation_Service ..> Conversation_DAO : appelle
+    Conversation_Service ..> LLM_API : appelle
