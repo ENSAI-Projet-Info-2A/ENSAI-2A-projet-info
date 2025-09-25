@@ -1,0 +1,40 @@
+erDiagram
+    USERS ||--o{ SENDERS : "peut être"
+    SENDERS ||--o{ MESSAGES : "envoie"
+    CONVERSATIONS ||--o{ MESSAGES : "contient"
+    CONVERSATIONS ||--o{ CONVERSATION_PARTICIPANTS : "associe"
+    SENDERS ||--o{ CONVERSATION_PARTICIPANTS : "participe"
+
+    USERS {
+        int id PK
+        string username
+        string email
+        string password_hash
+        datetime created_at
+    }
+
+    SENDERS {
+        int id PK
+        enum type "user | ai"
+        int user_id FK "nullable"
+     }
+
+    CONVERSATIONS {
+        int id PK
+        string title
+        datetime created_at
+    }
+
+    CONVERSATION_PARTICIPANTS {
+        int id PK
+        int conversation_id FK
+        int sender_id FK
+    }
+
+    MESSAGES {
+        int id PK
+        int conversation_id FK
+        int sender_id FK
+        text content
+        datetime created_at
+    }
