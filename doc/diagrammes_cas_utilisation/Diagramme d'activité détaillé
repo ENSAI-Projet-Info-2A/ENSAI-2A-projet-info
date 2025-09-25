@@ -1,3 +1,6 @@
+' à coller ici pour visualiser : https://www.plantuml.com/plantuml/uml/SyfFKj2rKt3CoKnELR1Io4ZDoSa70000
+' doc : https://plantuml.com/fr/use-case-diagram
+
 @startuml
 left to right direction
 skinparam packageStyle rectangle
