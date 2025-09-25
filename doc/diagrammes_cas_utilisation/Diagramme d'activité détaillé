@@ -1,0 +1,89 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor "Utilisateur" as User
+actor "Client" as Client
+
+rectangle "ensaiGPT — fonctionnalités" as SYS {
+  ' --- Tableau de bord ---
+  package "Tableau de bord" as DASH {
+    usecase "Consulter le tableau de bord" as UC_tableau
+    usecase "Voir statistiques" as UC_stats
+    usecase "Consulter ses conversations" as UC_consulter
+    usecase "Créer une conversation" as UC_creer_conv
+    usecase "Rechercher une conversation" as UC_rechercher_conv
+    usecase "Filtrer par mot-clé" as UC_par_mot
+    usecase "Filtrer par date" as UC_par_date
+  }
+
+  ' --- Accès aux conversations ---
+  package "Accès aux conversations" as CONV {
+    usecase "Accéder à une conversation" as UC_acceder_conv
+    usecase "Supprimer cette conversation" as UC_supprimer_conv
+  }
+
+  ' --- Dans une conversation ---
+  package "Dans une conversation" as INCONV {
+    usecase "Afficher anciens messages" as UC_voir_msgs
+    usecase "Rechercher un message" as UC_rechercher_msg
+    usecase "Envoyer une requête au LLM" as UC_send_llm
+    usecase "Ajouter un client à la conversation" as UC_add_client
+    usecase "Exporter la conversation" as UC_export
+  }
+
+  ' --- Cas d'utilisation principaux ---
+  usecase "Se connecter" as UC_connect
+  usecase "Créer un compte" as UC_creer
+  usecase "Quitter" as UC_quitter
+  usecase "Se déconnecter" as UC_deconnect
+
+  ' --- Contraintes d’agencement (Juste pour avoir un joli graph) ---
+  Client -[hidden]-> DASH
+  DASH -[hidden]-> CONV
+  CONV -[hidden]-> INCONV
+  
+  UC_tableau -[hidden]-> UC_stats
+  UC_tableau -[hidden]-> UC_creer_conv
+  UC_tableau -[hidden]-> UC_rechercher_conv
+  UC_tableau -[hidden]-> UC_consulter
+  
+  UC_rechercher_conv -[hidden]-> UC_par_mot
+  UC_rechercher_conv -[hidden]-> UC_par_date
+  
+  UC_consulter -[hidden]-> UC_acceder_conv
+  UC_consulter -[hidden]-> UC_supprimer_conv
+
+
+  UC_par_date -[hidden]-> CONV
+  UC_par_mot -[hidden]-> CONV
+  UC_par_mot -[hidden]-> INCONV
+
+  
+}
+
+' --- Associations acteurs → cas d'utilisation ---
+User --> UC_connect
+User --> UC_creer
+User --> UC_quitter
+Client --> UC_tableau
+Client --> UC_deconnect
+Client --> UC_quitter
+
+' --- include / extend ---
+UC_stats ..> UC_tableau : <<extend>>
+UC_creer_conv ..> UC_tableau : <<extend>>
+UC_rechercher_conv ..> UC_tableau : <<extend>>
+UC_par_mot ..> UC_rechercher_conv : <<extend>>
+UC_par_date ..> UC_rechercher_conv : <<extend>>
+UC_consulter ..> UC_tableau : <<include>>
+UC_acceder_conv ..> UC_consulter : <<extend>>
+UC_supprimer_conv ..> UC_consulter : <<extend>>
+UC_voir_msgs ..> UC_acceder_conv : <<include>>
+UC_rechercher_msg ..> UC_acceder_conv : <<extend>>
+UC_send_llm ..> UC_acceder_conv : <<extend>>
+UC_supprimer_conv ..> UC_acceder_conv : <<extend>>
+UC_add_client ..> UC_acceder_conv : <<extend>>
+UC_export ..> UC_acceder_conv : <<extend>>
+@enduml
