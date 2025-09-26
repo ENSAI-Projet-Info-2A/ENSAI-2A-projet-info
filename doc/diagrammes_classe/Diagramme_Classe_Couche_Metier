@@ -1,44 +1,46 @@
+---
+config:
+  theme: default
+  themeVariables:
+    fontSize: 20px
+---
 classDiagram
-direction LR
-    class Echange {
-	    +id : int
-	    +agent : AgentType                %% enum: system|user|assistant
-	    +message : string
-	    +date_msg : datetime
-	    +agent_name : string              %% optionnel(nom d'agent)
-	    +afficher_echange() : string
-    }
-
+direction TB
     class Statistiques {
 	    +nb_conversations : int
 	    +nb_messages : int
 	    +heures_utilisation : double
 	    +sujets_plus_frequents : list~string~
     }
-
-    class Participant {
-	    +user_id : int
-	    +conv_id : int
-	    +role : RoleType                  %% enum: OWNER|MEMBER|GUEST
-	    +date_joined : datetime
-    }
-
     class Conversation {
 	    +id : int
 	    +nom : string
 	    +date_creation : datetime
-	    +personnalisation : string        %% style / persona LLM pour cette conversation
+	    +personnalisation : string
 	    +echanges : list~Echange~
 	    +participants : list~Participant~
 	    +afficher_conv() : string
     }
-
     class Utilisateur {
 	    +id : int
 	    +pseudo : string
 	    -password_hash : string
-	    +conversations : list~Conversation~  %% vue matérialisée/convenance
+	    +conversations : list~Conversation~
 	    +afficher_utilisateur() : string
+    }
+    class Echange {
+	    +id : int
+	    +agent : string
+	    +message : string
+	    +date_msg : datetime
+	    +agent_name : string
+	    +afficher_echange() : string
+    }
+    class Participant {
+	    +user_id : int
+	    +conv_id : int
+	    +role : string
+	    +date_joined : datetime
     }
 
     Utilisateur "0..*" -- "0..*" Conversation : "via Participation"
@@ -46,3 +48,8 @@ direction LR
     Participant "0..*" --> "1" Utilisateur : concerne
     Participant "0..*" --> "1" Conversation : concerne
 
+	style Statistiques fill:#ffffff,stroke:#333,stroke-width:2px
+	style Conversation fill:#ffffff,stroke:#333,stroke-width:2px
+	style Utilisateur fill:#ffffff,stroke:#333,stroke-width:2px
+	style Echange fill:#ffffff,stroke:#333,stroke-width:2px
+	style Participant fill:#ffffff,stroke:#333,stroke-width:2px
