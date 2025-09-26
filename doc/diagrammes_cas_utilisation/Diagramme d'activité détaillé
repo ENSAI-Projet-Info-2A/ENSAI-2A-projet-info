@@ -12,13 +12,14 @@ actor "Client" as Client
 rectangle "ensaiGPT — fonctionnalités" as SYS {
   ' --- Tableau de bord ---
   package "Tableau de bord" as DASH {
-    usecase "Consulter le tableau de bord" as UC_tableau
-    usecase "Voir statistiques" as UC_stats
-    usecase "Consulter ses conversations" as UC_consulter
     usecase "Créer une conversation" as UC_creer_conv
+    usecase "Voir statistiques" as UC_stats
+    usecase "Consulter le tableau de bord" as UC_tableau
     usecase "Rechercher une conversation" as UC_rechercher_conv
     usecase "Filtrer par mot-clé" as UC_par_mot
     usecase "Filtrer par date" as UC_par_date
+    usecase "Consulter ses conversations" as UC_consulter
+    
   }
 
   ' --- Accès aux conversations ---
@@ -29,6 +30,8 @@ rectangle "ensaiGPT — fonctionnalités" as SYS {
 
   ' --- Dans une conversation ---
   package "Dans une conversation" as INCONV {
+    usecase "Personnaliser l’agent conversationnel" as UC_personalisation
+    usecase "Nommer la conversation" as UC_name
     usecase "Afficher anciens messages" as UC_voir_msgs
     usecase "Rechercher un message" as UC_rechercher_msg
     usecase "Envoyer une requête au LLM" as UC_send_llm
@@ -46,6 +49,7 @@ rectangle "ensaiGPT — fonctionnalités" as SYS {
   Client -[hidden]-> DASH
   DASH -[hidden]-> CONV
   CONV -[hidden]-> INCONV
+  CONV -[hidden]-> INCONV
   
   UC_tableau -[hidden]-> UC_stats
   UC_tableau -[hidden]-> UC_creer_conv
@@ -54,14 +58,14 @@ rectangle "ensaiGPT — fonctionnalités" as SYS {
   
   UC_rechercher_conv -[hidden]-> UC_par_mot
   UC_rechercher_conv -[hidden]-> UC_par_date
+  UC_creer_conv -[hidden]-> UC_name
   
   UC_consulter -[hidden]-> UC_acceder_conv
   UC_consulter -[hidden]-> UC_supprimer_conv
 
-
   UC_par_date -[hidden]-> CONV
   UC_par_mot -[hidden]-> CONV
-  UC_par_mot -[hidden]-> INCONV
+  UC_personalisation -[hidden]-> CONV
 
   
 }
@@ -89,4 +93,7 @@ UC_send_llm ..> UC_acceder_conv : <<extend>>
 UC_supprimer_conv ..> UC_acceder_conv : <<extend>>
 UC_add_client ..> UC_acceder_conv : <<extend>>
 UC_export ..> UC_acceder_conv : <<extend>>
+UC_name ..> UC_creer_conv : <<include>>
+UC_personalisation ..> UC_acceder_conv : <<extend>>
+UC_personalisation ..> UC_creer_conv : <<include>>
 @enduml
