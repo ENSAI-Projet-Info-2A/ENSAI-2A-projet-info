@@ -1,50 +1,39 @@
 flowchart TD
-    Start(( ))
-    Portail{ }
+    Start((Début))
+    Portail{Portail principal}
     Dashboard[Afficher tableau de bord]
-    Access[accéder aux anciennes conversations]
-    Démarrer[démarrer une nouvelle conversation]
-    1[...]
-    2[...]
-    A{ }
-    Recherche[recherche avancée]
-    Afficher[afficher les dernières conversations]
-    Nom(entrer nom de conversation)
-   B{ }
-   C{ }
-   D{ }
- Date(entrer date)
- Mot(entrer mots-clés)
-  E{ }
+    Access[Accéder aux anciennes conversations]
+    Démarrer[Démarrer une nouvelle conversation]
+    End([Fin])
 
+    %% Navigation principale
+    Start --> Portail
+    Portail --> Dashboard
+    Portail --> Access
+    Portail --> Démarrer
+    Portail --> End
 
-Start-->Portail
-Portail-->Dashboard
-Portail-->Access
-Portail-->Démarrer
+    %% Gestion des anciennes conversations
+    Access --> A{Choix}
+    A --> Afficher[Afficher les dernières conversations]
+    A --> Recherche[Recherche avancée]
+    A --> Start
 
-Démarrer-->1
-Dashboard-->2
-Access-->A
-A-->Start
-A-->Recherche
-A-->Afficher
-Afficher --entrer un entier n-->B
-B--Si l'entrée est invalide--> Afficher 
+    %% Afficher dernières conversations
+    Afficher -- Entrer un entier n --> B{n valide ?}
+    B -- Non --> Afficher
+    B -- Oui --> ConvOld[Afficher n conversations]
 
-Recherche-->Nom
-Nom-->C
-C--Si le nom de conversation n'existe pas-->Date
-Date-->D
-D--Si aucune date ne correspond-->Mot
-Mot-->E
-E--Si aucune conversation n'est trouvée-->Access
+    %% Recherche avancée
+    Recherche --> Nom[Entrer nom de conversation]
+    Nom --> C{Nom trouvé ?}
+    C -- Oui --> ConvOld
+    C -- Non --> Date[Entrer date]
 
+    Date --> D{Date trouvée ?}
+    D -- Oui --> ConvOld
+    D -- Non --> Mot[Entrer mots-clés]
 
-
-
-
-       
-    
-
-
+    Mot --> E{Résultat trouvé ?}
+    E -- Oui --> ConvOld
+    E -- Non --> Access

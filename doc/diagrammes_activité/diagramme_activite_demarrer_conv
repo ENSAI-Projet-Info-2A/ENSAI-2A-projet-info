@@ -1,37 +1,31 @@
 flowchart TD
-    Start(( ))
-    Portail{ }
+    Start((Début))
+    Portail{Portail principal}
     Dashboard[Afficher tableau de bord]
-    Access[accéder aux anciennes conversations]
-    Démarrer[démarrer une nouvelle conversation]
-    1[...]
-    2[...]
-    Name[nommer la conversation]
+    Access[Accéder aux anciennes conversations]
+    Démarrer[Démarrer une nouvelle conversation]
+    Name[Nommer la conversation]
+    A{Nom valide ?}
     Choose[Choisir le profil du LLM]
-    Conv[entrer une phrase]
-    A{ }
-    B{ }
+    Conv[Entrer une phrase]
+    B{Continuer la conversation ?}
     Stopper[Arrêter la conversation]
     End([Fin])
 
-
-
+    %% Navigation principale
     Start -- L'utilisateur est connecté --> Portail
-    Portail  --> Dashboard
+    Portail --> Dashboard
     Portail --> Access
-    Portail -->Démarrer
-    Access -.->1
-    Dashboard-.->2
-    Démarrer--> Name
+    Portail --> Démarrer
+    Portail --> End
+
+    %% Nouvelle conversation
+    Démarrer --> Name
     Name --> A
-    A--Le nom est invalide ou déjà utilisé-->Name
-    A-->Choose
-   Choose -->Conv
-    Conv --Le LLM répond -->B
-    B-->Conv
-    B -->Stopper
+    A -- Non --> Name
+    A -- Oui --> Choose
+    Choose --> Conv
+    Conv -- Réponse du LLM --> B
+    B -- Oui --> Conv
+    B -- Non --> Stopper
     Stopper --> Portail
-       
-    
-
-
