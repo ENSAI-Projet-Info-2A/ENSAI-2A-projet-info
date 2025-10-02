@@ -67,7 +67,7 @@ gantt
 * [x] Diagramme de Gantt
 * [x] Diagramme de cas d'utilisation
 * [x] Diagramme de classe
-* [ ] Répartition des parties à rédiger
+* [X] Répartition des parties à rédiger
 
 ## Code
 
