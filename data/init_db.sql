@@ -15,8 +15,11 @@
 -- Table attendue
 -- schema.public.utilisateur (ou ton schema .env)
 -- id SERIAL PK, pseudo UNIQUE, password_hash TEXT NOT NULL
+
+DROP TABLE IF EXISTS utilisateur CASCADE ;
 CREATE TABLE IF NOT EXISTS utilisateur (
   id             SERIAL PRIMARY KEY,
   pseudo         TEXT UNIQUE NOT NULL,
   password_hash  TEXT NOT NULL
 );
+
