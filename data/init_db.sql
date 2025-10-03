@@ -15,7 +15,28 @@
 -- Table attendue
 -- schema.public.utilisateur (ou ton schema .env)
 -- id SERIAL PK, pseudo UNIQUE, password_hash TEXT NOT NULL
-CREATE TABLE IF NOT EXISTS utilisateur (
+CREATE TABLE IF NOT EXISTS users (
+  id             SERIAL PRIMARY KEY,
+  pseudo         TEXT UNIQUE NOT NULL,
+  password_hash  TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS messages  (
+  id             SERIAL PRIMARY KEY,
+  conversation_id        TEXT UNIQUE NOT NULL,
+  user_id TEXT NOT NULL,
+  sender_type ,
+  content,
+  created_at
+);
+
+CREATE TABLE IF NOT EXISTS conversations (
+  id             SERIAL PRIMARY KEY,
+  pseudo         TEXT UNIQUE NOT NULL,
+  password_hash  TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS conversations_participants (
   id             SERIAL PRIMARY KEY,
   pseudo         TEXT UNIQUE NOT NULL,
   password_hash  TEXT NOT NULL
