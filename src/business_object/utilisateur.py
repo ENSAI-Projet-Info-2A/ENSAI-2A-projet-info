@@ -4,30 +4,31 @@ class Utilisateur:
 
     Attributs
     ----------
-    id_utilisateur : int
-        identifiant
+    id : int
+        identifiant unique de l'utilisateur
     pseudo : str
         pseudo de l'utilisateur
-    mdp : str
-        le mot de passe de l'utilisateur
-    age : int
-        age de l'utilisateur
-    mail : str
-        mail de l'utilisateur
+    password_hash : str
+        mot de passe hashé de l'utilisateur
+    conversations : list
+        liste des conversations de l'utilisateur
     """
 
-    def __init__(self, pseudo, age, mail, mdp=None, id_utilisateur=None):
+    def __init__(self, pseudo: str, password_hash: str, id: int = None):
         """Constructeur"""
-        self.id_utilisateur = id_utilisateur
+        self.id = id
         self.pseudo = pseudo
-        self.mdp = mdp
-        self.age = age
-        self.mail = mail
+        self.password_hash = password_hash
+        self.conversations = []
+
+    def afficher_utilisateur(self) -> str:
+        """Retourne une chaîne représentant l'utilisateur"""
+        return f"Utilisateur(id={self.id}, pseudo={self.pseudo})"
 
     def __str__(self):
-        """Permet d'afficher les informations de l'utilisateur"""
-        return f"Utilisateur({self.pseudo}, {self.age} ans)"
+        """Représentation sous forme de string"""
+        return self.afficher_utilisateur()
 
-    def as_list(self) -> list[str]:
-        """Retourne les attributs de l'utilisateur dans une liste"""
-        return [self.pseudo, self.age, self.mail]
+    def ajouter_conversation(self, conversation):
+        """Ajoute une conversation à la liste de l'utilisateur"""
+        self.conversations.append(conversation)
