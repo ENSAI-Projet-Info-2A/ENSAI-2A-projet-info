@@ -1,5 +1,6 @@
 from datetime import datetime
 
+
 class Conversation:
     """
     Classe représentant une conversation
