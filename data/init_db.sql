@@ -41,3 +41,4 @@ CREATE TABLE IF NOT EXISTS conversations_participants (
   pseudo         TEXT UNIQUE NOT NULL,
   password_hash  TEXT NOT NULL
 );
+

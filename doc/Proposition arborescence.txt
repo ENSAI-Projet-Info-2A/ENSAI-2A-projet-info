@@ -26,6 +26,7 @@ ensai-gpt/
 └─ src/
    ├─ __init__.py
    ├─ app.py                      # point d’entrée (CLI/console ou FastAPI si besoin)
+   ├─ main.py
    ├─ business_object/            # objets métier
    │  ├─ __init__.py
    │  ├─ utilisateur.py
