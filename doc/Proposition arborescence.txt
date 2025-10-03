@@ -1,0 +1,80 @@
+ensai-gpt/
+├─ .coveragerc
+├─ .gitignore
+├─ .github/
+│  └─ workflows/
+│     └─ ci.yml
+├─ .vscode/
+│  └─ settings.json
+├─ LICENSE
+├─ README.md
+├─ requirements.txt
+├─ logging_config.yml
+├─ data/
+│  ├─ init_db.sql                # création tables: users, conversations, participants, messages
+│  ├─ pop_db.sql                 # données de démo
+│  └─ pop_db_test.sql            # données de tests
+├─ doc/
+│  ├─ diagramme_bdd.txt
+│  ├─ diagrammes_activité/
+│  ├─ diagramme_séquence/
+│  └─ gantt.py
+├─ suivi/
+│  ├─ 2025.09.04-semaine1.md
+│  ├─ 2025.09.11-semaine2.md
+│  └─ ...
+└─ src/
+   ├─ __init__.py
+   ├─ app.py                      # point d’entrée (CLI/console ou FastAPI si besoin)
+   ├─ business_object/            # objets métier
+   │  ├─ __init__.py
+   │  ├─ utilisateur.py
+   │  ├─ conversation.py
+   │  ├─ participant.py
+   │  ├─ message.py
+   │  └─ statistiques.py
+   ├─ dao/                        # accès aux données
+   │  ├─ __init__.py
+   │  ├─ db_connection.py         # singleton connexion (psycopg2/sqlite3)
+   │  ├─ utilisateur_dao.py
+   │  ├─ conversation_dao.py
+   │  ├─ participant_dao.py
+   │  └─ message_dao.py
+   ├─ service/                    # logique applicative (use cases)
+   │  ├─ __init__.py
+   │  ├─ auth_service.py          # login/logout, hash, tokens
+   │  ├─ utilisateur_service.py
+   │  ├─ conversation_service.py  # créer/renommer/supprimer, ajouter msg, recherche, export
+   │  └─ stats_service.py
+   ├─ client/                     # clients externes (ex. LLM)
+   │  ├─ __init__.py
+   │  └─ llm_client.py            # interface d’appel au modèle
+   ├─ view/                       # “vue” console (ou adapter à une API Web)
+   │  ├─ __init__.py
+   │  ├─ accueil/
+   │  │  ├─ accueil_vue.py
+   │  │  ├─ connexion_vue.py
+   │  │  └─ inscription_vue.py
+   │  ├─ menu_vue.py
+   │  ├─ conversation_vue.py
+   │  ├─ session.py
+   │  └─ vue_abstraite.py
+   ├─ utils/                      # utilitaires transverses
+   │  ├─ __init__.py
+   │  ├─ log_decorator.py
+   │  ├─ log_init.py
+   │  ├─ reset_database.py
+   │  ├─ securite.py              # hash mdp, vérifs
+   │  └─ singleton.py
+   └─ tests/                      # structure de tests proche du template
+      ├─ __init__.py
+      ├─ test_dao/
+      │  ├─ __init__.py
+      │  ├─ test_utilisateur_dao.py
+      │  ├─ test_conversation_dao.py
+      │  └─ test_message_dao.py
+      └─ test_service/
+         ├─ __init__.py
+         ├─ test_auth_service.py
+         ├─ test_conversation_service.py
+         └─ test_stats_service.py
