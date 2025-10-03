@@ -1,11 +1,13 @@
-import hashlib
+from typing import Optional
+from utils.securite import hash_password
+
 
 class Utilisateur:
     """
     Classe représentant un Utilisateur (Business Object)
     """
 
-    def __init__(self, pseudo: str, password_hash: str = None, id: int = None):
+    def __init__(self, pseudo: str, password_hash: Optional[str] = None, id: Optional[int] = None):
         self.id = id
         self.pseudo = pseudo
         self.password_hash = password_hash
@@ -24,20 +26,35 @@ class Utilisateur:
         return isinstance(other, Utilisateur) and self.id == other.id
 
     # ---- Méthodes métier ----
-    def set_password(self, mot_de_passe: str):
-        """Hash et enregistre un mot de passe"""
-        self.password_hash = hashlib.sha256(mot_de_passe.encode()).hexdigest()
+    def set_password(self, mot_de_passe: str) -> None:
+        """
+        Hash et enregistre un mot de passe avec la même fonction que le service.
+        On utilise `hash_password(mot_de_passe, self.pseudo)` pour rester cohérent.
+        """
+        self.password_hash = hash_password(mot_de_passe, self.pseudo)
 
     def verifier_password(self, mot_de_passe: str) -> bool:
-        """Vérifie si le mot de passe correspond au hash enregistré"""
-        return self.password_hash == hashlib.sha256(mot_de_passe.encode()).hexdigest()
+        """
+        Vérifie si le mot de passe correspond au hash enregistré.
+        On re-hash le mot de passe saisi avec le même sel (pseudo) et on compare.
+        """
+        if self.password_hash is None:
+            return False
+        return self.password_hash == hash_password(mot_de_passe, self.pseudo)
 
-    def ajouter_conversation(self, conversation):
+    def ajouter_conversation(self, conversation) -> None:
         self.conversations.append(conversation)
 
-    def retirer_conversation(self, conversation):
+    def retirer_conversation(self, conversation) -> None:
         if conversation in self.conversations:
             self.conversations.remove(conversation)
 
     def lister_conversations(self) -> list[str]:
         return [conv.nom for conv in self.conversations]
+
+    # Optionnel : constructeur pratique quand on reçoit un mdp en clair
+    @classmethod
+    def from_plain_password(cls, pseudo: str, mot_de_passe: str, id: Optional[int] = None) -> "Utilisateur":
+        user = cls(pseudo=pseudo, password_hash=None, id=id)
+        user.set_password(mot_de_passe)
+        return user
