@@ -77,118 +77,111 @@ class ConversationDAO:
 
         Raises
         ------
-            ExceptionType
-                Description des exceptions levées (optionnel).
         """
         pass
 
     def lister_conversations(id_user: int) ->List[Conversation]:
         """
-        Brève description de ce que fait la méthode.
+        Présente une liste des conversations reliées à un joueur.
 
         Parameters
         ----------
-            param1 : Type1
-                Description du paramètre 1.
-            param2 : Type2
-                Description du paramètre 2.
+            id_user : int
+                l'identifiant d'un tilisateur
+        
 
         Returns
         -------
-            ReturnType
-                Description de ce que la méthode retourne.
+            List[Conversation]
+                Renvoit une liste d'objets Conversation.
 
         Raises
         ------
-            ExceptionType
-                Description des exceptions levées (optionnel).
         """
         pass
 
     def rechercher_mot_clef(id_user: int, mot_clef: str) ->List[Conversation]:
         """
-        Brève description de ce que fait la méthode.
+        Recherche une conversation selon un mot-clé.
 
         Parameters
         ----------
-            param1 : Type1
-                Description du paramètre 1.
-            param2 : Type2
-                Description du paramètre 2.
+            id_user : int
+                l'identifiant d'un utilisateur 
+            mot_clef : str
+                le mot-clé avec lequel on fait la recherche.
 
         Returns
         -------
-            ReturnType
-                Description de ce que la méthode retourne.
+            List[Conversation]
+                Une liste d'objet Conversation qui incluent le mot-clé.
 
         Raises
         ------
-            ExceptionType
-                Description des exceptions levées (optionnel).
         """
         pass
 
     def rechercher_date(id_user: int, date: Date) ->List[Conversation]:
         """
-        Brève description de ce que fait la méthode.
+        Recherche une conversation à partir d'une date.
+        -->la date de quoi ? de la création ? du dernier message ? 
 
         Parameters
         ----------
-            param1 : Type1
-                Description du paramètre 1.
-            param2 : Type2
-                Description du paramètre 2.
+            id_user : int
+                l'identifiant d'un utilisateur 
+            date : Date
+                un objet Date
 
         Returns
         -------
-            ReturnType
-                Description de ce que la méthode retourne.
+            List[Conversation]
+                Une liste de Conversations qui correspondent à la date.
 
         Raises
         ------
-            ExceptionType
-                Description des exceptions levées (optionnel).
         """
         pass
 
     def lire_echanges(id_conv: int, offset: int, limit: int) ->List[Echange]:
         """
-        Brève description de ce que fait la méthode.
+        ?.
 
         Parameters
         ----------
-            param1 : Type1
-                Description du paramètre 1.
-            param2 : Type2
-                Description du paramètre 2.
-
+            id_conv : int
+                l'identifiant du joueur
+            offset : int
+                ?
+            limit : int
+                ?
         Returns
         -------
-            ReturnType
-                Description de ce que la méthode retourne.
+            List[Echange]
+                ?
 
         Raises
         ------
-            ExceptionType
-                Description des exceptions levées (optionnel).
         """
         pass
 
-    def rechercher_echange(id_conv: int, mot_clef, date: Date) ->List[Echange]:
+    def rechercher_echange(id_conv: int, mot_clef: str, date: Date) ->List[Echange]:
         """
-        Brève description de ce que fait la méthode.
+        Recherche un échange au sein d'une conversation, à partir d'un mot-clé et d'une date.
 
         Parameters
         ----------
-            param1 : Type1
-                Description du paramètre 1.
-            param2 : Type2
-                Description du paramètre 2.
+            id_conv : int 
+                l'identifiant d'une conversation
+            mot_clef : str
+                Le mot-clef de la recherche
+            date : Date
+                la date supposée de l'échange
 
         Returns
         -------
-            ReturnType
-                Description de ce que la méthode retourne.
+            list[Echange]
+                Une liste d'objets Echanges qui répondent à la recherche
 
         Raises
         ------
