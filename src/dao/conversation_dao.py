@@ -185,64 +185,59 @@ class ConversationDAO:
 
         Raises
         ------
-            ExceptionType
-                Description des exceptions levées (optionnel).
         """
         pass
     
-    def ajouter_participant(id_conv: int, id_user: int, role: str):
+    def ajouter_participant(id_conv: int, id_user: int, role: str)-->bool :
         """
-        Brève description de ce que fait la méthode.
+        Ajoute un autre utilisateur à une conversation en cours.
 
         Parameters
         ----------
-            param1 : Type1
-                Description du paramètre 1.
-            param2 : Type2
-                Description du paramètre 2.
+            id_conv : int
+                identifiant de la conversation
+            id_user : int
+                identifiant du joueur à rajouter
+            role : str
+                ?
 
         Returns
         -------
-            ReturnType
-                Description de ce que la méthode retourne.
-
+            bool
+                indique si le joueur a été ajouté ou non 
         Raises
         ------
-            ExceptionType
-                Description des exceptions levées (optionnel).
         """
         pass
     
     def retirer_participant(id_conv: int, id_user: int) ->bool:
         """
-        Brève description de ce que fait la méthode.
+        Retire un utilisateur d'une conversation. (comment borner le droit : 
+        éviter qu'un mec invité tej le proprio de la conv?)
 
         Parameters
         ----------
-            param1 : Type1
-                Description du paramètre 1.
-            param2 : Type2
-                Description du paramètre 2.
+            id_conv : int
+                identifiant de la conversation dont on veut retirer un des participants. 
+            id_user : int
+                identifiant du joueur à retirer de la conversation
 
         Returns
         -------
-            ReturnType
-                Description de ce que la méthode retourne.
-
+            Bool
+                indique si le joueur a été effectivement retiré
         Raises
         ------
-            ExceptionType
-                Description des exceptions levées (optionnel).
         """
         pass
 
     def ajouter_echange(id_conv: int, echange: Echange) ->bool:
         """
-        Brève description de ce que fait la méthode.
+        Ajoute un échange à une conversation dans la base de donnée.
 
         Parameters
         ----------
-            param1 : Type1
+            id_conv : int
                 Description du paramètre 1.
             param2 : Type2
                 Description du paramètre 2.
@@ -261,115 +256,97 @@ class ConversationDAO:
 
     def mettre_a_jour_personnalisation(id_conv: int, personnalisation: str) ->bool:
         """
-        Brève description de ce que fait la méthode.
+        Permet de changer le profil du LLM via un système de préprompt
 
         Parameters
         ----------
-            param1 : Type1
-                Description du paramètre 1.
-            param2 : Type2
-                Description du paramètre 2.
+            id_conv : int
+                l'identifiant de la conversation pour laquelle on veut changer le profil du LLM
+            personnalisation : str
+                Nom du profil du LLM à appliquer
 
         Returns
         -------
-            ReturnType
-                Description de ce que la méthode retourne.
-
+            Bool
+                indique si le profil du LLM a été changé avec succès
         Raises
         ------
-            ExceptionType
-                Description des exceptions levées (optionnel).
         """
         pass
 
     def compter_conversations(id_user: int) ->int:
         """
-        Brève description de ce que fait la méthode.
+        Compte le nombre total de conversation d'un utilisateur (compter aussi conv auxquelles il est invité ?).
 
         Parameters
         ----------
-            param1 : Type1
-                Description du paramètre 1.
-            param2 : Type2
-                Description du paramètre 2.
+            id_user : int
+                l'identifiant de l'utilisateur dans la base de donnée
 
         Returns
         -------
-            ReturnType
-                Description de ce que la méthode retourne.
+            int
+                Le nombre total de conversations de l'utilisateur.
 
         Raises
         ------
-            ExceptionType
-                Description des exceptions levées (optionnel).
         """
         pass
 
     def compter_message_user(id_user: int) ->int:
         """
-        Brève description de ce que fait la méthode.
+        Compte le nombre total de messages envoyés par un utilisateur.
 
         Parameters
         ----------
-            param1 : Type1
-                Description du paramètre 1.
-            param2 : Type2
-                Description du paramètre 2.
-
+            id_user : int
+                l'identifiant de l'utilisateur dans la base de donnée
+          
         Returns
         -------
-            ReturnType
-                Description de ce que la méthode retourne.
+            int 
+                Le nombre total de messages envoyé. 
 
         Raises
         ------
-            ExceptionType
-                Description des exceptions levées (optionnel).
         """
         pass
 
     def sujets_plus_frequents(id_user: int, topK: int) ->List[str]:
         """
-        Brève description de ce que fait la méthode.
+        Renvoie une liste des sujets les plus fréquents entretenus dans les conversations d'un utilisateur.
 
         Parameters
         ----------
-            param1 : Type1
-                Description du paramètre 1.
-            param2 : Type2
-                Description du paramètre 2.
+            id_user : int
+                l'identifiant de l'utilisateur dans la base de donnée
+            topK : int
+                ???.
 
         Returns
         -------
-            ReturnType
-                Description de ce que la méthode retourne.
+            List[str]
+                Une liste des principaux sujets déterminés par le LLM
 
         Raises
         ------
-            ExceptionType
-                Description des exceptions levées (optionnel).
         """
         pass
 
     def heures_utilisation(id_user: int) ->float:
         """
-        Brève description de ce que fait la méthode.
+        Donne une approximation du temps passé sur l'application.
 
         Parameters
         ----------
-            param1 : Type1
-                Description du paramètre 1.
-            param2 : Type2
-                Description du paramètre 2.
+            id_user : int
+                l'identifiant de l'utilisateur dans la base de donnée
 
         Returns
         -------
-            ReturnType
-                Description de ce que la méthode retourne.
-
+            float
+                donne une estimation du temps passé sur l'application au total. 
         Raises
         ------
-            ExceptionType
-                Description des exceptions levées (optionnel).
         """
         pass
