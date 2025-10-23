@@ -165,15 +165,14 @@ class ConversationService:
 
         reponse = f"Voici une réponse simulée à: {message[:50]}"
 
-        # Créer un objet Echange (tu dois avoir une classe Echange définie quelque part)
+        
         echange = Echange(
-            id_conv=None,        # pas forcément lié à une conversation
+            id_conv=None,        
             sender="assistant",
             message=reponse,
             date_echange=date.today()
         )
 
-        # Si tu veux, tu peux stocker ce message dans la BDD
         # self.dao.ajouter_echange(echange)
 
         return echange
