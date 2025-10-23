@@ -1,7 +1,26 @@
+import bcrypt
+import jwt
+from datetime import datetime, timedelta
+from dao.utilisateur_dao import Utilisateur_DAO 
+
+SECRET_KEY = "mL2fT6pYhQ8rE9sD4uC1vZ0aB3xN7tG6kJ9pR2sW8mH5eQ0yT7" # Exemple de code secret qu'on devra mettre dans un fichier .env
+
+
 class Auth_Service:
     """
     Service d'authentification pour gérer les connexions utilisateurs
     """
+    def __init__(self, utilisateur_dao: Utilisateur_DAO):
+        """
+        Initialise le service d'authentification avec un DAO utilisateur.
+
+        Parameters
+        ----------
+        utilisateur_dao : UtilisateurDAO
+            Instance du DAO permettant d'accéder aux utilisateurs.
+        """
+        self.utilisateur_dao = utilisateur_dao
+        self.tokens_invalides = set()  # liste noire des tokens déconnectés
 
     def se_connecter(self, pseudo: str, mdp: str) -> str:
         """
@@ -20,7 +39,23 @@ class Auth_Service:
         str
             Token de session
         """
-        pass
+        utilisateur = self.utilisateur_dao.trouver_par_pseudo(pseudo)
+        if not utilisateur:
+            raise ValueError("Utilisateur introuvable.")
+
+        # Vérifie le mot de passe
+        if not bcrypt.checkpw(mdp.encode(), utilisateur.password_hash.encode()):
+            raise ValueError("Mot de passe incorrect.")
+
+        # Génère un token JWT valable 1 heure
+        payload = {
+            "user_id": utilisateur.id,
+            "pseudo": utilisateur.pseudo,
+            "exp": datetime.utcnow() + timedelta(hours=1),
+        }
+        token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+
+        return token
 
     def se_deconnecter(self, token: str) -> None:
         """
@@ -31,7 +66,7 @@ class Auth_Service:
         token : str
             Token de session à invalider
         """
-        pass
+        self.tokens_invalides.add(token)
 
     def verifier_token(self, token: str) -> bool:
         """
@@ -47,4 +82,15 @@ class Auth_Service:
         bool
             True si le token est valide, False sinon
         """
-        pass
+        if token in self.tokens_invalides:
+            return False  # token déjà invalidé
+
+        try:
+            jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+            return True
+        except jwt.ExpiredSignatureError:
+            print("Le token a expiré.")
+            return False
+        except jwt.InvalidTokenError:
+            print("Token invalide.")
+            return False
