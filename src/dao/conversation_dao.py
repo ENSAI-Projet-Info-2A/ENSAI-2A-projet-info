@@ -1,12 +1,38 @@
 from business_object.conversation import Conversation
 from business_object.echange import Echange 
 from datetime import datetime as Date
-
+from dao.db_connection import DBConnection
+from business_object.conversation import Conversation
 
 class ConversationDAO:
+    def create(self, conversation):
+        """
+        créer une nouvelle conversation dans la table Conversation
+
+        Parameters
+        ----------
+            conversation : int
+                identifiant de la conversation
+        """
+        with DBConnection().connection as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "INSERT INTO CONVERSATION (titre, personnalisation, owner_id)         "
+                    "     VALUES (%(titre)s, %(personnalisation)s, %(owner_id)s)   "
+                    "  RETURNING id_conversation;                           ",
+                    {"titre": conversation.titre, 
+                    "personnalisation": conversation.personnalisation, 
+                    "owner_id": conversation.owner_id},
+                )
+                conversation.id = cursor.fetchone()["id_conversation"]
+        return conversation
+
+        pass
+
+
     def __init__(titre: str, personnalisation: str, owner_id: int) -> Conversation:
         """
-        Initialise une conversation.
+        Initialise la table Conversation.
 
         Parameters
         ----------
@@ -19,7 +45,6 @@ class ConversationDAO:
 
         """
         pass
-
     def trouver_par_id(id_conv: int) -> Conversation:
         """
         Trouve une conversation dans la base de donnée à partir de son identifiant.
@@ -188,7 +213,7 @@ class ConversationDAO:
         """
         pass
     
-    def ajouter_participant(id_conv: int, id_user: int, role: str)-->bool :
+    def ajouter_participant(id_conv: int, id_user: int, role: str) ->bool:
         """
         Ajoute un autre utilisateur à une conversation en cours.
 
