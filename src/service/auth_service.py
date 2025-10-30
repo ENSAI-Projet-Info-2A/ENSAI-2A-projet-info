@@ -1,9 +1,12 @@
 import bcrypt
-import jwt
-from datetime import datetime, timedelta
+import jwt 
+from datetime import datetime, timedelta, timezone
 from dao.utilisateur_dao import Utilisateur_DAO 
+import os
+from dotenv import load_dotenv
 
-SECRET_KEY = "mL2fT6pYhQ8rE9sD4uC1vZ0aB3xN7tG6kJ9pR2sW8mH5eQ0yT7" # Exemple de code secret qu'on devra mettre dans un fichier .env
+load_dotenv()
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 
 class Auth_Service:
@@ -51,7 +54,7 @@ class Auth_Service:
         payload = {
             "user_id": utilisateur.id,
             "pseudo": utilisateur.pseudo,
-            "exp": datetime.utcnow() + timedelta(hours=1),
+            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
         }
         token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
 

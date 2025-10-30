@@ -11,7 +11,7 @@ class Utilisateur_DAO(metaclass=Singleton):
     """Classe contenant les méthodes pour accéder aux Utilisateurs de la base de données"""
 
     @log
-    def créer_utilisateur(self, utilisateur) -> bool
+    def créer_utilisateur(self, utilisateur) -> bool:
         """Creation d'un utilisateur dans la base de données
 
         Parameters
@@ -26,7 +26,7 @@ class Utilisateur_DAO(metaclass=Singleton):
         """
         pass
 
-    def get_par_id(self, id: int) -> Utilisateur
+    def get_par_id(self, id: int) -> Utilisateur:
         """trouver un utilisateur grace à son id
 
         Parameters
@@ -41,7 +41,7 @@ class Utilisateur_DAO(metaclass=Singleton):
         """
         pass
 
-    def trouver_par_pseudo(self, pseudo: string) -> Utilisateur
+    def trouver_par_pseudo(self, pseudo: str) -> Utilisateur:
         """trouver un utilisateur grace à son pseudo
 
         Parameters
@@ -56,7 +56,7 @@ class Utilisateur_DAO(metaclass=Singleton):
         """
         pass
 
-    def supprimer(self, utilisateur) -> bool
+    def supprimer(self, utilisateur) -> bool:
         """Suppression d'un utilisateur dans la base de données
 
         Parameters
@@ -70,6 +70,7 @@ class Utilisateur_DAO(metaclass=Singleton):
         """
         pass
 
-    def get_hash_par_pseudo(self, pseudo: string) : string
-    """A voir plus tard si utile à garder ou non"""
-        pass
+    def get_hash_par_pseudo(self, pseudo: str) -> str:
+
+      """A voir plus tard si utile à garder ou non"""
+    pass
