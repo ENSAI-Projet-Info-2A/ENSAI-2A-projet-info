@@ -1,10 +1,7 @@
-from unittest.mock import MagicMock
+from unittest.mock import patch
 
 from service.utilisateur_service import UtilisateurService
-from dao.utilisateur_dao import UtilisateurDao
 from business_object.utilisateur import Utilisateur
-import service.utilisateur_service as svc  # pour mocker hash_password
-
 
 # --------- Données factices ----------
 liste_utilisateurs = [
@@ -18,223 +15,211 @@ liste_utilisateurs = [
 
 def test_creer_compte_ok():
     """Création d'utilisateur réussie"""
-
-    # GIVEN
     pseudo, mdp = "alice", "1234"
-    UtilisateurDao().trouver_par_pseudo = MagicMock(return_value=None)  # pas déjà pris
-    UtilisateurDao().creer = MagicMock(return_value=True)
-    svc.hash_password = MagicMock(return_value="HASHED")
+    with patch("service.utilisateur_service.UtilisateurDao") as MockDao, \
+         patch("service.utilisateur_service.hash_password", return_value="HASHED") as mock_hash:
+        mock_dao = MockDao.return_value
+        mock_dao.trouver_par_pseudo.return_value = None  # pas déjà pris
+        mock_dao.creer.return_value = True
 
-    # WHEN
-    user = UtilisateurService().creer_compte(pseudo, mdp)
+        user = UtilisateurService().creer_compte(pseudo, mdp)
 
-    # THEN
-    assert user is not None
-    assert user.pseudo == pseudo
-    assert user.password_hash == "HASHED"
-    svc.hash_password.assert_called_once_with(mdp, pseudo)
+        assert user is not None
+        assert user.pseudo == pseudo
+        assert user.password_hash == "HASHED"
+        mock_hash.assert_called_once_with(mdp, pseudo)
+        mock_dao.trouver_par_pseudo.assert_called_once_with(pseudo)
+        mock_dao.creer.assert_called_once()
 
 
 def test_creer_compte_echec_dao():
     """Création échouée (DAO.creer renvoie False)"""
-
-    # GIVEN
     pseudo, mdp = "bob", "0000"
-    UtilisateurDao().trouver_par_pseudo = MagicMock(return_value=None)
-    UtilisateurDao().creer = MagicMock(return_value=False)
-    svc.hash_password = MagicMock(return_value="HASHED")
+    with patch("service.utilisateur_service.UtilisateurDao") as MockDao, \
+         patch("service.utilisateur_service.hash_password", return_value="HASHED") as mock_hash:
+        mock_dao = MockDao.return_value
+        mock_dao.trouver_par_pseudo.return_value = None
+        mock_dao.creer.return_value = False
 
-    # WHEN
-    user = UtilisateurService().creer_compte(pseudo, mdp)
+        user = UtilisateurService().creer_compte(pseudo, mdp)
 
-    # THEN
-    assert user is None
-    svc.hash_password.assert_called_once_with(mdp, pseudo)
+        assert user is None
+        mock_hash.assert_called_once_with(mdp, pseudo)
+        mock_dao.trouver_par_pseudo.assert_called_once_with(pseudo)
+        mock_dao.creer.assert_called_once()
 
 
 def test_creer_compte_pseudo_deja_utilise():
     """Création échouée : pseudo déjà présent en BDD"""
+    with patch("service.utilisateur_service.UtilisateurDao") as MockDao:
+        mock_dao = MockDao.return_value
+        mock_dao.trouver_par_pseudo.return_value = liste_utilisateurs[0]
 
-    # GIVEN
-    UtilisateurDao().trouver_par_pseudo = MagicMock(return_value=liste_utilisateurs[0])
+        user = UtilisateurService().creer_compte("alice", "secret")
 
-    # WHEN
-    user = UtilisateurService().creer_compte("alice", "secret")
-
-    # THEN
-    assert user is None
+        assert user is None
+        mock_dao.trouver_par_pseudo.assert_called_once_with("alice")
 
 
 # ===================== LISTAGE =====================
 
 def test_lister_tous_inclure_hash_true():
     """Lister les utilisateurs en incluant les password_hash"""
+    with patch("service.utilisateur_service.UtilisateurDao") as MockDao:
+        mock_dao = MockDao.return_value
+        mock_dao.lister_tous.return_value = liste_utilisateurs
 
-    # GIVEN
-    UtilisateurDao().lister_tous = MagicMock(return_value=liste_utilisateurs)
+        res = UtilisateurService().lister_tous(inclure_hash=True)
 
-    # WHEN
-    res = UtilisateurService().lister_tous(inclure_hash=True)
-
-    # THEN
-    assert len(res) == 3
-    for u in res:
-        assert u.password_hash is not None
+        assert len(res) == 3
+        for u in res:
+            assert u.password_hash is not None
+        mock_dao.lister_tous.assert_called_once()
 
 
 def test_lister_tous_inclure_hash_false():
     """Lister les utilisateurs en excluant les password_hash"""
+    with patch("service.utilisateur_service.UtilisateurDao") as MockDao:
+        mock_dao = MockDao.return_value
+        mock_dao.lister_tous.return_value = [
+            Utilisateur(id=4, pseudo="dave", password_hash="hashX")
+        ]
 
-    # GIVEN
-    UtilisateurDao().lister_tous = MagicMock(
-        return_value=[Utilisateur(id=4, pseudo="dave", password_hash="hashX")]
-    )
+        res = UtilisateurService().lister_tous()
 
-    # WHEN
-    res = UtilisateurService().lister_tous()
-
-    # THEN
-    assert len(res) == 1
-    assert res[0].pseudo == "dave"
-    assert res[0].password_hash is None  # masqué par le service
+        assert len(res) == 1
+        assert res[0].pseudo == "dave"
+        assert res[0].password_hash is None  # masqué par le service
+        mock_dao.lister_tous.assert_called_once()
 
 
 # ===================== RECHERCHE =====================
 
 def test_trouver_par_id():
     """Trouver par id"""
+    with patch("service.utilisateur_service.UtilisateurDao") as MockDao:
+        mock_dao = MockDao.return_value
+        mock_dao.trouver_par_id.return_value = liste_utilisateurs[1]
 
-    # GIVEN
-    UtilisateurDao().trouver_par_id = MagicMock(return_value=liste_utilisateurs[1])
+        res = UtilisateurService().trouver_par_id(2)
 
-    # WHEN
-    res = UtilisateurService().trouver_par_id(2)
-
-    # THEN
-    assert res is not None
-    assert res.id == 2
-    assert res.pseudo == "bob"
+        assert res is not None
+        assert res.id == 2
+        assert res.pseudo == "bob"
+        mock_dao.trouver_par_id.assert_called_once_with(2)
 
 
 def test_trouver_par_pseudo():
     """Trouver par pseudo"""
+    with patch("service.utilisateur_service.UtilisateurDao") as MockDao:
+        mock_dao = MockDao.return_value
+        mock_dao.trouver_par_pseudo.return_value = liste_utilisateurs[2]
 
-    # GIVEN
-    UtilisateurDao().trouver_par_pseudo = MagicMock(return_value=liste_utilisateurs[2])
+        res = UtilisateurService().trouver_par_pseudo("carol")
 
-    # WHEN
-    res = UtilisateurService().trouver_par_pseudo("carol")
-
-    # THEN
-    assert res is not None
-    assert res.id == 3
-    assert res.pseudo == "carol"
+        assert res is not None
+        assert res.id == 3
+        assert res.pseudo == "carol"
+        mock_dao.trouver_par_pseudo.assert_called_once_with("carol")
 
 
 # ===================== PSEUDO DEJA UTILISE =====================
 
 def test_pseudo_deja_utilise_oui():
     """Le pseudo est déjà utilisé"""
+    with patch("service.utilisateur_service.UtilisateurDao") as MockDao:
+        mock_dao = MockDao.return_value
+        mock_dao.trouver_par_pseudo.return_value = liste_utilisateurs[0]
 
-    # GIVEN
-    UtilisateurDao().trouver_par_pseudo = MagicMock(return_value=liste_utilisateurs[0])
+        res = UtilisateurService().pseudo_deja_utilise("alice")
 
-    # WHEN
-    res = UtilisateurService().pseudo_deja_utilise("alice")
-
-    # THEN
-    assert res is True
+        assert res is True
+        mock_dao.trouver_par_pseudo.assert_called_once_with("alice")
 
 
 def test_pseudo_deja_utilise_non():
     """Le pseudo n'est pas utilisé"""
+    with patch("service.utilisateur_service.UtilisateurDao") as MockDao:
+        mock_dao = MockDao.return_value
+        mock_dao.trouver_par_pseudo.return_value = None
 
-    # GIVEN
-    UtilisateurDao().trouver_par_pseudo = MagicMock(return_value=None)
+        res = UtilisateurService().pseudo_deja_utilise("zozo")
 
-    # WHEN
-    res = UtilisateurService().pseudo_deja_utilise("zozo")
-
-    # THEN
-    assert res is False
+        assert res is False
+        mock_dao.trouver_par_pseudo.assert_called_once_with("zozo")
 
 
 # ===================== SUPPRESSION =====================
 
 def test_supprimer_succes():
     """Suppression réussie"""
+    with patch("service.utilisateur_service.UtilisateurDao") as MockDao:
+        mock_dao = MockDao.return_value
+        mock_dao.supprimer.return_value = True
+        u = Utilisateur(id=5, pseudo="temp", password_hash="h")
 
-    # GIVEN
-    u = Utilisateur(id=5, pseudo="temp", password_hash="h")
-    UtilisateurDao().supprimer = MagicMock(return_value=True)
+        ok = UtilisateurService().supprimer(u)
 
-    # WHEN
-    ok = UtilisateurService().supprimer(u)
-
-    # THEN
-    assert ok is True
+        assert ok is True
+        mock_dao.supprimer.assert_called_once_with(u)
 
 
 def test_supprimer_echec():
     """Suppression échouée"""
+    with patch("service.utilisateur_service.UtilisateurDao") as MockDao:
+        mock_dao = MockDao.return_value
+        mock_dao.supprimer.return_value = False
+        u = Utilisateur(id=6, pseudo="temp2", password_hash="h2")
 
-    # GIVEN
-    u = Utilisateur(id=6, pseudo="temp2", password_hash="h2")
-    UtilisateurDao().supprimer = MagicMock(return_value=False)
+        ok = UtilisateurService().supprimer(u)
 
-    # WHEN
-    ok = UtilisateurService().supprimer(u)
-
-    # THEN
-    assert ok is False
+        assert ok is False
+        mock_dao.supprimer.assert_called_once_with(u)
 
 
 # ===================== CONNEXION =====================
 
 def test_se_connecter_ok():
     """Connexion réussie : pseudo existe et hash concordant"""
-
-    # GIVEN
     user = Utilisateur(id=7, pseudo="eve", password_hash="HASH")
-    UtilisateurDao().trouver_par_pseudo = MagicMock(return_value=user)
-    svc.hash_password = MagicMock(return_value="HASH")
+    with patch("service.utilisateur_service.UtilisateurDao") as MockDao, \
+         patch("service.utilisateur_service.hash_password", return_value="HASH") as mock_hash:
+        mock_dao = MockDao.return_value
+        mock_dao.trouver_par_pseudo.return_value = user
 
-    # WHEN
-    res = UtilisateurService().se_connecter("eve", "secret")
+        res = UtilisateurService().se_connecter("eve", "secret")
 
-    # THEN
-    assert res is not None
-    assert res == user
-    svc.hash_password.assert_called_once_with("secret", "eve")
+        assert res is not None
+        assert res == user
+        mock_hash.assert_called_once_with("secret", "eve")
+        mock_dao.trouver_par_pseudo.assert_called_once_with("eve")
 
 
 def test_se_connecter_mauvais_mdp():
     """Connexion échouée : hash ne correspond pas"""
-
-    # GIVEN
     user = Utilisateur(id=8, pseudo="zoe", password_hash="HASH")
-    UtilisateurDao().trouver_par_pseudo = MagicMock(return_value=user)
-    svc.hash_password = MagicMock(return_value="AUTREHASH")
+    with patch("service.utilisateur_service.UtilisateurDao") as MockDao, \
+         patch("service.utilisateur_service.hash_password", return_value="AUTREHASH") as mock_hash:
+        mock_dao = MockDao.return_value
+        mock_dao.trouver_par_pseudo.return_value = user
 
-    # WHEN
-    res = UtilisateurService().se_connecter("zoe", "badpass")
+        res = UtilisateurService().se_connecter("zoe", "badpass")
 
-    # THEN
-    assert res is None
-    svc.hash_password.assert_called_once_with("badpass", "zoe")
+        assert res is None
+        mock_hash.assert_called_once_with("badpass", "zoe")
+        mock_dao.trouver_par_pseudo.assert_called_once_with("zoe")
 
 
 def test_se_connecter_pseudo_inconnu():
     """Connexion échouée : pseudo inconnu"""
+    with patch("service.utilisateur_service.UtilisateurDao") as MockDao:
+        mock_dao = MockDao.return_value
+        mock_dao.trouver_par_pseudo.return_value = None
 
-    # GIVEN
-    UtilisateurDao().trouver_par_pseudo = MagicMock(return_value=None)
+        res = UtilisateurService().se_connecter("ghost", "secret")
 
-    # WHEN
-    res = UtilisateurService().se_connecter("ghost", "secret")
-
-    # THEN
-    assert res is None
+        assert res is None
+        mock_dao.trouver_par_pseudo.assert_called_once_with("ghost")
 
 
 # Point d'entrée local
