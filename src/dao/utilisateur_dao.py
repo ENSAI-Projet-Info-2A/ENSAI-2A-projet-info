@@ -74,3 +74,21 @@ class Utilisateur_DAO(metaclass=Singleton):
 
       """A voir plus tard si utile à garder ou non"""
     pass
+
+    def heures_utilisation(id_user: int) ->float:
+        """
+        Donne une approximation du temps passé sur l'application.
+
+        Parameters
+        ----------
+            id_user : int
+                l'identifiant de l'utilisateur dans la base de donnée
+
+        Returns
+        -------
+            float
+                donne une estimation du temps passé sur l'application au total. 
+        Raises
+        ------
+        """
+        pass

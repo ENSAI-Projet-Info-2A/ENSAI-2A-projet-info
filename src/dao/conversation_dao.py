@@ -124,7 +124,7 @@ class ConversationDAO:
     def rechercher_date(id_user: int, date: Date) ->List[Conversation]:
         """
         Recherche une conversation à partir d'une date.
-        -->la date de quoi ? de la création ? du dernier message ? 
+        --> la date de quoi ? de la création ? du dernier message ? 
 
         Parameters
         ----------
@@ -328,24 +328,6 @@ class ConversationDAO:
             List[str]
                 Une liste des principaux sujets déterminés par le LLM
 
-        Raises
-        ------
-        """
-        pass
-
-    def heures_utilisation(id_user: int) ->float:
-        """
-        Donne une approximation du temps passé sur l'application.
-
-        Parameters
-        ----------
-            id_user : int
-                l'identifiant de l'utilisateur dans la base de donnée
-
-        Returns
-        -------
-            float
-                donne une estimation du temps passé sur l'application au total. 
         Raises
         ------
         """
