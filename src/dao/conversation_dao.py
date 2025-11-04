@@ -25,7 +25,6 @@ class ConversationDAO:
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
-<<<<<<< HEAD
                     """
                     INSERT INTO conversations (titre, prompt_id, cree_le)         
                         VALUES (%(titre)s, %(prompt_id)s, %(cree_le)s)           
@@ -33,41 +32,14 @@ class ConversationDAO:
                     """,
                     {"titre": conversation.titre, 
                     "prompt_id": prompt_id, 
-                    "cree_le": cree_le},
-=======
-                    "INSERT INTO CONVERSATION (titre, personnalisation, owner_id)         "
-                    "     VALUES (%(titre)s, %(personnalisation)s, %(owner_id)s)   "
-                    "  RETURNING id_conversation;                           ",
-                    {
-                        "titre": conversation.titre,
-                        "personnalisation": conversation.personnalisation,
-                        "owner_id": conversation.owner_id,
-                    },
->>>>>>> dc082acb685c4aa0e111ec7ea0d46d97dcae1a8e
-                )
+                    "cree_le": cree_le}
+                    )
                 conversation.id = cursor.fetchone()["id"]
         return conversation
 
         pass
 
-<<<<<<< HEAD
-=======
-    def __init__(titre: str, personnalisation: str, owner_id: int) -> Conversation:
-        """
-        Initialise la table Conversation.
 
-        Parameters
-        ----------
-            titre : str
-                le titre de la conversation
-            personnalisation : str
-                le nom du profil du LLM
-            owner_id : int
-                l'identifiant du créateur de la conversation
-
-        """
-        pass
->>>>>>> dc082acb685c4aa0e111ec7ea0d46d97dcae1a8e
 
     def trouver_par_id(id_conv: int) -> Conversation:
         """
@@ -102,7 +74,7 @@ class ConversationDAO:
                     personnalisation = conv["prompt_id"], date_creation = conv["cree_le"])
             else:
                 raise Exception(f"Aucune conversation trouvée avec id_conv={id_conv}")
-        pass
+    
 
     def renommer_conv(id_conv: int, nouveau_nom: str) -> bool:
         """
@@ -138,7 +110,7 @@ class ConversationDAO:
             return "titre modifié avec succès"
         else:
             raise Exception(f"Erreur dans la modification du titre pour id_conv = {id_conv}")
-        pass
+        
 
     def supprimmer_conv(id_conv: int) -> str:
         """
@@ -171,7 +143,7 @@ class ConversationDAO:
             return(f"la conversation d'id={id_conv} a bien été supprimmée")
         else:
             return(f"echec de la suppression de la conversation d'identifiant {id_conv}")
-        pass
+        
 
     def lister_conversations(id_user: int) -> List[Conversation]:
         """
@@ -211,7 +183,7 @@ class ConversationDAO:
             else:
                 raise Exception(f"aucune conversation trouvée pour l'utilisateur {id_user}")
 
-        pass
+        
 
     def rechercher_mot_clef(id_user: int, mot_clef: str) -> List[Conversation]:
         """
@@ -264,23 +236,17 @@ class ConversationDAO:
                      {"conv_id":liste}
                 )
                 res = cursor.fetchall()
-                liste_finale = []
-                for conv in res:
-                    liste_finale.append(Conversation(id= conv["id"], nom= conv["titre"], 
-                    personnalisation = conv["prompt_id"], date_creation = conv["cree_le"]))
+            liste_finale = []
+            for conv in res:
+                liste_finale.append(Conversation(id= conv["id"], nom= conv["titre"], 
+                personnalisation = conv["prompt_id"], date_creation = conv["cree_le"]))
 
-
-        pass
 
     def rechercher_date(id_user: int, date: Date) -> List[Conversation]:
         """
-<<<<<<< HEAD
+
         Recherche une conversation à partir d'une date (date d'un message)
         
-=======
-        Recherche une conversation à partir d'une date.
-        --> la date de quoi ? de la création ? du dernier message ?
->>>>>>> dc082acb685c4aa0e111ec7ea0d46d97dcae1a8e
 
         Parameters
         ----------
@@ -319,18 +285,24 @@ class ConversationDAO:
                 dict_id = cursor.fetchall()
             if not dict_id:
                 raise Exception(f"Aucune conversation de l'utilisateur {id_user} pour la date {date}")
-            
+            # on récupère 
             with conn.cursor() as cursor:
                 cursor.execute(
                     """
                     SELECT *
                     FROM conversations
-                    WHERE id = ANY(%(dict_id));
-                    """
-                    
+                    WHERE id = ANY(%(dict_id)s);
+                    """,
+                    {"dict_id":dict_id}
                 )
+                res = cursor.fetchall()
+            liste_res
+            for conv in res:
+                liste_res.append(Conversation(id= conv["id"], nom= conv["titre"], 
+                personnalisation = conv["prompt_id"], date_creation = conv["cree_le"]))
             
-        pass
+            return liste_res
+
 
     def lire_echanges(id_conv: int, offset: int, limit: int) -> List[Echange]:
         """
