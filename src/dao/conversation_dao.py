@@ -1,8 +1,9 @@
-from business_object.conversation import Conversation
-from business_object.echange import Echange 
 from datetime import datetime as Date
-from dao.db_connection import DBConnection
+
 from business_object.conversation import Conversation
+from business_object.echange import Echange
+from dao.db_connection import DBConnection
+
 
 class ConversationDAO:
     def create(self, conversation):
@@ -20,15 +21,16 @@ class ConversationDAO:
                     "INSERT INTO CONVERSATION (titre, personnalisation, owner_id)         "
                     "     VALUES (%(titre)s, %(personnalisation)s, %(owner_id)s)   "
                     "  RETURNING id_conversation;                           ",
-                    {"titre": conversation.titre, 
-                    "personnalisation": conversation.personnalisation, 
-                    "owner_id": conversation.owner_id},
+                    {
+                        "titre": conversation.titre,
+                        "personnalisation": conversation.personnalisation,
+                        "owner_id": conversation.owner_id,
+                    },
                 )
                 conversation.id = cursor.fetchone()["id_conversation"]
         return conversation
 
         pass
-
 
     def __init__(titre: str, personnalisation: str, owner_id: int) -> Conversation:
         """
@@ -45,6 +47,7 @@ class ConversationDAO:
 
         """
         pass
+
     def trouver_par_id(id_conv: int) -> Conversation:
         """
         Trouve une conversation dans la base de donnée à partir de son identifiant.
@@ -53,7 +56,7 @@ class ConversationDAO:
         ----------
             id_conv : int
                 identifiant de la conversation
-            
+
 
         Returns
         -------
@@ -80,7 +83,7 @@ class ConversationDAO:
         -------
             bool
                 indique si le nom a été changé avec succès
-                
+
         Raises
         ------
         """
@@ -94,7 +97,7 @@ class ConversationDAO:
         ----------
             id_conv : int
                 identifiant de la conversation
-            
+
         Returns
         -------
             bool
@@ -105,7 +108,7 @@ class ConversationDAO:
         """
         pass
 
-    def lister_conversations(id_user: int) ->List[Conversation]:
+    def lister_conversations(id_user: int) -> List[Conversation]:
         """
         Présente une liste des conversations reliées à un joueur.
 
@@ -113,7 +116,7 @@ class ConversationDAO:
         ----------
             id_user : int
                 l'identifiant d'un tilisateur
-        
+
 
         Returns
         -------
@@ -125,14 +128,14 @@ class ConversationDAO:
         """
         pass
 
-    def rechercher_mot_clef(id_user: int, mot_clef: str) ->List[Conversation]:
+    def rechercher_mot_clef(id_user: int, mot_clef: str) -> List[Conversation]:
         """
         Recherche une conversation selon un mot-clé.
 
         Parameters
         ----------
             id_user : int
-                l'identifiant d'un utilisateur 
+                l'identifiant d'un utilisateur
             mot_clef : str
                 le mot-clé avec lequel on fait la recherche.
 
@@ -146,15 +149,15 @@ class ConversationDAO:
         """
         pass
 
-    def rechercher_date(id_user: int, date: Date) ->List[Conversation]:
+    def rechercher_date(id_user: int, date: Date) -> List[Conversation]:
         """
         Recherche une conversation à partir d'une date.
-        --> la date de quoi ? de la création ? du dernier message ? 
+        --> la date de quoi ? de la création ? du dernier message ?
 
         Parameters
         ----------
             id_user : int
-                l'identifiant d'un utilisateur 
+                l'identifiant d'un utilisateur
             date : Date
                 un objet Date
 
@@ -168,7 +171,7 @@ class ConversationDAO:
         """
         pass
 
-    def lire_echanges(id_conv: int, offset: int, limit: int) ->List[Echange]:
+    def lire_echanges(id_conv: int, offset: int, limit: int) -> List[Echange]:
         """
         ?.
 
@@ -190,13 +193,13 @@ class ConversationDAO:
         """
         pass
 
-    def rechercher_echange(id_conv: int, mot_clef: str, date: Date) ->List[Echange]:
+    def rechercher_echange(id_conv: int, mot_clef: str, date: Date) -> List[Echange]:
         """
         Recherche un échange au sein d'une conversation, à partir d'un mot-clé et d'une date.
 
         Parameters
         ----------
-            id_conv : int 
+            id_conv : int
                 l'identifiant d'une conversation
             mot_clef : str
                 Le mot-clef de la recherche
@@ -212,8 +215,8 @@ class ConversationDAO:
         ------
         """
         pass
-    
-    def ajouter_participant(id_conv: int, id_user: int, role: str) ->bool:
+
+    def ajouter_participant(id_conv: int, id_user: int, role: str) -> bool:
         """
         Ajoute un autre utilisateur à une conversation en cours.
 
@@ -229,21 +232,21 @@ class ConversationDAO:
         Returns
         -------
             bool
-                indique si le joueur a été ajouté ou non 
+                indique si le joueur a été ajouté ou non
         Raises
         ------
         """
         pass
-    
-    def retirer_participant(id_conv: int, id_user: int) ->bool:
+
+    def retirer_participant(id_conv: int, id_user: int) -> bool:
         """
-        Retire un utilisateur d'une conversation. (comment borner le droit : 
+        Retire un utilisateur d'une conversation. (comment borner le droit :
         éviter qu'un mec invité tej le proprio de la conv?)
 
         Parameters
         ----------
             id_conv : int
-                identifiant de la conversation dont on veut retirer un des participants. 
+                identifiant de la conversation dont on veut retirer un des participants.
             id_user : int
                 identifiant du joueur à retirer de la conversation
 
@@ -256,7 +259,7 @@ class ConversationDAO:
         """
         pass
 
-    def ajouter_echange(id_conv: int, echange: Echange) ->bool:
+    def ajouter_echange(id_conv: int, echange: Echange) -> bool:
         """
         Ajoute un échange à une conversation dans la base de donnée.
 
@@ -279,7 +282,7 @@ class ConversationDAO:
         """
         pass
 
-    def mettre_a_jour_personnalisation(id_conv: int, personnalisation: str) ->bool:
+    def mettre_a_jour_personnalisation(id_conv: int, personnalisation: str) -> bool:
         """
         Permet de changer le profil du LLM via un système de préprompt
 
@@ -299,7 +302,7 @@ class ConversationDAO:
         """
         pass
 
-    def compter_conversations(id_user: int) ->int:
+    def compter_conversations(id_user: int) -> int:
         """
         Compte le nombre total de conversation d'un utilisateur (compter aussi conv auxquelles il est invité ?).
 
@@ -318,7 +321,7 @@ class ConversationDAO:
         """
         pass
 
-    def compter_message_user(id_user: int) ->int:
+    def compter_message_user(id_user: int) -> int:
         """
         Compte le nombre total de messages envoyés par un utilisateur.
 
@@ -326,18 +329,18 @@ class ConversationDAO:
         ----------
             id_user : int
                 l'identifiant de l'utilisateur dans la base de donnée
-          
+
         Returns
         -------
-            int 
-                Le nombre total de messages envoyé. 
+            int
+                Le nombre total de messages envoyé.
 
         Raises
         ------
         """
         pass
 
-    def sujets_plus_frequents(id_user: int, topK: int) ->List[str]:
+    def sujets_plus_frequents(id_user: int, topK: int) -> List[str]:
         """
         Renvoie une liste des sujets les plus fréquents entretenus dans les conversations d'un utilisateur.
 
