@@ -305,18 +305,15 @@ class ConversationDAO:
             return liste_res
 
 
-    def lire_echanges(id_conv: int, offset: int, limit: int) -> List[Echange]:
+    def lire_echanges(id_conv: int, limit: int) -> List[Echange]:
         """
-        ?.
+        Permet de lire les messages d'une conversation donnée.
 
         Parameters
         ----------
             id_conv : int
                 l'identifiant du joueur
-            offset : int
-                ?
-            limit : int
-                ?
+            
         Returns
         -------
             List[Echange]
