@@ -4,175 +4,177 @@ from echange import Echange
 from datetime import datetime as Date
 from conversation_dao import ConversationDAO
 
-class ValidationError(Exception):
+class ErreurValidation(Exception):
     """Erreur levée quand les données reçues ne sont pas valides."""
     pass
 
-class NotFoundError(Exception):
+class ErreurNonTrouvee(Exception):
     """Levée quand une ressource n'existe pas."""
     pass
 
 class ConversationService:
 
-    def __init__(self, titre: str, personnalisation: str, owner_id: int):
+    def __init__(self, titre: str, personnalisation: str, id_proprietaire: int):
         """
         Crée une nouvelle conversation.
-        Parameters
+
+        Paramètres
         ----------
             titre : str
-                le titre de la conversation
+                Le titre de la conversation.
             personnalisation : str
-                le nom du profil du LLM
-            owner_id : int
-                l'identifiant du créateur de la conversation
+                Le nom du profil du LLM.
+            id_proprietaire : int
+                L'identifiant du créateur de la conversation.
 
-        Retourne l'objet Conversation.
+        Retourne
+        --------
+            L'objet Conversation créé.
         """
-        if title is None:
-            raise ValidationError("There is no title.")
-        if len(title) > 255:
-            raise ValidationError("Title too long (max 255 chars).")
+        if titre is None:
+            raise ErreurValidation("Le titre est nécéssaire.")
+        if len(titre) > 255:
+            raise ErreurValidation("Le titre est trop long (maximum 255 caractères).")
         if personnalisation is None:
-            raise ValidationError("There is no personalisation .")
-        conv = self.dao.create_conversation(title, personnalisation, owner_id) #manque l'attribut id non ?
-        logger.info("Created conversation id=%s", getattr(conv, "id", None))
-        return conv 
+            raise ErreurValidation("La personnalisation est obligatoire.")
 
-    def acceder(self, id_conv: int) -> Conversation:
-        """
-        Permet d'accéder à la dernière conversation.
-        Parameters
-        ----------
-            id_conv: int
-                l'id de la conversation
-        """
-        if id_conv is None:
-            raise ValidationError("There is no id_conv.")
-        res = self.dao.get_conversation(id_conv)
-        if res is None:
-            raise NotFoundError("Conversation not found")
-        return res
+        conversation = self.dao.creer_conversation(titre, personnalisation, id_proprietaire)
+        logger.info("Conversation créée avec id=%s", getattr(conversation, "id", None))
+        return conversation
 
-    def renommer_conv(self, id_conv: int, nouveau_nom: str) -> bool:
-        if not id_conv:
-            raise ValidationError("id_conv est requis")
-        if not nouveau_nom or not nouveau_nom.strip():
-            raise ValidationError("Le nouveau nom est requis")
+    def acceder_conversation(self, id_conversation: int):
+        """Permet d'accéder à une conversation existante."""
+        if id_conversation is None:
+            raise ErreurValidation("L'identifiant de la conversation est requis.")
+        conversation = self.dao.obtenir_conversation(id_conversation)
+        if conversation is None:
+            raise ErreurNonTrouvee("Conversation introuvable.")
+        return conversation
+
+    def renommer_conversation(self, id_conversation: int, nouveau_titre: str) -> bool:
+        """Renomme une conversation existante."""
+        if not id_conversation:
+            raise ErreurValidation("L'identifiant de la conversation est requis.")
+        if not nouveau_titre or not nouveau_titre.strip():
+            raise ErreurValidation("Le nouveau titre est requis.")
 
         try:
-            success = self.dao.renommer_conv(id_conv, nouveau_nom)
-            if success:
-                logger.info("Conversation %s renommée en '%s'", id_conv, nouveau_nom)
+            succes = self.dao.renommer_conversation(id_conversation, nouveau_titre)
+            if succes:
+                logger.info("Conversation %s renommée en '%s'", id_conversation, nouveau_titre)
             else:
-                logger.warning("Aucune conversation trouvée pour id_conv=%s", id_conv)
-            return success
+                logger.warning("Aucune conversation trouvée pour id=%s", id_conversation)
+            return succes
         except Exception as e:
-            logger.error("Erreur lors du renommage de la conversation %s : %s", id_conv, e)
+            logger.error("Erreur lors du renommage de la conversation %s : %s", id_conversation, e)
             raise
 
-    def supprimer_conv(self, id_conv: int) -> bool:
-        if not id_conv:
-            raise ValidationError("id_conv est requis")
+    def supprimer_conversation(self, id_conversation: int) -> bool:
+        """Supprime une conversation existante."""
+        if not id_conversation:
+            raise ErreurValidation("L'identifiant de la conversation est requis.")
 
         try:
-            success = self.dao.supprimer_conv(id_conv)
-            if success:
-                logger.info("Conversation %s supprimée avec succès", id_conv)
+            succes = self.dao.supprimer_conversation(id_conversation)
+            if succes:
+                logger.info("Conversation %s supprimée avec succès", id_conversation)
             else:
-                logger.warning("Aucune conversation trouvée à supprimer pour id_conv=%s", id_conv)
-            return success
+                logger.warning("Aucune conversation trouvée à supprimer pour id=%s", id_conversation)
+            return succes
         except Exception as e:
-            logger.error("Erreur lors de la suppression de la conversation %s : %s", id_conv, e)
+            logger.error("Erreur lors de la suppression de la conversation %s : %s", id_conversation, e)
             raise
 
-    def lister_conv(self, id_user: int, limit: int) -> List[Conversation]:
-        """
-        Liste les conversations par updated_at descendant.
-        """
-        if id_user is None: 
-            raise ValidationError("there is no id_user")
-        if limit < 1 or limit > 100:
-            raise ValidationError("limit must be between 1 and 200")
-        return self.dao.list_conversations(id_user, limit=limit)
+    def lister_conversations(self, id_utilisateur: int, limite: int) -> List['Conversation']:
+        """Liste les conversations triées par date de mise à jour décroissante."""
+        if id_utilisateur is None: 
+            raise ErreurValidation("L'identifiant de l'utilisateur est requis.")
+        if limite < 1 or limite > 100:
+            raise ErreurValidation("La limite doit être comprise entre 1 et 100.")
+        return self.dao.lister_conversations(id_utilisateur, limite=limite)
 
+    def rechercher_conversations(self, id_utilisateur: int, mot_cle: str, date_recherche: date) -> List['Conversation']:
+        """Recherche des conversations selon un mot-clé et une date."""
+        if id_utilisateur is None:
+            raise ErreurValidation("L'identifiant de l'utilisateur est requis.")
+        return self.dao.rechercher_conversations(id_utilisateur, mot_cle, date_recherche)
 
-    def rechercher_conv(self, id_user: int, motcle: str, date: Date) -> List[Conversation]:
-        if id_user is None:
-            raise ValidationError("there is no id_user")
-        return self.dao.rechercher_conv(id_user, motcle, date)
+    def lire_fil(self, id_conversation: int, decalage: int, limite: int) -> List['Echange']:
+        """Lit les échanges d'une conversation avec pagination."""
+        if id_conversation is None:
+            raise ErreurValidation("L'identifiant de la conversation est requis.")
+        return self.dao.lire_fil(id_conversation, decalage, limite)
 
-    def lire_fil(self, id_conv: int, offset: int, limit: int) -> List[Echange]:
-        if id_conv is None:
-            raise ValidationError("id_conv is required")
-        return self.dao.lire_fil(id_conv, offset, limit)
+    def rechercher_message(self, id_conversation: int, mot_cle: str, date_recherche: date) -> List['Echange']:
+        """Recherche un message dans une conversation."""
+        if id_conversation is None:
+            raise ErreurValidation("L'identifiant de la conversation est requis.")
+        if not mot_cle and not date_recherche:
+            raise ErreurValidation("Un mot-clé ou une date doivent être fournis.")
+        return self.dao.rechercher_message(id_conversation, mot_cle, date_recherche)
 
-    def rechercher_message(self, id_conv: int, motcle: str, date: Date) -> List[Echange]:
-        if id_conv is None:
-            raise ValidationError("id_conv is required")
-        if not motcle and not date:
-            raise ValidationError("motcle or date must be provided")
-        return self.dao.rechercher_message(id_conv, motcle, date)
+    def ajouter_utilisateur(self, id_conversation: int, id_utilisateur: int, role: str) -> bool:
+        """Ajoute un utilisateur à une conversation."""
+        if not id_conversation or not id_utilisateur or not role:
+            raise ErreurValidation("Les champs id_conversation, id_utilisateur et rôle sont requis.")
+        return self.dao.ajouter_utilisateur(id_conversation, id_utilisateur, role)
 
-    def ajouter_utilisateur(self, id_conv: int, id_user: int, role: str) -> bool:
-        if not id_conv or not id_user or not role:
-            raise ValidationError("id_conv, id_user and role are required")
-        return self.dao.ajouter_utilisateur(id_conv, id_user, role)
+    def retirer_utilisateur(self, id_conversation: int, id_utilisateur: int) -> bool:
+        """Retire un utilisateur d'une conversation."""
+        if not id_conversation or not id_utilisateur:
+            raise ErreurValidation("Les champs id_conversation et id_utilisateur sont requis.")
+        return self.dao.retirer_utilisateur(id_conversation, id_utilisateur)
 
-    def retirer_utilisateur(self, id_conv: int, id_user: int) -> bool:
-        if not id_conv or not id_user:
-            raise ValidationError("id_conv and id_user are required")
-        return self.dao.retirer_utilisateur(id_conv, id_user)
-
-    def mettre_a_jour_personnalisation(self, id_conv: int, personnalisation: str) -> bool:
-        if not id_conv:
-            raise ValidationError("id_conv est requis")
+    def mettre_a_jour_personnalisation(self, id_conversation: int, personnalisation: str) -> bool:
+        """Met à jour le profil de personnalisation de la conversation."""
+        if not id_conversation:
+            raise ErreurValidation("L'identifiant de la conversation est requis.")
         if not personnalisation:
-            raise ValidationError("le champ personnalisation est requis")
+            raise ErreurValidation("Le champ personnalisation est requis.")
 
         try:
-            success = self.dao.mettre_a_jour_personnalisation(id_conv, personnalisation)
-            if success:
-                logger.info("Personnalisation mise à jour pour la conversation %s", id_conv)
-            return success
+            succes = self.dao.mettre_a_jour_personnalisation(id_conversation, personnalisation)
+            if succes:
+                logger.info("Personnalisation mise à jour pour la conversation %s", id_conversation)
+            return succes
         except Exception as e:
             logger.error("Erreur lors de la mise à jour de la personnalisation : %s", e)
             raise
 
-
-    def exporter_conversation(self, id_conv: int, format: str) -> bool:
-        if not id_conv:
-            raise ValidationError("id_conv est requis")
-        if format not in ("json"): # le seul format nécéssaire ?
-            raise ValidationError("format non supporté")
+    def exporter_conversation(self, id_conversation: int, format_: str) -> bool:
+        """Exporte la conversation dans un fichier (actuellement au format JSON uniquement)."""
+        if not id_conversation:
+            raise ErreurValidation("L'identifiant de la conversation est requis.")
+        if format_ not in ("json",):
+            raise ErreurValidation("Format non supporté.")
         try:
-            echanges = self.dao.lire_fil(id_conv, offset=0, limit=10000)  # récupère tous les messages
-            if format == "json":
+            echanges = self.dao.lire_fil(id_conversation, decalage=0, limite=10000)
+            if format_ == "json":
                 import json
-                with open(f"conversation_{id_conv}.json", "w", encoding="utf-8") as f:
-                    json.dump([e.__dict__ for e in echanges], f, ensure_ascii=False, indent=2)
+                with open(f"conversation_{id_conversation}.json", "w", encoding="utf-8") as fichier:
+                    json.dump([e.__dict__ for e in echanges], fichier, ensure_ascii=False, indent=2)
 
-            logger.info("Conversation %s exportée en %s", id_conv, format)
+            logger.info("Conversation %s exportée en %s", id_conversation, format_)
             return True
         except Exception as e:
-            logger.error("Erreur d'export pour la conversation %s : %s", id_conv, e)
+            logger.error("Erreur lors de l'exportation de la conversation %s : %s", id_conversation, e)
             raise
 
-    def demander_assistant(self, message: str, options=None) -> Echange:
+    def demander_assistant(self, message: str, options=None):
+        """Envoie un message à l'assistant et reçoit une réponse."""
         if not message or not message.strip():
-            raise ValidationError("le message est requis")
+            raise ErreurValidation("Le message est requis.")
 
-        logger.info("Assistant appelé avec message: %s", message[:50])
+        logger.info("Assistant appelé avec le message : %s", message[:50])
 
-        reponse = f"Voici une réponse simulée à: {message[:50]}"
+        reponse = f"Voici une réponse simulée à : {message[:50]}"
 
-        
         echange = Echange(
-            id_conv=None,        
-            sender="assistant",
+            id_conversation=None,
+            expediteur="assistant",
             message=reponse,
             date_echange=date.today()
         )
 
         # self.dao.ajouter_echange(echange)
-
         return echange
