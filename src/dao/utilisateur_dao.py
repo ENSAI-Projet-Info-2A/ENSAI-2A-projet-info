@@ -1,12 +1,9 @@
 import logging
+
 import bcrypt
 
-from utils.singleton import Singleton
-from utils.log_decorator import log
-
-from dao.db_connection import DBConnection
-
 from business_object.utilisateur import Utilisateur
+from dao.db_connection import DBConnection
 from utils.log_decorator import log
 from utils.singleton import Singleton
 
@@ -28,11 +25,8 @@ class Utilisateur_DAO(metaclass=Singleton):
             True si la création est un succès
             False sinon
         """
-        mdp_hash = bcrypt.hashpw(
-            utilisateur.mdp.encode('utf-8'),
-            bcrypt.gensalt()
-        ).decode('utf-8')
-        
+        mdp_hash = bcrypt.hashpw(utilisateur.mdp.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
         res = None
 
         try:
@@ -41,7 +35,7 @@ class Utilisateur_DAO(metaclass=Singleton):
                     cursor.execute(
                         "INSERT INTO utilisateur(pseudo, mdp) VALUES         "
                         "(%(pseudo)s, %(mdp)s)                               "
-                        " RETURNING id;                                     ",
+                        " RETURNING id;                                      ",
                         {
                             "pseudo": utilisateur.pseudo,
                             "mdp": mdp_hash,
@@ -55,7 +49,7 @@ class Utilisateur_DAO(metaclass=Singleton):
         if res:
             utilisateur.id = res["id"]
             created = True
-            
+
         return created
 
     @log
@@ -94,7 +88,7 @@ class Utilisateur_DAO(metaclass=Singleton):
             # Vérifier le mot de passe avec bcrypt
             mdp_hash_stocke = res["mdp"]
             try:
-                if bcrypt.checkpw(mdp.encode('utf-8'), mdp_hash_stocke.encode('utf-8')):
+                if bcrypt.checkpw(mdp.encode("utf-8"), mdp_hash_stocke.encode("utf-8")):
                     # Mot de passe correct
                     utilisateur = Utilisateur(
                         pseudo=res["pseudo"],
@@ -124,7 +118,7 @@ class Utilisateur_DAO(metaclass=Singleton):
                 with connection.cursor() as cursor:
                     cursor.execute(
                         "SELECT *                           "
-                        "  FROM utilisateur                      "
+                        "  FROM utilisateur                 "
                         " WHERE id = %(id)s;  ",
                         {"id": id},
                     )
@@ -161,7 +155,7 @@ class Utilisateur_DAO(metaclass=Singleton):
                 with connection.cursor() as cursor:
                     cursor.execute(
                         "SELECT *                           "
-                        "  FROM utilisateur                      "
+                        "  FROM utilisateur                 "
                         " WHERE pseudo = %(pseudo)s;  ",
                         {"pseudo": pseudo},
                     )
@@ -197,8 +191,7 @@ class Utilisateur_DAO(metaclass=Singleton):
                 with connection.cursor() as cursor:
                     # Supprimer le compte d'un utilisateur
                     cursor.execute(
-                        "DELETE FROM utilisateur                  "
-                        " WHERE id=%(id)s      ",
+                        "DELETE FROM utilisateur                   WHERE id=%(id)s      ",
                         {"id": utilisateur.id},
                     )
                     res = cursor.rowcount
@@ -222,7 +215,7 @@ class Utilisateur_DAO(metaclass=Singleton):
         Utilisateur
             L'utilisateur correspondant au hash (avec son id et pseudo)
             None si aucun utilisateur ne correspond à ce hash
-        
+
         Raises
         ------
         Exception
@@ -235,7 +228,7 @@ class Utilisateur_DAO(metaclass=Singleton):
                         "SELECT id, pseudo     "
                         "  FROM utilisateur                 "
                         " WHERE mdp = %(mdp_hash)s;         ",
-                        {"mdp_hash": mdp_hash}
+                        {"mdp_hash": mdp_hash},
                     )
                     res = cursor.fetchone()
         except Exception as e:
@@ -279,12 +272,14 @@ class Utilisateur_DAO(metaclass=Singleton):
                         WHERE id = %(id)s
                         AND deconnexion IS NOT NULL;
                         """,
-                        {"id": id}
+                        {"id": id},
                     )
                     res = cursor.fetchone()
 
         except Exception as e:
-            logging.error(f"Erreur lors du calcul des heures d'utilisation pour l'utilisateur {id}:{e}")
+            logging.error(
+                f"Erreur lors du calcul des heures d'utilisation pour l'utilisateur {id}:{e}"
+            )
             raise
 
         if res and res["total_heures"] is not None:

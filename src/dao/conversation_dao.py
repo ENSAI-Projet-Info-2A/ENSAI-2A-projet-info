@@ -1,14 +1,12 @@
 from datetime import datetime as Date
 
 from business_object.conversation import Conversation
+
 from dao.db_connection import DBConnection
 from business_object.echange import Echange
 
 import psycopg2.extras
 from datetime import datetime as Date
-
-
-
 
 class ConversationDAO: 
     
@@ -414,8 +412,7 @@ class ConversationDAO:
         pass
 
 
-    def mettre_a_jour_personnalisation(id_conv: int, personnalisation: str) -> bool:
-
+    def mettre_a_j_preprompt_id(id_conv: preprompt_id: str) ->bool:
         """
         Permet de changer le profil du LLM via un système de préprompt
 
@@ -423,11 +420,11 @@ class ConversationDAO:
         ----------
             id_conv : int
                 l'identifiant de la conversation pour laquelle on veut changer le profil du LLM
-preprompt_id : str
+                preprompt_id : str
                 Nom du profil du LLM à appliquer
 
         Returns
-        -------
+        -------__
             Bool
                 indique si le profil du LLM a été changé avec succès
         Raises
