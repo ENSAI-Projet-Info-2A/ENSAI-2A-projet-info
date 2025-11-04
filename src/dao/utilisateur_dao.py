@@ -3,6 +3,8 @@ import bcrypt
 
 from utils.singleton import Singleton
 from utils.log_decorator import log
+from utils.securite import hash_password
+from utils.securite import verifier_mot_de_passe
 
 from dao.db_connection import DBConnection
 
@@ -15,7 +17,7 @@ class Utilisateur_DAO(metaclass=Singleton):
     """Classe contenant les méthodes pour accéder aux Utilisateurs de la base de données"""
 
     @log
-    def créer_utilisateur(self, utilisateur) -> bool:
+    def creer_utilisateur(self, utilisateur) -> bool:
         """Creation d'un utilisateur dans la base de données
 
         Parameters
@@ -28,11 +30,7 @@ class Utilisateur_DAO(metaclass=Singleton):
             True si la création est un succès
             False sinon
         """
-        mdp_hash = bcrypt.hashpw(
-            utilisateur.mdp.encode('utf-8'),
-            bcrypt.gensalt()
-        ).decode('utf-8')
-        
+
         res = None
 
         try:
@@ -44,7 +42,7 @@ class Utilisateur_DAO(metaclass=Singleton):
                         " RETURNING id;                                     ",
                         {
                             "pseudo": utilisateur.pseudo,
-                            "mdp": mdp_hash,
+                            "mdp": hash_password(mdp),
                         },
                     )
                     res = cursor.fetchone()
@@ -94,7 +92,7 @@ class Utilisateur_DAO(metaclass=Singleton):
             # Vérifier le mot de passe avec bcrypt
             mdp_hash_stocke = res["mdp"]
             try:
-                if bcrypt.checkpw(mdp.encode('utf-8'), mdp_hash_stocke.encode('utf-8')):
+                if verifier_mot_de_passe(mdp, hash_password(mdp)):
                     # Mot de passe correct
                     utilisateur = Utilisateur(
                         pseudo=res["pseudo"],
@@ -208,49 +206,7 @@ class Utilisateur_DAO(metaclass=Singleton):
 
         return res > 0
 
-    @log
-    def get_hash_par_pseudo(self, mdp_hash: str) -> Utilisateur:
-        """Récupère un utilisateur à partir du hash de son mot de passe
-
-        Parameters
-        ----------
-        mdp_hash : str
-            Le hash du mot de passe à rechercher
-
-        Returns
-        -------
-        Utilisateur
-            L'utilisateur correspondant au hash (avec son id et pseudo)
-            None si aucun utilisateur ne correspond à ce hash
-        
-        Raises
-        ------
-        Exception
-            En cas d'erreur lors de la requête SQL
-        """
-        try:
-            with DBConnection().connection as connection:
-                with connection.cursor() as cursor:
-                    cursor.execute(
-                        "SELECT id, pseudo     "
-                        "  FROM utilisateur                 "
-                        " WHERE mdp = %(mdp_hash)s;         ",
-                        {"mdp_hash": mdp_hash}
-                    )
-                    res = cursor.fetchone()
-        except Exception as e:
-            logging.info(e)
-            raise
-
-        utilisateur = None
-        if res:
-            utilisateur = Utilisateur(
-                pseudo=res["pseudo"],
-                id=res["id"],
-            )
-
-        return utilisateur
-
+    
     @log
     def heures_utilisation(id: int) -> float:
         """
