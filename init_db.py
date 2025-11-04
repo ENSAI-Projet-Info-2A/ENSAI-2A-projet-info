@@ -36,7 +36,7 @@ def init_db(dsn):
     
     
     
-    print("✅ Table 'CONVERSATIONS', 'MESSAGES', 'CONVERSATIONS_PARTICIPANTS', 'USERS' vérifiée ou créée.")
+    print("Table 'CONVERSATIONS', 'MESSAGES', 'CONVERSATIONS_PARTICIPANTS', 'USERS' vérifiée ou créée.")
 
 
 
