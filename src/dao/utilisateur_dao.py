@@ -1,11 +1,7 @@
-import logging
-
-from utils.singleton import Singleton
-from utils.log_decorator import log
-
-from dao.db_connection import DBConnection
-
 from business_object.utilisateur import Utilisateur
+from utils.log_decorator import log
+from utils.singleton import Singleton
+
 
 class Utilisateur_DAO(metaclass=Singleton):
     """Classe contenant les méthodes pour accéder aux Utilisateurs de la base de données"""
@@ -71,11 +67,11 @@ class Utilisateur_DAO(metaclass=Singleton):
         pass
 
     def get_hash_par_pseudo(self, pseudo: str) -> str:
+        """A voir plus tard si utile à garder ou non"""
 
-      """A voir plus tard si utile à garder ou non"""
     pass
 
-    def heures_utilisation(id_user: int) ->float:
+    def heures_utilisation(id_user: int) -> float:
         """
         Donne une approximation du temps passé sur l'application.
 
@@ -87,7 +83,7 @@ class Utilisateur_DAO(metaclass=Singleton):
         Returns
         -------
             float
-                donne une estimation du temps passé sur l'application au total. 
+                donne une estimation du temps passé sur l'application au total.
         Raises
         ------
         """
