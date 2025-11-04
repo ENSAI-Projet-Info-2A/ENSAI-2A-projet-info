@@ -1,7 +1,7 @@
-import bcrypt
-import jwt 
-from datetime import datetime, timedelta, timezone
+
 from dao.utilisateur_dao import Utilisateur_DAO 
+from utils.securite import verifier_mot_de_passe
+from utils.jtw_utils import creer_token, verifier_token as verif_token
 import os
 from dotenv import load_dotenv
 
@@ -46,19 +46,10 @@ class Auth_Service:
         if not utilisateur:
             raise ValueError("Utilisateur introuvable.")
 
-        # Vérifie le mot de passe
-        if not bcrypt.checkpw(mdp.encode(), utilisateur.password_hash.encode()):
+        if not verifier_mot_de_passe(mdp, utilisateur.password_hash):
             raise ValueError("Mot de passe incorrect.")
 
-        # Génère un token JWT valable 1 heure
-        payload = {
-            "user_id": utilisateur.id,
-            "pseudo": utilisateur.pseudo,
-            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
-        }
-        token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
-
-        return token
+        return creer_token(utilisateur.id, utilisateur.pseudo)
 
     def se_deconnecter(self, token: str) -> None:
         """
@@ -85,15 +76,11 @@ class Auth_Service:
         bool
             True si le token est valide, False sinon
         """
-        if token in self.tokens_invalides:
-            return False  # token déjà invalidé
 
-        try:
-            jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-            return True
-        except jwt.ExpiredSignatureError:
-            print("Le token a expiré.")
+        if token in self.tokens_invalides:
             return False
-        except jwt.InvalidTokenError:
-            print("Token invalide.")
+        try:
+            verif_token(token)
+            return True
+        except Exception:
             return False

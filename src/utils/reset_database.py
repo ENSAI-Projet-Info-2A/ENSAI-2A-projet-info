@@ -1,63 +1,52 @@
-import os
 import logging
+import os
+
 import dotenv
 
-from unittest import mock
-
+from dao.db_connection import DBConnection
 from utils.log_decorator import log
 from utils.singleton import Singleton
-from dao.db_connection import DBConnection
-
-from service.joueur_service import JoueurService
 
 
 class ResetDatabase(metaclass=Singleton):
     """
-    Reinitialisation de la base de données
+    Réinitialisation de la base (Stratégie A : hash géré dans les scripts SQL).
     """
 
     @log
-    def lancer(self, test_dao=False):
-        """Lancement de la réinitialisation des données
-        Si test_dao = True : réinitialisation des données de test"""
-        if test_dao:
-            mock.patch.dict(os.environ, {"POSTGRES_SCHEMA": "projet_test_dao"}).start()
-            pop_data_path = "data/pop_db_test.sql"
-        else:
-            pop_data_path = "data/pop_db.sql"
-
+    def lancer(self, test_dao: bool = False) -> bool:
         dotenv.load_dotenv()
 
-        schema = os.environ["POSTGRES_SCHEMA"]
+        # Schéma cible + script de population
+        schema = "projet_test_dao" if test_dao else os.environ["POSTGRES_SCHEMA"]
+        pop_path = "data/pop_db_test.sql" if test_dao else "data/pop_db.sql"
 
-        create_schema = f"DROP SCHEMA IF EXISTS {schema} CASCADE; CREATE SCHEMA {schema};"
+        # DDL schéma
+        ddl = f"DROP SCHEMA IF EXISTS {schema} CASCADE; CREATE SCHEMA {schema};"
 
-        init_db = open("data/init_db.sql", encoding="utf-8")
-        init_db_as_string = init_db.read()
-        init_db.close()
+        # Lire les scripts
+        with open("data/init_db.sql", encoding="utf-8") as f:
+            init_sql = f.read()
+        with open(pop_path, encoding="utf-8") as f:
+            pop_sql = f.read()
 
-        pop_db = open(pop_data_path, encoding="utf-8")
-        pop_db_as_string = pop_db.read()
-        pop_db.close()
+        # Exécution simple (les scripts contiennent du SQL exécutable)
+        with DBConnection().connection as conn:
+            with conn.cursor() as cur:
+                # Recréation du schéma
+                cur.execute(ddl)
+                # Très important : on ajoute "public" pour voir pgcrypto (crypt/gen_salt)
+                cur.execute(f"SET search_path TO {schema}, public;")
 
-        try:
-            with DBConnection().connection as connection:
-                with connection.cursor() as cursor:
-                    cursor.execute(create_schema)
-                    cursor.execute(init_db_as_string)
-                    cursor.execute(pop_db_as_string)
-        except Exception as e:
-            logging.info(e)
-            raise
+                # Init + seed
+                cur.execute(init_sql)
+                cur.execute(pop_sql)
 
-        # Appliquer le hashage des mots de passe à chaque joueur
-        joueur_service = JoueurService()
-        for j in joueur_service.lister_tous(inclure_mdp=True):
-            joueur_service.modifier(j)
-
+        logging.info("[ResetDB] Terminé")
         return True
 
 
 if __name__ == "__main__":
-    ResetDatabase().lancer()
-    ResetDatabase().lancer(True)
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    ResetDatabase().lancer()  # schéma = POSTGRES_SCHEMA du .env
+    ResetDatabase().lancer(True)  # schéma = projet_test_dao

@@ -55,17 +55,23 @@ class Statistiques_Service:
 
         return stats
 
-    def stats_conversation(self, id_conv: int) -> Statistiques:
-        """
-        Retourne les statistiques liées à une conversation donnée
+    # Inutile ou à repenser
+    # 
+    # def stats_conversation(self, id_conv: int) -> Statistiques:
+    #     """
+    #     Retourne les statistiques liées à une conversation donnée
 
-        Parameters
-        ----------
-        id_conv : int
-            Identifiant de la conversation
+    #     Calcule:
+    #         - Nb de message
+    #         - ?
 
-        Returns
-        -------
-        Statistiques
-        """
-        pass
+    #     Parameters
+    #     ----------
+    #     id_conv : int
+    #         Identifiant de la conversation
+
+    #     Returns
+    #     -------
+    #     Statistiques
+    #     """
+        
