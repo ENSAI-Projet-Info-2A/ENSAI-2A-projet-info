@@ -7,6 +7,9 @@ from utils.log_decorator import log
 from dao.db_connection import DBConnection
 
 from business_object.utilisateur import Utilisateur
+from utils.log_decorator import log
+from utils.singleton import Singleton
+
 
 class Utilisateur_DAO(metaclass=Singleton):
     """Classe contenant les méthodes pour accéder aux Utilisateurs de la base de données"""
@@ -288,4 +291,3 @@ class Utilisateur_DAO(metaclass=Singleton):
             return float(res["total_heures"])
         else:
             return 0.0
-
