@@ -315,11 +315,31 @@ class ConversationDAO:
         Returns
         -------
             List[Echange]
-                ?
+             
 
         Raises
         ------
         """
+        with DBConnection().connection as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT * 
+                    FROM messages 
+                    WHERE conversation_id = %(id_conv)s
+                    """, 
+                    {"id_conv": id_conv}
+                )
+                res = cursor.fetchall()
+            if not res: 
+                raise Exception(f"pas de messages trouvés pour l'identifiant {id_conv}")
+            else:
+                liste_conv = []
+                for conv in res:
+                    liste_conv.append(Echange(id = conv["id"] , agent = conv["emetteur"], 
+                    message = conv[], date_msg = conv[], agent_name = conv[]))
+
+                
         pass
 
     def rechercher_echange(id_conv: int, mot_clef: str, date: Date) -> List[Echange]:
