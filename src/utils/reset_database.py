@@ -10,7 +10,7 @@ from utils.singleton import Singleton
 
 class ResetDatabase(metaclass=Singleton):
     """
-    Réinitialisation de la base (Stratégie A : hash géré dans les scripts SQL).
+    Réinitialisation de la base
     """
 
     @log
