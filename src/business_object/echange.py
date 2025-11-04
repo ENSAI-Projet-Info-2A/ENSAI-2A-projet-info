@@ -14,8 +14,6 @@ class Echange:
         contenu du message
     date_msg : datetime
         date et heure de l'envoi du message
-    agent_name : str
-        nom de l'agent ayant envoyé le message
     """
 
     def __init__(self, message: str, agent: str = "utilisateur", agent_name: str = "",
@@ -25,7 +23,6 @@ class Echange:
         self.agent = agent
         self.message = message
         self.date_msg = date_msg if date_msg else datetime.now()
-        self.agent_name = agent_name
 
     def afficher_echange(self) -> str:
         """Retourne une chaîne représentant l'échange"""
