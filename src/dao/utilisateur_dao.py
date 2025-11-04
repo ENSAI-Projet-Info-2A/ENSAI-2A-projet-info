@@ -1,4 +1,5 @@
 import logging
+
 import bcrypt
 
 from utils.singleton import Singleton
@@ -6,9 +7,8 @@ from utils.log_decorator import log
 from utils.securite import hash_password
 from utils.securite import verifier_mot_de_passe
 
-from dao.db_connection import DBConnection
-
 from business_object.utilisateur import Utilisateur
+from dao.db_connection import DBConnection
 from utils.log_decorator import log
 from utils.singleton import Singleton
 
@@ -39,7 +39,7 @@ class Utilisateur_DAO(metaclass=Singleton):
                     cursor.execute(
                         "INSERT INTO utilisateur(pseudo, mdp) VALUES         "
                         "(%(pseudo)s, %(mdp)s)                               "
-                        " RETURNING id;                                     ",
+                        " RETURNING id;                                      ",
                         {
                             "pseudo": utilisateur.pseudo,
                             "mdp": hash_password(mdp),
@@ -53,7 +53,7 @@ class Utilisateur_DAO(metaclass=Singleton):
         if res:
             utilisateur.id = res["id"]
             created = True
-            
+
         return created
 
     @log
@@ -122,7 +122,7 @@ class Utilisateur_DAO(metaclass=Singleton):
                 with connection.cursor() as cursor:
                     cursor.execute(
                         "SELECT *                           "
-                        "  FROM utilisateur                      "
+                        "  FROM utilisateur                 "
                         " WHERE id = %(id)s;  ",
                         {"id": id},
                     )
@@ -159,7 +159,7 @@ class Utilisateur_DAO(metaclass=Singleton):
                 with connection.cursor() as cursor:
                     cursor.execute(
                         "SELECT *                           "
-                        "  FROM utilisateur                      "
+                        "  FROM utilisateur                 "
                         " WHERE pseudo = %(pseudo)s;  ",
                         {"pseudo": pseudo},
                     )
@@ -195,8 +195,7 @@ class Utilisateur_DAO(metaclass=Singleton):
                 with connection.cursor() as cursor:
                     # Supprimer le compte d'un utilisateur
                     cursor.execute(
-                        "DELETE FROM utilisateur                  "
-                        " WHERE id=%(id)s      ",
+                        "DELETE FROM utilisateur                   WHERE id=%(id)s      ",
                         {"id": utilisateur.id},
                     )
                     res = cursor.rowcount
@@ -235,12 +234,14 @@ class Utilisateur_DAO(metaclass=Singleton):
                         WHERE id = %(id)s
                         AND deconnexion IS NOT NULL;
                         """,
-                        {"id": id}
+                        {"id": id},
                     )
                     res = cursor.fetchone()
 
         except Exception as e:
-            logging.error(f"Erreur lors du calcul des heures d'utilisation pour l'utilisateur {id}:{e}")
+            logging.error(
+                f"Erreur lors du calcul des heures d'utilisation pour l'utilisateur {id}:{e}"
+            )
             raise
 
         if res and res["total_heures"] is not None:
