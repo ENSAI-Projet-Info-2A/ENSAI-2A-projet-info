@@ -12,7 +12,7 @@ class ConversationDAO:
     
     ####faudra revenir dessus car il manque potentiellement le param preprompt_id/traduction
     #### faut rajouter aussi 
-    def creer_conversation(self, conversation):
+    def creer_conversation(conversation):
         """
         créer une nouvelle conversation dans la table Conversation
 
