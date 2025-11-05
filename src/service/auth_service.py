@@ -46,7 +46,7 @@ class Auth_Service:
         if not utilisateur:
             raise ValueError("Utilisateur introuvable.")
 
-        if not verifier_mot_de_passe(mdp, utilisateur.password_hash):
+        if not verifier_password(mdp, utilisateur.password_hash):
             raise ValueError("Mot de passe incorrect.")
 
         return creer_token(utilisateur.id, utilisateur.pseudo)
