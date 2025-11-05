@@ -39,11 +39,11 @@ class ConversationService:
             raise ErreurValidation("La personnalisation est obligatoire.")
         conv = Conversation(nom = titre, personnalisation=personnalisation,id = id_proprietaire )
         try :
-            res = ConversationDAO.creer_conversation(titre, personnalisation, id_proprietaire)
+            res = ConversationDAO.creer_conversation(conv)
             if not res: 
                 raise Exception("l'implémentation de la conversation dans la base de donnée a échouée")
             
-            logger.info("Conversation créée avec id=%s", getattr(conversation, "id", None))
+            logger.info("Conversation créée avec id=%s", getattr(conv, "id", None))
             
             return(f"conversation {titre} créée (id propriétaire = {id_proprietaire})")
         
