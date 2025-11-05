@@ -276,7 +276,6 @@ class ConversationDAO:
         #contrôle du format de la date:
         if not isinstance(date, datetime):
             raise Exception(f"la date {date} n'est pas au format datetime")
-
         #on récupère tous les identifiants de conversation qui ont des messages qui correspondent 
         # à la date en entrée.
         with DBConnection().connection as conn:
@@ -312,6 +311,53 @@ class ConversationDAO:
                 personnalisation = conv["prompt_id"], date_creation = conv["cree_le"]))
             
             return liste_res
+
+    def rechercher_conv_motC_et_date(id_user: int, mot_cle: str, date: datetime.date):
+        #contrôle du format de la date:
+        if not isinstance(date, datetime.date):
+            raise Exception(f"la date {date} n'est pas au format datetime")
+        if not isinstance(mot_cle, str):
+            raise Exception(f"le mot clé n'est pas une chaîne de charactères")
+        #on récupère tous les identifiants de conversation qui ont des messages qui correspondent 
+        # à la date en entrée et qui comprennent le mot_clé.
+        with DBConnection().connection as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT conversation_id
+                    FROM messages
+                    WHERE DATE(cree_le) = %(date)s
+                    AND utilisateur_id = %(id_user)s
+                    AND contenu ILIKE %(mot_cle)s;
+                    """,
+                    {"date":date,
+                    "id_user": id_user,
+                    "mot_cle": f"%{mot_cle}%"
+                    }
+                )
+                dict_id = cursor.fetchall()
+            if not dict_id:
+                raise Exception(f"Aucune conversation de l'utilisateur {id_user} pour la date {date}")
+            ids = [row["conversation_id"] for row in dict_id]
+    
+            # on récupère les conversations de ids
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT *
+                    FROM conversations
+                    WHERE id = ANY(%(ids)s);
+                    """,
+                    {"dict_id":tuple(ids)}
+                )
+                res = cursor.fetchall()
+            liste_res = []
+            for conv in res:
+                liste_res.append(Conversation(id= conv["id"], nom= conv["titre"], 
+                personnalisation = conv["prompt_id"], date_creation = conv["cree_le"]))
+            
+            return liste_res
+
 
     @staticmethod
     def lire_echanges(id_conv: int, limit: int) -> list[Echange]:

@@ -137,7 +137,34 @@ class ConversationService:
                 raise
 
         elif mot_cle and not date_recherche:
-            
+            try:
+                res = ConversationDAO.rechercher_mot_clef(id_user=id_utilisateur, mot_clef=mot_cle)
+                if res:
+                    logger.info(f"conversations de {id_utilisateur} trouvées")
+                    return res
+                else:
+                    logger.warning(f"Aucune conversation trouvée pour {id_utilisateur} pour le mot clef {mot_cle}")
+            except Exception as e:
+                logger.error("Erreur lors de la recherche des conversations de l'utilisateur %s pour le mot_cle %s : %s", 
+                id_utilisateur, mot_cle, e)
+                raise
+        elif date_recherche and not mot_cle:
+            try:
+                res = ConversationDAO.rechercher_date(id_user=id_utilisateur, date=date_recherche)
+                if res:
+                    logger.info(f"conversations de {id_utilisateur} trouvées")
+                    return res
+                else:
+                    logger.warning(f"Aucune conversation trouvée pour {id_utilisateur} pour la date {date_recherche}")
+            except Exception as e:
+                logger.error("Erreur lors de la recherche des conversations de l'utilisateur %s pour la date %s : %s", 
+                id_utilisateur, date_recherche, e)
+                raise
+        elif date_recherche and mot_cle:
+            try:
+                res = ConversationDAO.
+
+
 
 
 
