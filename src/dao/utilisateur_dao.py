@@ -31,8 +31,8 @@ class UtilisateurDao(metaclass=Singleton):
                         RETURNING id;
                         """,
                         {
-                            "pseudo": utilisateur.pseudo,
-                            "mot_de_passe": utilisateur.password_hash,
+                            "pseudo": utilisateurs.pseudo,
+                            "mot_de_passe": utilisateurs.password_hash,
                         },
                     )
                     res = cursor.fetchone()
