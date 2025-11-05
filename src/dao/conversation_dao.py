@@ -145,9 +145,9 @@ class ConversationDAO:
             raise Exception(f"echec de la suppression de la conversation d'identifiant {id_conv}")
         
     @staticmethod
-    def lister_conversations(id_user: int) -> List[Conversation]:
+    def lister_conversations(id_user: int, n = None) -> List[Conversation]:
         """
-        Présente une liste des conversations reliées à un joueur.
+        Présente une liste des n conversations les plus récentes reliées à un joueur.
 
         Parameters
         ----------
@@ -162,26 +162,32 @@ class ConversationDAO:
         Raises
         ------
         """
+        query = """
+                    SELECT c.*, MAX(m.cree_le) AS dernier_message
+                    FROM conversations c
+                    JOIN conversations_participants uc ON c.id = uc.conversation_id
+                    LEFT JOIN messages m ON c.id = m.conversation_id
+                    WHERE uc.utilisateur_id = %(id_user)s
+                    GROUP BY c.id
+                    ORDER BY dernier_message DESC NULLS LAST;
+                    """
+        params = {"id_user": id_user}
+        if n and n>0:
+            query +=" Limit %(10)s"
+            params["n"]=n
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
-                cursor.execute(
-                """
-                SELECT c.*
-                FROM conversations c
-                JOIN conversations_participants uc ON c.id = uc.conversation.id
-                WHERE uc.utilisateur_id = %(id_user)s;
-                """,
-                {"id_user": id_user}
-                )
-                liste_DAO = cursor.fetchall()
+                    cursor.execute(query,params)
+                    liste_DAO = cursor.fetchall()
             liste_conv = []
             if liste_DAO:
                 for conv in liste_DAO:
-                    liste_conv.append(Conversation(id= conv["id"], nom= conv["titre"], 
-                    personnalisation = conv["prompt_id"], date_creation = conv["cree_le"]))
+                        liste_conv.append(Conversation(id= conv["id"], nom= conv["titre"], 
+                        personnalisation = conv["prompt_id"], date_creation = conv["cree_le"]))
                 return liste_conv
             else:
                 raise Exception(f"aucune conversation trouvée pour l'utilisateur {id_user}")
+        
 
         
     @staticmethod
