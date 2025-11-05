@@ -69,7 +69,7 @@ class ConversationService:
             logger.error("erreur lors de la recherche de la conversation d'id = %s : %s",id_conversation, e)
             raise Exception("erreur interne lors de la recherche de la conversation.") from e
 
-    def renommer_conversation(self, id_conversation: int, nouveau_titre: str) -> bool:
+    def renommer_conversation(self, id_conversation: int, nouveau_titre: str):
         """Renomme une conversation existante."""
         if not id_conversation:
             raise ErreurValidation("L'identifiant de la conversation est requis.")

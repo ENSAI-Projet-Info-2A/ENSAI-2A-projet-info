@@ -141,7 +141,7 @@ class ConversationDAO:
         if count>0:
             return(f"la conversation d'id={id_conv} a bien été supprimmée")
         else:
-            return(f"echec de la suppression de la conversation d'identifiant {id_conv}")
+            raise Exception(f"echec de la suppression de la conversation d'identifiant {id_conv}")
         
 
     def lister_conversations(id_user: int) -> List[Conversation]:
