@@ -8,6 +8,9 @@ from business_object.echange import Echange
 import psycopg2.extras
 from datetime import datetime as Date
 
+from collections import Counter
+import re
+
 class ConversationDAO: 
     
     ####faudra revenir dessus car il manque potentiellement le param preprompt_id/traduction
@@ -210,7 +213,7 @@ class ConversationDAO:
         Raises
         ------
         """
-        liste_CONV = lister_conversation(id_user)
+        liste_CONV = ConversationDAO.lister_conversation(id_user)
         liste_conv = [conv.id for conv in liste_CONV]
        # on récupère d'abord tous les identifiants des conversations qui vérifient comprennent au moins un 
        # message avec le mot_clef, pour un utilisateur donné. 
@@ -571,8 +574,15 @@ class ConversationDAO:
                     """
                     UPDATE conversations
                     SET prompt_id = %(prompt_id)d
-                    """
+                    WHERE id = %(conversation_id)s
+                    """,
+                    {"prompt_id": prompt_id, "conversation_id": conversation_id}
                 )
+                count = cursor.rowcount
+        if count > 0:
+            return "personnalité modifié avec succès"
+        else:
+            raise Exception(f"Erreur dans la modification de la personnalisation pour conversation_id = {conversation_id}")
 
     @staticmethod
     def compter_conversations(id_user: int) -> int:
@@ -592,9 +602,8 @@ class ConversationDAO:
         Raises
         ------
         """
-        liste_CONV = lister_conversation(id_user)
-        liste_conv = [conv.id for conv in liste_CONV]
-        return len(liste_conv)
+        liste_CONV = ConversationDAO.lister_conversations(id_user=id_user)
+        return len(liste_CONV)
 
     @staticmethod
     def compter_message_user(id_user: int) -> int:
@@ -629,7 +638,7 @@ class ConversationDAO:
 
 
     @staticmethod
-    def sujets_plus_frequents(id_user: int, topK: int) -> list[str]:
+    def sujets_plus_frequents(id_user: int, k: int) -> list[str]:
         """
         Renvoie une liste des sujets les plus fréquents entretenus dans les conversations d'un utilisateur.
 
@@ -637,8 +646,8 @@ class ConversationDAO:
         ----------
             id_user : int
                 l'identifiant de l'utilisateur dans la base de donnée
-            topK : int
-                ???.
+            k : int
+                nombres k de sujets les plus fréquents considérés
 
         Returns
         -------
@@ -648,4 +657,40 @@ class ConversationDAO:
         Raises
         ------
         """
-        pass
+        query = """
+            SELECT c.titre
+            FROM conversations c
+            JOIN conversations_participants uc ON c.id = uc.conversation_id
+            WHERE uc.utilisateur_id = %(id_user)s;
+            """
+
+        with DBConnection().connection as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query, {"id_user": id_user})
+                titres = [row["titre"] for row in cursor.fetchall()]
+
+        if not titres:
+            raise Exception(f"Aucune conversation trouvée pour l'utilisateur {id_user}")
+
+        # Liste de mots à ignorer (articles, prépositions courantes, etc.)
+        stop_words = {
+            "le", "la", "les", "de", "des", "du", "un", "une", "et", "en", "à", "a", "au",
+            "aux", "pour", "par", "avec", "sur", "dans", "d", "l", "l'", "au", "aux"
+        }
+
+        mots = []
+        for titre in titres:
+        # Mettre en minuscules et retirer la ponctuation
+            titre_nettoye = re.sub(r"[^\w\s']", " ", titre.lower())
+        # Séparer en mots
+            for mot in titre_nettoye.split():
+            # Nettoyer les apostrophes
+                mot = re.sub(r"^l['’]", "", mot)
+            # Ajouter seulement si ce n'est pas un mot vide
+                if mot and mot not in stop_words:
+                    mots.append(mot)
+
+        compteur = Counter(mots)
+        sujets_frequents = compteur.most_common(k)
+
+        return sujets_frequents
