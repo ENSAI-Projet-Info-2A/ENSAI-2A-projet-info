@@ -1,7 +1,6 @@
 import re
-import pytest
 
-from business_object.utilisateur import Utilisateur
+from src.business_object.utilisateur import Utilisateur
 
 
 # --- Doubles très simples pour les conversations ---
@@ -11,6 +10,7 @@ class DummyConv:
 
 
 # ------------------ Affichage / Repr ------------------
+
 
 def test_afficher_utilisateur_nominal():
     # GIVEN
@@ -35,6 +35,7 @@ def test_repr_contient_id_et_pseudo():
 
 
 # ------------------ Egalité (==) ------------------
+
 
 def test_egalite_par_id_egal():
     # GIVEN
@@ -64,12 +65,14 @@ def test_egalite_objet_autre_type():
 
 # ------------------ Mot de passe ------------------
 
+
 def test_set_password_genere_un_hash(monkeypatch):
     # GIVEN
     u = Utilisateur(pseudo="alice", id=10)
 
     # On rend le hash déterministe pour le test (template de cours : test isolé et reproductible)
     from business_object import utilisateur as util_module
+
     monkeypatch.setattr(util_module, "hash_password", lambda mdp, sel: f"H({mdp}|{sel})")
 
     # WHEN
@@ -83,6 +86,7 @@ def test_verifier_password_ok(monkeypatch):
     # GIVEN
     u = Utilisateur(pseudo="alice", id=10)
     from business_object import utilisateur as util_module
+
     monkeypatch.setattr(util_module, "hash_password", lambda mdp, sel: f"H({mdp}|{sel})")
     u.set_password("secret")
 
@@ -97,6 +101,7 @@ def test_verifier_password_ko(monkeypatch):
     # GIVEN
     u = Utilisateur(pseudo="alice", id=10)
     from business_object import utilisateur as util_module
+
     monkeypatch.setattr(util_module, "hash_password", lambda mdp, sel: f"H({mdp}|{sel})")
     u.set_password("secret")
 
@@ -121,6 +126,7 @@ def test_verifier_password_sans_hash_renvoie_false():
 def test_from_plain_password_construit_un_user_valide(monkeypatch):
     # GIVEN
     from business_object import utilisateur as util_module
+
     monkeypatch.setattr(util_module, "hash_password", lambda mdp, sel: f"H({mdp}|{sel})")
 
     # WHEN
@@ -134,6 +140,7 @@ def test_from_plain_password_construit_un_user_valide(monkeypatch):
 
 
 # ------------------ Conversations ------------------
+
 
 def test_ajouter_et_lister_conversations():
     # GIVEN

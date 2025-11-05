@@ -1,23 +1,26 @@
 from unittest.mock import patch
 
-from service.utilisateur_service import UtilisateurService
-from business_object.utilisateur import Utilisateur
+from src.business_object.utilisateur import Utilisateur
+from src.service.utilisateur_service import UtilisateurService
 
 # --------- Données factices ----------
 liste_utilisateurs = [
     Utilisateur(id=1, pseudo="alice", password_hash="hash1"),
-    Utilisateur(id=2, pseudo="bob",   password_hash="hash2"),
+    Utilisateur(id=2, pseudo="bob", password_hash="hash2"),
     Utilisateur(id=3, pseudo="carol", password_hash="hash3"),
 ]
 
 
 # ===================== CREATION =====================
 
+
 def test_creer_compte_ok():
     """Création d'utilisateur réussie"""
     pseudo, mdp = "alice", "1234"
-    with patch("service.utilisateur_service.UtilisateurDao") as MockDao, \
-         patch("service.utilisateur_service.hash_password", return_value="HASHED") as mock_hash:
+    with (
+        patch("service.utilisateur_service.UtilisateurDao") as MockDao,
+        patch("service.utilisateur_service.hash_password", return_value="HASHED") as mock_hash,
+    ):
         mock_dao = MockDao.return_value
         mock_dao.trouver_par_pseudo.return_value = None  # pas déjà pris
         mock_dao.creer.return_value = True
@@ -35,8 +38,10 @@ def test_creer_compte_ok():
 def test_creer_compte_echec_dao():
     """Création échouée (DAO.creer renvoie False)"""
     pseudo, mdp = "bob", "0000"
-    with patch("service.utilisateur_service.UtilisateurDao") as MockDao, \
-         patch("service.utilisateur_service.hash_password", return_value="HASHED") as mock_hash:
+    with (
+        patch("service.utilisateur_service.UtilisateurDao") as MockDao,
+        patch("service.utilisateur_service.hash_password", return_value="HASHED") as mock_hash,
+    ):
         mock_dao = MockDao.return_value
         mock_dao.trouver_par_pseudo.return_value = None
         mock_dao.creer.return_value = False
@@ -62,6 +67,7 @@ def test_creer_compte_pseudo_deja_utilise():
 
 
 # ===================== LISTAGE =====================
+
 
 def test_lister_tous_inclure_hash_true():
     """Lister les utilisateurs en incluant les password_hash"""
@@ -95,6 +101,7 @@ def test_lister_tous_inclure_hash_false():
 
 # ===================== RECHERCHE =====================
 
+
 def test_trouver_par_id():
     """Trouver par id"""
     with patch("service.utilisateur_service.UtilisateurDao") as MockDao:
@@ -125,6 +132,7 @@ def test_trouver_par_pseudo():
 
 # ===================== PSEUDO DEJA UTILISE =====================
 
+
 def test_pseudo_deja_utilise_oui():
     """Le pseudo est déjà utilisé"""
     with patch("service.utilisateur_service.UtilisateurDao") as MockDao:
@@ -150,6 +158,7 @@ def test_pseudo_deja_utilise_non():
 
 
 # ===================== SUPPRESSION =====================
+
 
 def test_supprimer_succes():
     """Suppression réussie"""
@@ -179,11 +188,14 @@ def test_supprimer_echec():
 
 # ===================== CONNEXION =====================
 
+
 def test_se_connecter_ok():
     """Connexion réussie : pseudo existe et hash concordant"""
     user = Utilisateur(id=7, pseudo="eve", password_hash="HASH")
-    with patch("service.utilisateur_service.UtilisateurDao") as MockDao, \
-         patch("service.utilisateur_service.hash_password", return_value="HASH") as mock_hash:
+    with (
+        patch("service.utilisateur_service.UtilisateurDao") as MockDao,
+        patch("service.utilisateur_service.hash_password", return_value="HASH") as mock_hash,
+    ):
         mock_dao = MockDao.return_value
         mock_dao.trouver_par_pseudo.return_value = user
 
@@ -198,8 +210,10 @@ def test_se_connecter_ok():
 def test_se_connecter_mauvais_mdp():
     """Connexion échouée : hash ne correspond pas"""
     user = Utilisateur(id=8, pseudo="zoe", password_hash="HASH")
-    with patch("service.utilisateur_service.UtilisateurDao") as MockDao, \
-         patch("service.utilisateur_service.hash_password", return_value="AUTREHASH") as mock_hash:
+    with (
+        patch("service.utilisateur_service.UtilisateurDao") as MockDao,
+        patch("service.utilisateur_service.hash_password", return_value="AUTREHASH") as mock_hash,
+    ):
         mock_dao = MockDao.return_value
         mock_dao.trouver_par_pseudo.return_value = user
 
@@ -225,4 +239,5 @@ def test_se_connecter_pseudo_inconnu():
 # Point d'entrée local
 if __name__ == "__main__":
     import pytest
+
     pytest.main([__file__])

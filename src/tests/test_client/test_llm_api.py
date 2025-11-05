@@ -1,12 +1,11 @@
-# src/tests/test_client/test_llm_api.py
 import json
 import types
 from unittest.mock import MagicMock
 
 import pytest
 
-from business_object.echange import Echange
-from client.llm_client import LLM_API
+from src.business_object.echange import Echange
+from src.client.llm_client import LLM_API
 
 
 def _fake_response_ok_type_mistral(text):
