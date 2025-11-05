@@ -429,8 +429,21 @@ class ConversationDAO:
             ExceptionType
                 Description des exceptions levées (optionnel).
         """
-        pass
-
+        with DBConnection().connection as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO messages (conversation_id, utilisateur_id, emetteur, contenu)
+                        VALUES (%(conversation_id)d, %(utilisateur_id)d, %(emetteur)s, %(contenu)s)                          
+                    RETURNING id;
+                    """, 
+                    {"conversation_id": conversation_id,
+                     "utilisateur_id": utilisateur_id,
+                     "emeteur": emetteur,
+                     "contenu": contenu}  
+                    )
+                message.id = cursor.fetchone()["id"]
+        return message
 
     def mettre_a_j_preprompt_id(id_conv: preprompt_id: str) ->bool:
         """
