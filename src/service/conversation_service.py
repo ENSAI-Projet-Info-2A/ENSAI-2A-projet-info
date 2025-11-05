@@ -1,8 +1,8 @@
 from typing import List
-from conversation import Conversation
-from echange import Echange
+from src.business_object.conversation import Conversation
+from src.business_object.echange import Echange
 from datetime import datetime as Date
-from conversation_dao import ConversationDAO
+from src.dao.conversation_dao import ConversationDAO
 
 class ErreurValidation(Exception):
     """Erreur levée quand les données reçues ne sont pas valides."""
@@ -14,7 +14,7 @@ class ErreurNonTrouvee(Exception):
 
 class ConversationService:
 
-    def __init__(self, titre: str, personnalisation: str, id_proprietaire: int):
+    def creer_conv(self, titre: str, personnalisation: str, id_proprietaire: int):
         """
         Crée une nouvelle conversation.
 
@@ -29,7 +29,7 @@ class ConversationService:
 
         Retourne
         --------
-            L'objet Conversation créé.
+            Message de succès de l'implémentation dans la DAO
         """
         if titre is None:
             raise ErreurValidation("Le titre est nécéssaire.")
@@ -37,16 +37,25 @@ class ConversationService:
             raise ErreurValidation("Le titre est trop long (maximum 255 caractères).")
         if personnalisation is None:
             raise ErreurValidation("La personnalisation est obligatoire.")
-
-        conversation = self.dao.creer_conversation(titre, personnalisation, id_proprietaire)
-        logger.info("Conversation créée avec id=%s", getattr(conversation, "id", None))
-        return conversation
+        conv = Conversation(nom = titre, personnalisation=personnalisation,id = id_proprietaire )
+        try :
+            res = self.dao.creer_conversation(titre, personnalisation, id_proprietaire)
+            if not res: 
+                raise Exception("l'implémentation de la conversation dans la base de donnée a échouée")
+            
+            logger.info("Conversation créée avec id=%s", getattr(conversation, "id", None))
+            
+            return(f"conversation {titre} créée (id propriétaire = {id_proprietaire})")
+        
+        except Exception as e:
+            logger.error("erreur lors de la création de la conversation id = %s", e)
+            raise
 
     def acceder_conversation(self, id_conversation: int):
         """Permet d'accéder à une conversation existante."""
         if id_conversation is None:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
-        conversation = self.dao.obtenir_conversation(id_conversation)
+        conversation = self.dao.trouver_par_id(id_conv = id_conversation)
         if conversation is None:
             raise ErreurNonTrouvee("Conversation introuvable.")
         return conversation
