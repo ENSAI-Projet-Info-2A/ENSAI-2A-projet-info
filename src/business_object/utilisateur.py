@@ -1,4 +1,6 @@
+import hmac
 from typing import Optional
+
 from utils.securite import hash_password
 
 
@@ -36,11 +38,13 @@ class Utilisateur:
     def verifier_password(self, mot_de_passe: str) -> bool:
         """
         Vérifie si le mot de passe correspond au hash enregistré.
-        On re-hash le mot de passe saisi avec le même sel (pseudo) et on compare.
+        Re-hash le mot de passe saisi avec le même sel (pseudo)
+        et compare en temps constant avec hmac.
         """
         if self.password_hash is None:
             return False
-        return self.password_hash == hash_password(mot_de_passe, self.pseudo)
+        expected = hash_password(mot_de_passe, self.pseudo)
+        return hmac.compare_digest(self.password_hash, expected)
 
     def ajouter_conversation(self, conversation) -> None:
         self.conversations.append(conversation)
@@ -54,7 +58,9 @@ class Utilisateur:
 
     # Optionnel : constructeur pratique quand on reçoit un mdp en clair
     @classmethod
-    def from_plain_password(cls, pseudo: str, mot_de_passe: str, id: Optional[int] = None) -> "Utilisateur":
+    def from_plain_password(
+        cls, pseudo: str, mot_de_passe: str, id: Optional[int] = None
+    ) -> "Utilisateur":
         user = cls(pseudo=pseudo, password_hash=None, id=id)
         user.set_password(mot_de_passe)
         return user
