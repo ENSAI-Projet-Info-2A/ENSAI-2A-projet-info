@@ -16,7 +16,6 @@ class ConnexionVue(VueAbstraite):
 
         # Appel du service pour trouver l'utilisateur
         utilisateur = UtilisateurService().se_connecter(pseudo, mdp)
-        print(utilisateur)
 
         # Si l'utilisateur a été trouvé à partir de ses identifiants de connexion
         if utilisateur:

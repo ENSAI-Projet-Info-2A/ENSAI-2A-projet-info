@@ -61,6 +61,7 @@ class MenuUtilisateurVue(VueAbstraite):
                 case "Créer une nouvelle conversation":
                     from view.nouvelle_conversation_vue import NouvelleConversationVue
 
+                    print("here 12")
                     return NouvelleConversationVue()
 
                 case "Rechercher dans mes conversations":
