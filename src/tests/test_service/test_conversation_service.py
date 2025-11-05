@@ -11,10 +11,9 @@ liste_conversations = [
     Conversation(id=3, nom="Sujet libre", personnalisation="assistant", id_proprietaire=4),
 ]
 
-
-# ----------------- TEST creer_conv -----------------
-
-
+echange1 = Echange(id_conversation=1, expediteur="user", message="Salut", date_echange=date.today())
+echange2 = Echange(id_conversation=1, expediteur="assistant", message="Bonjour", date_echange=date.today())
+liste_echanges = [echange1, echange2]
 
 def test_creer_conv_titre_manquant(): #revoir
     """Création échouée car titre manquant"""
@@ -45,7 +44,6 @@ def test_creer_conv_titre_trop_long():
         assert True
 
 
-# ----------------- TEST accéder conversation -----------------
 def test_acceder_conversation_ok():
     """Accéder à une conversation existante"""
 
@@ -73,8 +71,6 @@ def test_acceder_conversation_introuvable():
     except ErreurNonTrouvee:
         assert True
 
-
-# ----------------- TEST renommer_conversation -----------------
 def test_renommer_conversation_ok():
     """Renommage réussi"""
 
@@ -104,7 +100,7 @@ def test_renommer_conversation_titre_vide():
         assert True
 
 
-# ----------------- TEST supprimer_conversation -----------------
+
 def test_supprimer_conversation_ok():
     """Suppression réussie"""
 
@@ -128,3 +124,75 @@ def test_supprimer_conversation_id_manquant():
         assert False
     except ErreurValidation:
         assert True
+
+def test_lister_conversations_ok(monkeypatch):
+    """Lister les conversations retourne bien une liste"""
+    ConversationDAO.lister_conversations = MagicMock(return_value=liste_convs)
+    res = ConversationService.lister_conversations(10, limite=2)
+    assert res == liste_convs
+    ConversationDAO.lister_conversations.assert_called_once_with(id_user=10, n=2)
+
+def test_lister_conversations_aucune(monkeypatch):
+    ConversationDAO.lister_conversations = MagicMock(return_value=[])
+    res = ConversationService.lister_conversations(10, limite=5)
+    assert res is None  # Pas de conversation trouvée
+
+def test_lister_conversations_limite_invalide():
+    with pytest.raises(ErreurValidation):
+        ConversationService.lister_conversations(10, limite=0)
+
+def test_rechercher_conversations_ok():
+    ConversationDAO.rechercher_conversation = MagicMock(return_value=liste_convs)
+    res = ConversationService.rechercher_conversations(10, mot_cle="Conv", date_recherche=date.today())
+    assert res == liste_convs
+    ConversationDAO.rechercher_conversation.assert_called_once()
+
+def test_rechercher_conversations_aucune():
+    ConversationDAO.rechercher_conversation = MagicMock(return_value=[])
+    res = ConversationService.rechercher_conversations(10, mot_cle="X", date_recherche=date.today())
+    assert res is None
+
+def test_lire_fil_ok():
+    ConversationDAO.lire_fil = MagicMock(return_value=liste_echanges)
+    res = ConversationService.lire_fil(1, decalage=0, limite=10)
+    assert res == liste_echanges
+    ConversationDAO.lire_fil.assert_called_once_with(1, 0, 10)
+
+
+def test_rechercher_message_ok():
+    ConversationDAO.rechercher_message = MagicMock(return_value=[echange1])
+    res = ConversationService.rechercher_message(1, mot_cle="Salut", date_recherche=None)
+    assert res == [echange1]
+
+def test_rechercher_message_ko():
+    with pytest.raises(ErreurValidation):
+        ConversationService.rechercher_message(1, mot_cle=None, date_recherche=None)
+
+def test_ajouter_utilisateur_ok():
+    ConversationDAO.ajouter_utilisateur = MagicMock(return_value=True)
+    assert ConversationService.ajouter_utilisateur(1, 10, "membre") is True
+
+def test_ajouter_utilisateur_invalide():
+    with pytest.raises(ErreurValidation):
+        ConversationService.ajouter_utilisateur(None, 10, "membre")
+
+def test_retirer_utilisateur_ok():
+    ConversationDAO.retirer_utilisateur = MagicMock(return_value=True)
+    assert ConversationService.retirer_utilisateur(1, 10) is True
+
+def test_retirer_utilisateur_invalide():
+    with pytest.raises(ErreurValidation):
+        ConversationService.retirer_utilisateur(1, None)
+
+def test_mettre_a_jour_personnalisation_ok():
+    ConversationDAO.mettre_a_jour_personnalisation = MagicMock(return_value=True)
+    assert ConversationService.mettre_a_jour_personnalisation(1, "NouveauProfil") is True
+
+def test_mettre_a_jour_personnalisation_invalide():
+    with pytest.raises(ErreurValidation):
+        ConversationService.mettre_a_jour_personnalisation(1, "")
+
+def test_demander_assistant_ok():
+    e = ConversationService.demander_assistant("Bonjour")
+    assert e.message.startswith("Voici une réponse simulée")
+    assert e.expediteur == "assistant"
