@@ -1,9 +1,10 @@
-
-from dao.utilisateur_dao import Utilisateur_DAO 
-from utils.securite import verifier_mot_de_passe
-from utils.jtw_utils import creer_token, verifier_token as verif_token
 import os
+
 from dotenv import load_dotenv
+
+from dao.utilisateur_dao import UtilisateurDAO
+from utils.jtw_utils import creer_token
+from utils.jtw_utils import verifier_token as verif_token
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -13,7 +14,8 @@ class Auth_Service:
     """
     Service d'authentification pour gérer les connexions utilisateurs
     """
-    def __init__(self, utilisateur_dao: Utilisateur_DAO):
+
+    def __init__(self, utilisateur_dao: UtilisateurDAO):
         """
         Initialise le service d'authentification avec un DAO utilisateur.
 
@@ -46,7 +48,7 @@ class Auth_Service:
         if not utilisateur:
             raise ValueError("Utilisateur introuvable.")
 
-        if not verifier_mot_de_passe(mdp, utilisateur.password_hash):
+        if not utilisateur.verifier_password(mdp):
             raise ValueError("Mot de passe incorrect.")
 
         return creer_token(utilisateur.id, utilisateur.pseudo)

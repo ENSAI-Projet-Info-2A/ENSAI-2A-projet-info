@@ -1,8 +1,10 @@
-import pytest
+from datetime import datetime, timedelta, timezone
+
 import bcrypt
 import jwt
-from datetime import datetime, timedelta, timezone
-from service.auth_service import Auth_Service, SECRET_KEY
+import pytest
+
+from src.service.auth_service import SECRET_KEY, Auth_Service
 
 
 # Classe factice pour simuler la base de données utilisateur
@@ -15,6 +17,7 @@ class FakeUtilisateur:
 
 class FakeUtilisateurDAO:
     """Simule un DAO avec un seul utilisateur enregistré."""
+
     def __init__(self):
         self.utilisateur = FakeUtilisateur(1, "alice", "motdepasse123")
 
@@ -26,6 +29,7 @@ class FakeUtilisateurDAO:
 
 # FIXTURE pour instancier le service avant chaque test
 
+
 @pytest.fixture
 def auth_service():
     dao = FakeUtilisateurDAO()
@@ -36,7 +40,7 @@ def auth_service():
 def test_se_connecter_succes(auth_service):
     token = auth_service.se_connecter("alice", "motdepasse123")
     assert isinstance(token, str)  # Le token doit être une chaîne
-    assert len(token) > 10         # Un token JWT a toujours une certaine longueur
+    assert len(token) > 10  # Un token JWT a toujours une certaine longueur
     assert auth_service.verifier_token(token)  # Et il doit être valide
 
 

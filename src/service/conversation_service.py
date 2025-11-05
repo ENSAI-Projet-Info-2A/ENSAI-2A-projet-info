@@ -1,8 +1,8 @@
 from typing import List
-from src.business_object.conversation import Conversation
-from src.business_object.echange import Echange
+from business_object.conversation import Conversation
+from business_object.echange import Echange
 from datetime import datetime as Date
-from src.dao.conversation_dao import ConversationDAO
+from dao.conversation_dao import ConversationDAO
 
 class ErreurValidation(Exception):
     """Erreur levée quand les données reçues ne sont pas valides."""
