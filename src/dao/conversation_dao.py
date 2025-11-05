@@ -13,7 +13,7 @@ class ConversationDAO:
     ####faudra revenir dessus car il manque potentiellement le param preprompt_id/traduction
     #### faut rajouter aussi 
     @staticmethod
-    def creer_conversation(conversation):
+    def creer_conversation(conversation: Conversation):
         """
         créer une nouvelle conversation dans la table Conversation
 
@@ -31,8 +31,8 @@ class ConversationDAO:
                     RETURNING id;
                     """,
                     {"titre": conversation.titre, 
-                    "prompt_id": prompt_id, 
-                    "cree_le": cree_le}
+                    "prompt_id": conversation.prompt_id, 
+                    "cree_le": conversation.cree_le}
                     )
                 conversation.id = cursor.fetchone()["id"]
         return conversation
@@ -136,7 +136,7 @@ class ConversationDAO:
                 DELETE FROM conversations
                 WHERE id = %(id_conv)s
                 """,
-                {"id_conv":id_conv}
+                {"id_conv" : id_conv}
                 )
             count = cursor.rowcount
         if count>0:
@@ -145,7 +145,7 @@ class ConversationDAO:
             raise Exception(f"echec de la suppression de la conversation d'identifiant {id_conv}")
         
     @staticmethod
-    def lister_conversations(id_user: int, n = None) -> List[Conversation]:
+    def lister_conversations(id_user: int, n = None) -> list[Conversation]:
         """
         Présente une liste des n conversations les plus récentes reliées à un joueur.
 
@@ -191,7 +191,7 @@ class ConversationDAO:
 
         
     @staticmethod
-    def rechercher_mot_clef(id_user: int, mot_clef: str) -> List[Conversation]:
+    def rechercher_mot_clef(id_user: int, mot_clef: str) -> list[Conversation]:
         """
         Recherche une conversation selon un mot-clé.
 
@@ -230,8 +230,8 @@ class ConversationDAO:
             liste = set(liste)
             if not liste:
                 raise Exception(f"aucune conversation trouvée parmi les conversations de l'utilisateur {id_user} our le mot clé '{mot_clef}'")
-            #une fois qu'on a récupéré la liste des conversations_id, on récupère les conversations 
-            #depuis la table conversations (oui je sais on aurait pu fair un join mais flemme)
+            # une fois qu'on a récupéré la liste des conversations_id, on récupère les conversations 
+            # depuis la table conversations (oui je sais on aurait pu fair un join mais flemme)
             with conn.cursor() as cursor:
                 cursor.execute(
                     """
@@ -249,7 +249,7 @@ class ConversationDAO:
             return liste_finale
 
     @staticmethod
-    def rechercher_date(id_user: int, date: Date) -> List[Conversation]:
+    def rechercher_date(id_user: int, date: Date) -> list[Conversation]:
         """
 
         Recherche une conversation à partir d'une date (date d'un message)
@@ -311,7 +311,7 @@ class ConversationDAO:
             return liste_res
 
     @staticmethod
-    def lire_echanges(id_conv: int, limit: int) -> List[Echange]:
+    def lire_echanges(id_conv: int, limit: int) -> list[Echange]:
         """
         Permet de lire les messages d'une conversation donnée.
 
@@ -349,7 +349,7 @@ class ConversationDAO:
                 return liste_conv
 
 
-    def rechercher_echange(conversation_id: int, mot_clef: str, date: Date) -> List[Echange]:
+    def rechercher_echange(conversation_id: int, mot_clef: str, date: Date) -> list[Echange]:
         """
         Recherche un échange au sein d'une conversation, à partir d'un mot-clé et d'une date.
 
@@ -376,12 +376,12 @@ class ConversationDAO:
                     """
                     SELECT * 
                     FROM messages 
-                    WHERE conversation_id = %(id_conv)s
+                    WHERE conversation_id = %(conversation_id)s
                     AND contenu ILIKE %(mot_clef)s
                     AND DATE(cree_le) = DATE(%(date)s);
                     """,
                     {
-                        "id_conv": id_conv,
+                        "id_conv": conversation_id,
                         "mot_clef": f"%{mot_clef}%",
                         "date": date
                     }
@@ -389,7 +389,7 @@ class ConversationDAO:
                 res = cursor.fetchall()
             
             if not res:
-                raise Exception(f"Aucun échange trouvé pour la conversation {id_conv} avec le mot-clé '{mot_clef}' à la date {date}")
+                raise Exception(f"Aucun échange trouvé pour la conversation {conversation_id} avec le mot-clé '{mot_clef}' à la date {date}")
             
             liste_echanges = []
             for msg in res:
@@ -433,26 +433,26 @@ class ConversationDAO:
                     WHERE conversation_id = %(id_conv)s
                     AND utilisateur_id = %(id_user)s;
                     """,
-                    {"id_conv": id_conv, "id_user": id_user}
+                    {"id_conv": conversation_id, "id_user": id_user}
                 )
                 existe = cursor.fetchone()["count"]
                 
                 if existe > 0:
-                    raise Exception(f"L'utilisateur {id_user} est déjà participant de la conversation {id_conv}")
+                    raise Exception(f"L'utilisateur {id_user} est déjà participant de la conversation {conversation_id}")
                 
                 cursor.execute(
                     """
                     INSERT INTO conversations_participants (conversation_id, utilisateur_id)
-                    VALUES (%(id_conv)s, %(id_user)s);
+                    VALUES (%(conversation_id)s, %(id_user)s);
                     """,
-                    {"id_conv": id_conv, "id_user": id_user}
+                    {"conversation_id": conversation_id, "id_user": id_user}
                 )
                 count = cursor.rowcount
         
             if count > 0:
                 return True
             else:
-                raise Exception(f"Erreur lors de l'ajout de l'utilisateur {id_user} à la conversation {id_conv}")
+                raise Exception(f"Erreur lors de l'ajout de l'utilisateur {id_user} à la conversation {conversation_id}")
 
 
         
@@ -485,7 +485,7 @@ class ConversationDAO:
                     FROM conversations_participants
                     WHERE conversation_id = %(id_conv)s;
                     """,
-                    {"id_conv": id_conv}
+                    {"id_conv": conversation_id}
                 )
                 nb_participants = cursor.fetchone()["count"]
                 
@@ -499,14 +499,14 @@ class ConversationDAO:
                     WHERE conversation_id = %(id_conv)s
                     AND utilisateur_id = %(id_user)s;
                     """,
-                    {"id_conv": id_conv, "id_user": id_user}
+                    {"id_conv": conversation_id, "id_user": id_user}
                 )
                 count = cursor.rowcount
         
         if count > 0:
             return True
         else:
-            raise Exception(f"L'utilisateur {id_user} n'est pas participant de la conversation {id_conv}")
+            raise Exception(f"L'utilisateur {id_user} n'est pas participant de la conversation {conversation_id}")
 
     @staticmethod
     def ajouter_echange(id_conv: int, echange: Echange) -> bool:
@@ -539,12 +539,12 @@ class ConversationDAO:
                     RETURNING id;
                     """, 
                     {"conversation_id": id_conv,
-                     "utilisateur_id": utilisateur_id,
-                     "emeteur": emetteur,
-                     "contenu": contenu}  
+                     "utilisateur_id": echange.utilisateur_id,
+                     "emetteur": echange.emetteur,
+                     "contenu": echange.contenu}  
                     )
-                message.id = cursor.fetchone()["id"]
-        return message
+                echange.id = cursor.fetchone()["id"]
+        return echange
 
     @staticmethod
     def mettre_a_j_preprompt_id(conversation_id:int, prompt_id: int) -> bool:
@@ -629,7 +629,7 @@ class ConversationDAO:
 
 
     @staticmethod
-    def sujets_plus_frequents(id_user: int, topK: int) -> List[str]:
+    def sujets_plus_frequents(id_user: int, topK: int) -> list[str]:
         """
         Renvoie une liste des sujets les plus fréquents entretenus dans les conversations d'un utilisateur.
 
