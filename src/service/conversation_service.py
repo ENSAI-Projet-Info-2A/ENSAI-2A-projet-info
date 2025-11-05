@@ -92,7 +92,7 @@ class ConversationService:
         if not id_conversation:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
         try:
-            succes = ConversationDAO.supprimer_conv(id_conversation)
+            succes = ConversationDAO.supprimer_conv(id_conv = id_conversation)
             if succes:
                 logger.info("Conversation %s supprimée avec succès", id_conversation)
             else:
@@ -102,22 +102,29 @@ class ConversationService:
             logger.error("Erreur lors de la suppression de la conversation %s : %s", id_conversation, e)
             raise
 
-    def lister_conversations(id_utilisateur: int, limite: int) -> List['Conversation']:
-        """Liste les conversations triées par date de mise à jour décroissante."""
+    def lister_conversations(id_utilisateur: int, limite=None) -> List['Conversation']:
+        """Liste n conversations de la """
         if id_utilisateur is None: 
             raise ErreurValidation("L'identifiant de l'utilisateur est requis.")
         if limite < 1 or limite > 100:
             raise ErreurValidation("La limite doit être comprise entre 1 et 100.")
         try:
-            res = ConversationDAO.lister_conversations(id_user = id_utilisateur)
+            res = ConversationDAO.lister_conversations(id_user = id_utilisateur, n=limite)
             if res:
-                return 
+                logger.info(f"Conversations de {id_utilisateur} listées avec succès")
+                return res
+            else:
+                logger.warning(f"Aucune conversation trouvée pour l'id {id_utilisateur}")
+        except Exception as e:
+            logger.error("Erreur lors de la récupération des conversations de l'utilisateur %s : %s", id_utilisateur, e)
+            raise
+                
 
     def rechercher_conversations(id_utilisateur: int, mot_cle: str, date_recherche: date) -> List['Conversation']:
         """Recherche des conversations selon un mot-clé et une date."""
         if id_utilisateur is None:
             raise ErreurValidation("L'identifiant de l'utilisateur est requis.")
-        return ConversationDAO.rechercher_conversations(id_utilisateur, mot_cle, date_recherche)
+        return ConversationDAO.rechercher_conversation(id_utilisateur, mot_cle, date_recherche)
 
     def lire_fil(id_conversation: int, decalage: int, limite: int) -> List['Echange']:
         """Lit les échanges d'une conversation avec pagination."""

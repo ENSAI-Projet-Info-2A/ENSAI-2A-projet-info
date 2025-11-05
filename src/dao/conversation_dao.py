@@ -303,7 +303,7 @@ class ConversationDAO:
                     {"dict_id":dict_id}
                 )
                 res = cursor.fetchall()
-            liste_res
+            liste_res = []
             for conv in res:
                 liste_res.append(Conversation(id= conv["id"], nom= conv["titre"], 
                 personnalisation = conv["prompt_id"], date_creation = conv["cree_le"]))
