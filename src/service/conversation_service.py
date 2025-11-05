@@ -48,17 +48,21 @@ class ConversationService:
             return(f"conversation {titre} créée (id propriétaire = {id_proprietaire})")
         
         except Exception as e:
-            logger.error("erreur lors de la création de la conversation id = %s", e)
+            logger.error("erreur lors de la création de la conversation : %s", e)
             raise
 
     def acceder_conversation(self, id_conversation: int):
         """Permet d'accéder à une conversation existante."""
         if id_conversation is None:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
-        conversation = self.dao.trouver_par_id(id_conv = id_conversation)
-        if conversation is None:
-            raise ErreurNonTrouvee("Conversation introuvable.")
-        return conversation
+        try:
+            conversation = self.dao.trouver_par_id(id_conv = id_conversation)
+            if conversation is None:
+                raise ErreurNonTrouvee("Conversation introuvable.")
+            logger.info(f"conversation d'id = {conversation.id} intitulée {conversation.nom} trouvée", conversation.id, conversation.nom)
+            return conversation
+        except Exception as e:
+            logger.error("erreur lors de la recherche de la conversation : %s", e)
 
     def renommer_conversation(self, id_conversation: int, nouveau_titre: str) -> bool:
         """Renomme une conversation existante."""
