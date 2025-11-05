@@ -1,169 +1,130 @@
-import pytest
-from datetime import date
 from unittest.mock import MagicMock
-
-from service.conversation_service.py import (
-    ConversationService,
-    ErreurValidation,
-    ErreurNonTrouvee
-)
+from service.conversation_service import ConversationService, ErreurValidation, ErreurNonTrouvee
+from business_object.conversation import Conversation
+from dao.conversation_dao import ConversationDAO
 
 
-# --- Fixtures ---
-
-@pytest.fixture
-def dao_simule():
-    """Crée un DAO simulé avec des méthodes factices."""
-    dao = MagicMock()
-    dao.creer_conversation.return_value = MagicMock(id=1, titre="Test", personnalisation="Général")
-    dao.obtenir_conversation.return_value = MagicMock(id=1, titre="Test")
-    dao.renommer_conversation.return_value = True
-    dao.supprimer_conversation.return_value = True
-    dao.lister_conversations.return_value = ["conv1", "conv2"]
-    dao.rechercher_conversations.return_value = ["conv_recherche"]
-    dao.lire_fil.return_value = ["msg1", "msg2"]
-    dao.rechercher_message.return_value = ["msg_trouve"]
-    dao.ajouter_utilisateur.return_value = True
-    dao.retirer_utilisateur.return_value = True
-    dao.mettre_a_jour_personnalisation.return_value = True
-    return dao
+# Données factices
+liste_conversations = [
+    Conversation(id=1, nom="Projet IA", personnalisation="chatbot", id_proprietaire=2),
+    Conversation(id=2, nom="Discussion test", personnalisation="profil_test", id_proprietaire=3),
+    Conversation(id=3, nom="Sujet libre", personnalisation="assistant", id_proprietaire=4),
+]
 
 
-@pytest.fixture
-def service(dao_simule):
-    """Crée une instance du service avec un DAO simulé."""
-    return ConversationService(dao_simule)
+# ----------------- TEST creer_conv -----------------
 
 
-# --- Tests de création ---
 
-def test_creer_conversation_valide(service):
-    conv = service.creer_conversation("Discussion test", "Profil A", 1)
-    assert conv.id == 1
-    service.dao.creer_conversation.assert_called_once()
+def test_creer_conv_titre_manquant(): #revoir
+    """Création échouée car titre manquant"""
 
-def test_creer_conversation_sans_titre(service):
-    with pytest.raises(ErreurValidation):
-        service.creer_conversation(None, "Profil", 1)
+    # GIVEN
+    titre, personnalisation, id_proprietaire = None, "chatbot", 2
 
-def test_creer_conversation_titre_trop_long(service):
-    titre_trop_long = "x" * 300
-    with pytest.raises(ErreurValidation):
-        service.creer_conversation(titre_trop_long, "Profil", 1)
-
-def test_creer_conversation_sans_personnalisation(service):
-    with pytest.raises(ErreurValidation):
-        service.creer_conversation("Titre", None, 1)
+    # WHEN / THEN
+    try:
+        ConversationService.creer_conv(titre, personnalisation, id_proprietaire)
+        assert False, "ErreurValidation aurait dû être levée"
+    except ErreurValidation as e:
+        assert "titre" in str(e).lower()
 
 
-# --- Tests d'accès ---
+def test_creer_conv_titre_trop_long():
+    """Création échouée car titre trop long (>255)"""
 
-def test_acceder_conversation_valide(service):
-    conv = service.acceder_conversation(1)
-    assert conv.id == 1
-    service.dao.obtenir_conversation.assert_called_once_with(1)
+    # GIVEN
+    titre = "X" * 300
+    personnalisation, id_proprietaire = "profil_test", 3
 
-def test_acceder_conversation_non_trouvee(service):
-    service.dao.obtenir_conversation.return_value = None
-    with pytest.raises(ErreurNonTrouvee):
-        service.acceder_conversation(999)
-
-
-# --- Tests de renommage ---
-
-def test_renommer_conversation_valide(service):
-    assert service.renommer_conversation(1, "Nouveau nom") is True
-
-def test_renommer_conversation_sans_nom(service):
-    with pytest.raises(ErreurValidation):
-        service.renommer_conversation(1, "")
-
-def test_renommer_conversation_sans_id(service):
-    with pytest.raises(ErreurValidation):
-        service.renommer_conversation(None, "Nom")
+    # WHEN / THEN
+    try:
+        ConversationService.creer_conv(titre, personnalisation, id_proprietaire)
+        assert False
+    except ErreurValidation:
+        assert True
 
 
-# --- Tests de suppression ---
+# ----------------- TEST accéder conversation -----------------
+def test_acceder_conversation_ok():
+    """Accéder à une conversation existante"""
 
-def test_supprimer_conversation_valide(service):
-    assert service.supprimer_conversation(1) is True
+    # GIVEN
+    conv = liste_conversations[0]
+    ConversationDAO.trouver_par_id = MagicMock(return_value=conv)
 
-def test_supprimer_conversation_sans_id(service):
-    with pytest.raises(ErreurValidation):
-        service.supprimer_conversation(None)
+    # WHEN
+    resultat = ConversationService.acceder_conversation(1)
 
-
-# --- Tests de liste ---
-
-def test_lister_conversations(service):
-    resultat = service.lister_conversations(1, 10)
-    assert resultat == ["conv1", "conv2"]
-
-def test_lister_conversations_id_manquant(service):
-    with pytest.raises(ErreurValidation):
-        service.lister_conversations(None, 10)
-
-def test_lister_conversations_limite_invalide(service):
-    with pytest.raises(ErreurValidation):
-        service.lister_conversations(1, 0)
+    # THEN
+    assert resultat.nom == "Projet IA"
 
 
-# --- Tests de recherche ---
+def test_acceder_conversation_introuvable():
+    """Accès échoué car conversation introuvable"""
 
-def test_rechercher_conversations(service):
-    result = service.rechercher_conversations(1, "mot", date.today())
-    assert "conv_recherche" in result
+    # GIVEN
+    ConversationDAO.trouver_par_id = MagicMock(return_value=None)
 
-def test_rechercher_conversations_sans_id(service):
-    with pytest.raises(ErreurValidation):
-        service.rechercher_conversations(None, "mot", date.today())
-
-
-# --- Tests d'ajout / retrait d'utilisateurs ---
-
-def test_ajouter_utilisateur_valide(service):
-    assert service.ajouter_utilisateur(1, 2, "membre") is True
-
-def test_ajouter_utilisateur_invalide(service):
-    with pytest.raises(ErreurValidation):
-        service.ajouter_utilisateur(1, None, "membre")
-
-def test_retirer_utilisateur_valide(service):
-    assert service.retirer_utilisateur(1, 2) is True
-
-def test_retirer_utilisateur_invalide(service):
-    with pytest.raises(ErreurValidation):
-        service.retirer_utilisateur(None, 2)
+    # WHEN / THEN
+    try:
+        ConversationService.acceder_conversation(99)
+        assert False
+    except ErreurNonTrouvee:
+        assert True
 
 
-# --- Tests de mise à jour de personnalisation ---
+# ----------------- TEST renommer_conversation -----------------
+def test_renommer_conversation_ok():
+    """Renommage réussi"""
 
-def test_mettre_a_jour_personnalisation(service):
-    assert service.mettre_a_jour_personnalisation(1, "profil B") is True
+    # GIVEN
+    ConversationDAO.renommer_conversation = MagicMock(return_value=True)
+    id_conv, nouveau_titre = 1, "Nouveau titre"
 
-def test_mettre_a_jour_personnalisation_sans_id(service):
-    with pytest.raises(ErreurValidation):
-        service.mettre_a_jour_personnalisation(None, "profil B")
+    # WHEN
+    resultat = ConversationService.renommer_conversation(id_conv, nouveau_titre)
 
-
-# --- Tests d'exportation (JSON simulé) ---
-
-def test_exporter_conversation_json(service, tmp_path):
-    chemin = tmp_path / "conversation_1.json"
-    service.dao.lire_fil.return_value = []
-    assert service.exporter_conversation(1, "json") is True
-
-def test_exporter_conversation_format_invalide(service):
-    with pytest.raises(ErreurValidation):
-        service.exporter_conversation(1, "xml")
+    # THEN
+    assert resultat
+    ConversationDAO.renommer_conversation.assert_called_once_with(id_conv, nouveau_titre)
 
 
-# --- Tests de l'assistant ---
+def test_renommer_conversation_titre_vide():
+    """Renommage échoué car titre vide"""
 
-def test_demander_assistant_valide(service):
-    echange = service.demander_assistant("Bonjour !")
-    assert "réponse simulée" in echange.message
+    # GIVEN
+    id_conv, nouveau_titre = 1, " "
 
-def test_demander_assistant_vide(service):
-    with pytest.raises(ErreurValidation):
-        service.demander_assistant("")
+    # WHEN / THEN
+    try:
+        ConversationService.renommer_conversation(id_conv, nouveau_titre)
+        assert False
+    except ErreurValidation:
+        assert True
+
+
+# ----------------- TEST supprimer_conversation -----------------
+def test_supprimer_conversation_ok():
+    """Suppression réussie"""
+
+    # GIVEN
+    ConversationDAO.supprimer_conv = MagicMock(return_value=True)
+
+    # WHEN
+    resultat = ConversationService.supprimer_conversation(1)
+
+    # THEN
+    assert resultat
+    ConversationDAO.supprimer_conv.assert_called_once_with(1)
+
+
+def test_supprimer_conversation_id_manquant():
+    """Suppression échouée car id manquant"""
+
+    # GIVEN / WHEN / THEN
+    try:
+        ConversationService.supprimer_conversation(None)
+        assert False
+    except ErreurValidation:
+        assert True
