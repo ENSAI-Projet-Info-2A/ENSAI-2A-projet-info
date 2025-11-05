@@ -1,4 +1,5 @@
 import re
+from unittest.mock import patch
 
 from src.business_object.utilisateur import Utilisateur
 
@@ -66,50 +67,48 @@ def test_egalite_objet_autre_type():
 # ------------------ Mot de passe ------------------
 
 
-def test_set_password_genere_un_hash(monkeypatch):
-    # GIVEN
+def test_set_password_genere_un_hash():
     u = Utilisateur(pseudo="alice", id=10)
 
-    # On rend le hash déterministe pour le test (template de cours : test isolé et reproductible)
-    from business_object import utilisateur as util_module
+    with patch(
+        "src.business_object.utilisateur.hash_password", return_value="H(secret|alice)"
+    ) as mock_hash:
+        u.set_password("secret")
 
-    monkeypatch.setattr(util_module, "hash_password", lambda mdp, sel: f"H({mdp}|{sel})")
-
-    # WHEN
-    u.set_password("secret")
-
-    # THEN
     assert u.password_hash == "H(secret|alice)"
+    mock_hash.assert_called_once_with("secret", "alice")
 
 
-def test_verifier_password_ok(monkeypatch):
-    # GIVEN
+def test_verifier_password_ok():
     u = Utilisateur(pseudo="alice", id=10)
-    from business_object import utilisateur as util_module
 
-    monkeypatch.setattr(util_module, "hash_password", lambda mdp, sel: f"H({mdp}|{sel})")
-    u.set_password("secret")
+    # 1er appel pour set_password -> "H(secret|alice)"
+    # 2e appel pour verifier_password("secret") -> "H(secret|alice)"
+    with patch(
+        "src.business_object.utilisateur.hash_password",
+        side_effect=lambda mdp, sel: f"H({mdp}|{sel})",
+    ) as mock_hash:
+        u.set_password("secret")
+        ok = u.verifier_password("secret")
 
-    # WHEN
-    ok = u.verifier_password("secret")
-
-    # THEN
     assert ok is True
+    # 2 appels : set_password et verifier_password
+    assert mock_hash.call_count == 2
 
 
-def test_verifier_password_ko(monkeypatch):
-    # GIVEN
+def test_verifier_password_ko():
     u = Utilisateur(pseudo="alice", id=10)
-    from business_object import utilisateur as util_module
 
-    monkeypatch.setattr(util_module, "hash_password", lambda mdp, sel: f"H({mdp}|{sel})")
-    u.set_password("secret")
+    with patch(
+        "src.business_object.utilisateur.hash_password",
+        side_effect=lambda mdp, sel: f"H({mdp}|{sel})",
+    ) as mock_hash:
+        u.set_password("secret")
+        ok = u.verifier_password("mauvais")
 
-    # WHEN
-    ok = u.verifier_password("mauvais")
-
-    # THEN
     assert ok is False
+    # 2 appels : set_password("secret") et verifier_password("mauvais")
+    assert mock_hash.call_count == 2
 
 
 def test_verifier_password_sans_hash_renvoie_false():
@@ -123,20 +122,23 @@ def test_verifier_password_sans_hash_renvoie_false():
     assert ok is False
 
 
-def test_from_plain_password_construit_un_user_valide(monkeypatch):
-    # GIVEN
-    from business_object import utilisateur as util_module
+def test_from_plain_password_construit_un_user_valide():
+    with patch(
+        "src.business_object.utilisateur.hash_password",
+        side_effect=lambda mdp, sel: f"H({mdp}|{sel})",
+    ) as mock_hash:
+        u = Utilisateur.from_plain_password("carol", "top")
 
-    monkeypatch.setattr(util_module, "hash_password", lambda mdp, sel: f"H({mdp}|{sel})")
+        assert u.id is None
+        assert u.pseudo == "carol"
+        assert u.password_hash == "H(top|carol)"
+        # vérification avec le même patch (appel 3) :
+        assert u.verifier_password("top") is True
 
-    # WHEN
-    u = Utilisateur.from_plain_password("carol", "top")
-
-    # THEN
-    assert u.id is None
-    assert u.pseudo == "carol"
-    assert u.password_hash == "H(top|carol)"
-    assert u.verifier_password("top") is True
+    # Appels attendus :
+    # 1) set_password("top") dans from_plain_password
+    # 2) verifier_password("top") à la fin du test
+    assert mock_hash.call_count == 2
 
 
 # ------------------ Conversations ------------------
