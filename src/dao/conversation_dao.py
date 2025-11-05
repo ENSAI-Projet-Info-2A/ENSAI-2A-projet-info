@@ -343,7 +343,7 @@ class ConversationDAO:
                 return liste_conv
 
 
-    def rechercher_echange(id_conv: int, mot_clef: str, date: Date) -> List[Echange]:
+    def rechercher_echange(conversation_id: int, mot_clef: str, date: Date) -> List[Echange]:
         """
         Recherche un échange au sein d'une conversation, à partir d'un mot-clé et d'une date.
 
@@ -366,7 +366,7 @@ class ConversationDAO:
         """
         pass
 
-    def ajouter_participant(id_conv: int, id_user: int, role: str) -> bool:
+    def ajouter_participant(conversation_id: int, id_user: int, role: str) -> bool:
         """
         Ajoute un autre utilisateur à une conversation en cours.
 
@@ -388,7 +388,7 @@ class ConversationDAO:
         """
         pass
 
-    def retirer_participant(id_conv: int, id_user: int) -> bool:
+    def retirer_participant(conversation_id: int, id_user: int) -> bool:
         """
         Retire un utilisateur d'une conversation. (comment borner le droit :
         éviter qu'un mec invité tej le proprio de la conv?)
@@ -409,7 +409,7 @@ class ConversationDAO:
         """
         pass
 
-    def ajouter_echange(id_conv: int, echange: Echange) -> bool:
+    def ajouter_echange(conversation_id: int, echange: Echange) -> bool:
         """
         Ajoute un échange à une conversation dans la base de donnée.
 
@@ -446,7 +446,7 @@ class ConversationDAO:
                 message.id = cursor.fetchone()["id"]
         return message
 
-    def mettre_a_j_preprompt_id(id_conv: preprompt_id: str) ->bool:
+    def mettre_a_j_preprompt_id(conversation_id: preprompt_id: str) ->bool:
         """
         Permet de changer le profil du LLM via un système de préprompt
 
