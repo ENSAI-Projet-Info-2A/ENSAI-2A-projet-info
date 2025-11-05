@@ -103,7 +103,7 @@ class ConversationService:
             raise
 
     def lister_conversations(id_utilisateur: int, limite: int) -> List['Conversation']:
-        """Liste les conversations triées par date de mise à jour décroissante."""
+        """Liste les conversations triées par date de mise à jour décroissante.""" 
         if id_utilisateur is None: 
             raise ErreurValidation("L'identifiant de l'utilisateur est requis.")
         if limite < 1 or limite > 100:
