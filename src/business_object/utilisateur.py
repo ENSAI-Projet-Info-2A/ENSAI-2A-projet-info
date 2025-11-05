@@ -1,7 +1,7 @@
 import hmac
 from typing import Optional
 
-from src.utils.securite import hash_password
+from utils.securite import hash_password
 
 
 class Utilisateur:

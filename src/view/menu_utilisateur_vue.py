@@ -1,3 +1,5 @@
+# src/view/menu_utilisateur_vue.py
+
 from InquirerPy import inquirer
 
 from view.session import Session
@@ -5,31 +7,52 @@ from view.vue_abstraite import VueAbstraite
 
 
 class MenuUtilisateurVue(VueAbstraite):
-    """
-    Vue du menu principal de l'utilisateur (tableau de bord ensaiGPT).
+    """Vue du menu de l'utilisateur
+
+    Attributes
+    ----------
+    message : str
+        Message optionnel affiché en haut du menu.
+
+    Returns
+    -------
+    view
+        Retourne la prochaine vue, choisie par l'utilisateur.
     """
 
     def __init__(self, message: str = ""):
         self.message = message
 
     def choisir_menu(self):
-        """Affiche le menu principal et renvoie la prochaine vue à afficher."""
+        """Choix du menu suivant de l'utilisateur.
 
-        print("\n" + "-" * 50)
-        print(f"Bienvenue, {Session().utilisateur.pseudo} !")
-        print("-" * 50 + "\n")
+        Returns
+        -------
+        vue
+            La vue suivante à afficher.
+        """
+        # Sécurité : si pas connecté, retour à l'accueil
+        if Session().utilisateur is None:
+            from view.accueil.accueil_vue import AccueilVue
+
+            return AccueilVue("Veuillez vous connecter.")
+
+        utilisateur = Session().utilisateur
+
+        print("\n" + "-" * 50 + f"\nMenu Utilisateur — {utilisateur.pseudo}\n" + "-" * 50 + "\n")
 
         if self.message:
             print(self.message + "\n")
 
         choix = inquirer.select(
-            message="Que souhaitez-vous faire ?",
+            message="Faites votre choix : ",
             choices=[
                 "Voir mes conversations",
                 "Créer une nouvelle conversation",
                 "Rechercher dans mes conversations",
                 "Voir mes statistiques",
                 "Personnaliser mon assistant",
+                "Infos de session",
                 "Se déconnecter",
             ],
         ).execute()
@@ -37,11 +60,15 @@ class MenuUtilisateurVue(VueAbstraite):
         match choix:
             case "Se déconnecter":
                 Session().deconnexion()
-                from view.accueil.connexion_vue import ConnexionVue
+                from view.accueil.accueil_vue import AccueilVue
 
-                return ConnexionVue()
+                return AccueilVue("Déconnexion effectuée.")
+
+            case "Infos de session":
+                return MenuUtilisateurVue(Session().afficher())
 
             case "Voir mes conversations":
+                # Liste les conversations de l'utilisateur
                 from view.conversations_vue import ConversationsVue
 
                 return ConversationsVue()

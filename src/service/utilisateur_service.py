@@ -1,7 +1,7 @@
-from src.business_object.utilisateur import Utilisateur
-from src.dao.utilisateur_dao import UtilisateurDao
-from src.utils.log_decorator import log
-from src.utils.securite import hash_password
+from business_object.utilisateur import Utilisateur
+from dao.utilisateur_dao import UtilisateurDao
+from utils.log_decorator import log
+from utils.securite import hash_password
 
 
 class UtilisateurService:
@@ -23,7 +23,7 @@ class UtilisateurService:
             return None
 
         user = Utilisateur(id=None, pseudo=pseudo_n, password_hash=hash_password(mdp, pseudo_n))
-        created = UtilisateurDao().creer(user)
+        created = UtilisateurDao().creer_utilisateur(user)
         return created if isinstance(created, Utilisateur) else (user if created else None)
 
     @log

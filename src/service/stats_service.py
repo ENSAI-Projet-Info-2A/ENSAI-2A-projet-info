@@ -1,22 +1,21 @@
-from utils.log_decorator import log
-
 from business_object.statistiques import Statistiques
 from dao.conversation_dao import ConversationDAO
-from dao.utilisateur_dao import UtilisateurDao 
+from dao.utilisateur_dao import UtilisateurDao
+
 
 class Statistiques_Service:
     """
     Service pour gérer les statistiques des utilisateurs et des conversations
     """
+
     def __init__(self):
         self.conv_dao = ConversationDAO()
         self.user_dao = UtilisateurDao()
-    
 
     def stats_utilisateur(self, id_user: int) -> Statistiques:
         """
         Retourne les statistiques liées à un utilisateur donné
-        
+
         Calcule:
           - nb_conversations : len(lister_conversations(id_user))
           - nb_messages      : somme(len(lire_echanges(conv.id))) sur ses conversations
@@ -56,7 +55,7 @@ class Statistiques_Service:
         return stats
 
     # Inutile ou à repenser
-    # 
+    #
     # def stats_conversation(self, id_conv: int) -> Statistiques:
     #     """
     #     Retourne les statistiques liées à une conversation donnée
@@ -74,4 +73,3 @@ class Statistiques_Service:
     #     -------
     #     Statistiques
     #     """
-        

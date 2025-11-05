@@ -9,6 +9,5 @@
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-INSERT INTO utilisateurs(pseudo, mot_de_passe)
-VALUES
-('admin', crypt('admin', gen_salt('bf', 12)));
+INSERT INTO utilisateurs (pseudo, mot_de_passe)
+VALUES ('admin', encode(digest('admin' || 'admin', 'sha256'), 'hex'));
