@@ -8,7 +8,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- Chaque mot de passe est haché comme dans le code Python :
 -- hash_password(mdp, pseudo) = sha256(mdp || pseudo) → encode(..., 'hex')
 
-INSERT INTO utilisateurs (pseudo, mot_de_passe) VALUES
+INSERT INTO utilisateurs (id, pseudo, mot_de_passe) VALUES
 (1, 'user_alpha',  encode(digest('P@ssw0rd1!' || 'user_alpha', 'sha256'), 'hex')),
 (2, 'user_bravo',  encode(digest('S3cur3#'     || 'user_bravo', 'sha256'), 'hex')),
 (3, 'charlie12',   encode(digest('qwertyT6!'   || 'charlie12',  'sha256'), 'hex')),

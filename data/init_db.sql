@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   id           SERIAL PRIMARY KEY,
   user_id      INT NOT NULL REFERENCES utilisateurs(id) ON DELETE CASCADE,
   connexion    TIMESTAMPTZ NOT NULL,
-  deconnexion  TIMESTAMPTZ,                -- NULL si la session est encore ouverte
+  deconnexion  TIMESTAMPTZ              -- NULL si la session est encore ouverte
 );
 
 
