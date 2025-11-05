@@ -12,6 +12,7 @@ class ConversationDAO:
     
     ####faudra revenir dessus car il manque potentiellement le param preprompt_id/traduction
     #### faut rajouter aussi 
+    @staticmethod
     def creer_conversation(conversation):
         """
         créer une nouvelle conversation dans la table Conversation
@@ -39,7 +40,7 @@ class ConversationDAO:
         pass
 
 
-
+    @staticmethod
     def trouver_par_id(id_conv: int) -> Conversation:
         """
         Trouve une conversation dans la base de donnée à partir de son identifiant.
@@ -74,7 +75,7 @@ class ConversationDAO:
             else:
                 raise Exception(f"Aucune conversation trouvée avec id_conv={id_conv}")
     
-
+    @staticmethod
     def renommer_conv(id_conv: int, nouveau_nom: str) -> bool:
         """
         Renomme une conversation dans la base de donnée:
@@ -110,7 +111,7 @@ class ConversationDAO:
         else:
             raise Exception(f"Erreur dans la modification du titre pour id_conv = {id_conv}")
         
-
+    @staticmethod
     def supprimmer_conv(id_conv: int) -> str:
         """
         Supprimme une conversation dans la base de donnée.
@@ -143,7 +144,7 @@ class ConversationDAO:
         else:
             raise Exception(f"echec de la suppression de la conversation d'identifiant {id_conv}")
         
-
+    @staticmethod
     def lister_conversations(id_user: int) -> List[Conversation]:
         """
         Présente une liste des conversations reliées à un joueur.
@@ -183,7 +184,7 @@ class ConversationDAO:
                 raise Exception(f"aucune conversation trouvée pour l'utilisateur {id_user}")
 
         
-
+    @staticmethod
     def rechercher_mot_clef(id_user: int, mot_clef: str) -> List[Conversation]:
         """
         Recherche une conversation selon un mot-clé.
@@ -241,7 +242,7 @@ class ConversationDAO:
                 personnalisation = conv["prompt_id"], date_creation = conv["cree_le"]))
             return liste_finale
 
-
+    @staticmethod
     def rechercher_date(id_user: int, date: Date) -> List[Conversation]:
         """
 
@@ -303,7 +304,7 @@ class ConversationDAO:
             
             return liste_res
 
-
+    @staticmethod
     def lire_echanges(id_conv: int, limit: int) -> List[Echange]:
         """
         Permet de lire les messages d'une conversation donnée.
