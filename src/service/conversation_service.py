@@ -106,8 +106,8 @@ class ConversationService:
         """Liste n conversations de la """
         if id_utilisateur is None: 
             raise ErreurValidation("L'identifiant de l'utilisateur est requis.")
-        if limite < 1 or limite > 100:
-            raise ErreurValidation("La limite doit être comprise entre 1 et 100.")
+        if limite < 1 : #pas de limite supérieure ? 
+            raise ErreurValidation("La limite doit être plus grande ou égale à 1.")
         try:
             res = ConversationDAO.lister_conversations(id_user = id_utilisateur, n=limite)
             if res:
@@ -119,38 +119,86 @@ class ConversationService:
             logger.error("Erreur lors de la récupération des conversations de l'utilisateur %s : %s", id_utilisateur, e)
             raise
                 
-
     def rechercher_conversations(id_utilisateur: int, mot_cle: str, date_recherche: date) -> List['Conversation']:
         """Recherche des conversations selon un mot-clé et une date."""
         if id_utilisateur is None:
             raise ErreurValidation("L'identifiant de l'utilisateur est requis.")
-        return ConversationDAO.rechercher_conversation(id_utilisateur, mot_cle, date_recherche)
+        try:
+            res = ConversationDAO.rechercher_conversation(id_utilisateur, mot_cle, date_recherche)
+            if res:
+                logger.info(f"Conversations de {id_utilisateur} trouvées avec succès (mot-clé: {mot_cle})")
+                return res
+            else:
+                logger.warning(f"Aucune conversation trouvée pour l'utilisateur {id_utilisateur} avec le mot-clé '{mot_cle}'")
+        except Exception as e:
+            logger.error("Erreur lors de la recherche des conversations de l'utilisateur %s : %s", id_utilisateur, e)
+            raise
+
 
     def lire_fil(id_conversation: int, decalage: int, limite: int) -> List['Echange']:
         """Lit les échanges d'une conversation avec pagination."""
         if id_conversation is None:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
-        return ConversationDAO.lire_fil(id_conversation, decalage, limite)
+        try:
+            res = ConversationDAO.lire_fil(id_conversation, decalage, limite)
+            if res:
+                logger.info(f"Lecture du fil de la conversation {id_conversation} réussie (offset={decalage}, limit={limite})")
+                return res
+            else:
+                logger.warning(f"Aucun échange trouvé pour la conversation {id_conversation}")
+        except Exception as e:
+            logger.error("Erreur lors de la lecture du fil de la conversation %s : %s", id_conversation, e)
+            raise
 
-    def rechercher_message(self, id_conversation: int, mot_cle: str, date_recherche: date) -> List['Echange']:
+
+    def rechercher_message(id_conversation: int, mot_cle: str, date_recherche: date) -> List['Echange']:
         """Recherche un message dans une conversation."""
         if id_conversation is None:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
         if not mot_cle and not date_recherche:
             raise ErreurValidation("Un mot-clé ou une date doivent être fournis.")
-        return ConversationDAO.rechercher_message(id_conversation, mot_cle, date_recherche)
+        try:
+            res = ConversationDAO.rechercher_message(id_conversation, mot_cle, date_recherche)
+            if res:
+                logger.info(f"Messages trouvés dans la conversation {id_conversation} (mot-clé: {mot_cle})")
+                return res
+            else:
+                logger.warning(f"Aucun message trouvé dans la conversation {id_conversation} avec les critères donnés.")
+        except Exception as e:
+            logger.error("Erreur lors de la recherche de messages dans la conversation %s : %s", id_conversation, e)
+            raise
 
-    def ajouter_utilisateur(self, id_conversation: int, id_utilisateur: int, role: str) -> bool:
+
+    def ajouter_utilisateur(id_conversation: int, id_utilisateur: int, role: str) -> bool:
         """Ajoute un utilisateur à une conversation."""
         if not id_conversation or not id_utilisateur or not role:
             raise ErreurValidation("Les champs id_conversation, id_utilisateur et rôle sont requis.")
-        return ConversationDAO.ajouter_utilisateur(id_conversation, id_utilisateur, role)
+        try:
+            res = ConversationDAO.ajouter_utilisateur(id_conversation, id_utilisateur, role)
+            if res:
+                logger.info(f"Utilisateur {id_utilisateur} ajouté à la conversation {id_conversation} avec le rôle {role}")
+                return res
+            else:
+                logger.warning(f"Échec de l’ajout de l’utilisateur {id_utilisateur} à la conversation {id_conversation}")
+        except Exception as e:
+            logger.error("Erreur lors de l’ajout de l’utilisateur %s à la conversation %s : %s", id_utilisateur, id_conversation, e)
+            raise
 
-    def retirer_utilisateur(self, id_conversation: int, id_utilisateur: int) -> bool:
+
+    def retirer_utilisateur(id_conversation: int, id_utilisateur: int) -> bool:
         """Retire un utilisateur d'une conversation."""
         if not id_conversation or not id_utilisateur:
             raise ErreurValidation("Les champs id_conversation et id_utilisateur sont requis.")
-        return ConversationDAO.retirer_utilisateur(id_conversation, id_utilisateur)
+        try:
+            res = ConversationDAO.retirer_utilisateur(id_conversation, id_utilisateur)
+            if res:
+                logger.info(f"Utilisateur {id_utilisateur} retiré de la conversation {id_conversation}")
+                return res
+            else:
+                logger.warning(f"Aucun utilisateur {id_utilisateur} trouvé dans la conversation {id_conversation}")
+        except Exception as e:
+            logger.error("Erreur lors du retrait de l’utilisateur %s de la conversation %s : %s", id_utilisateur, id_conversation, e)
+            raise
 
     def mettre_a_jour_personnalisation(self, id_conversation: int, personnalisation: str) -> bool:
         """Met à jour le profil de personnalisation de la conversation."""
