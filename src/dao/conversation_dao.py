@@ -145,9 +145,9 @@ class ConversationDAO:
             raise Exception(f"echec de la suppression de la conversation d'identifiant {id_conv}")
         
     @staticmethod
-    def lister_conversations(id_user: int) -> List[Conversation]:
+    def lister_conversations(id_user: int, n = None) -> List[Conversation]:
         """
-        Présente une liste des conversations reliées à un joueur.
+        Présente une liste des n conversations les plus récentes reliées à un joueur.
 
         Parameters
         ----------
@@ -162,26 +162,32 @@ class ConversationDAO:
         Raises
         ------
         """
+        query = """
+                    SELECT c.*, MAX(m.cree_le) AS dernier_message
+                    FROM conversations c
+                    JOIN conversations_participants uc ON c.id = uc.conversation_id
+                    LEFT JOIN messages m ON c.id = m.conversation_id
+                    WHERE uc.utilisateur_id = %(id_user)s
+                    GROUP BY c.id
+                    ORDER BY dernier_message DESC NULLS LAST;
+                    """
+        params = {"id_user": id_user}
+        if n and n>0:
+            query +=" Limit %(10)s"
+            params["n"]=n
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
-                cursor.execute(
-                """
-                SELECT c.*
-                FROM conversations c
-                JOIN conversations_participants uc ON c.id = uc.conversation.id
-                WHERE uc.utilisateur_id = %(id_user)s;
-                """,
-                {"id_user": id_user}
-                )
-                liste_DAO = cursor.fetchall()
+                    cursor.execute(query,params)
+                    liste_DAO = cursor.fetchall()
             liste_conv = []
             if liste_DAO:
                 for conv in liste_DAO:
-                    liste_conv.append(Conversation(id= conv["id"], nom= conv["titre"], 
-                    personnalisation = conv["prompt_id"], date_creation = conv["cree_le"]))
+                        liste_conv.append(Conversation(id= conv["id"], nom= conv["titre"], 
+                        personnalisation = conv["prompt_id"], date_creation = conv["cree_le"]))
                 return liste_conv
             else:
                 raise Exception(f"aucune conversation trouvée pour l'utilisateur {id_user}")
+        
 
         
     @staticmethod
@@ -502,7 +508,8 @@ class ConversationDAO:
         else:
             raise Exception(f"L'utilisateur {id_user} n'est pas participant de la conversation {id_conv}")
 
-    def ajouter_echange(conversation_id: int, echange: Echange) -> bool:
+    @staticmethod
+    def ajouter_echange(id_conv: int, echange: Echange) -> bool:
         """
         Ajoute un échange à une conversation dans la base de donnée.
 
@@ -531,7 +538,7 @@ class ConversationDAO:
                         VALUES (%(conversation_id)d, %(utilisateur_id)d, %(emetteur)s, %(contenu)s)                          
                     RETURNING id;
                     """, 
-                    {"conversation_id": conversation_id,
+                    {"conversation_id": id_conv,
                      "utilisateur_id": utilisateur_id,
                      "emeteur": emetteur,
                      "contenu": contenu}  
@@ -539,7 +546,8 @@ class ConversationDAO:
                 message.id = cursor.fetchone()["id"]
         return message
 
-    def mettre_a_j_preprompt_id(conversation_id: preprompt_id: str) ->bool:
+    @staticmethod
+    def mettre_a_j_preprompt_id(conversation_id:int, prompt_id: int) -> bool:
         """
         Permet de changer le profil du LLM via un système de préprompt
 
@@ -557,8 +565,16 @@ class ConversationDAO:
         Raises
         ------
         """
-        pass
+        with DBConnection().connection as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    UPDATE conversations
+                    SET prompt_id = %(prompt_id)d
+                    """
+                )
 
+    @staticmethod
     def compter_conversations(id_user: int) -> int:
         """
         Compte le nombre total de conversation d'un utilisateur (compter aussi conv auxquelles il est invité ?).
@@ -576,8 +592,11 @@ class ConversationDAO:
         Raises
         ------
         """
-        pass
+        liste_CONV = lister_conversation(id_user)
+        liste_conv = [conv.id for conv in liste_CONV]
+        return len(liste_conv)
 
+    @staticmethod
     def compter_message_user(id_user: int) -> int:
         """
         Compte le nombre total de messages envoyés par un utilisateur.
@@ -595,8 +614,21 @@ class ConversationDAO:
         Raises
         ------
         """
-        pass
+        with DBConnection().connection as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                """
+                SELECT COUNT(*)
+                FROM message m
+                WHERE m.utilisateur_id = %(id_user)d AND m.emetteur = 'utilisateur'
+                """,
+                {"id_user": id_user}
+                )
+                nombre_messages = cursor.fetchall()
+        return nombre_messages
 
+
+    @staticmethod
     def sujets_plus_frequents(id_user: int, topK: int) -> List[str]:
         """
         Renvoie une liste des sujets les plus fréquents entretenus dans les conversations d'un utilisateur.
