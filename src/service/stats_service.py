@@ -1,6 +1,6 @@
-from src.business_object.statistiques import Statistiques
-from src.dao.conversation_dao import ConversationDAO
-from src.dao.utilisateur_dao import UtilisateurDao
+from business_object.statistiques import Statistiques
+from dao.conversation_dao import ConversationDAO
+from dao.utilisateur_dao import UtilisateurDao
 
 
 class Statistiques_Service:

@@ -2,10 +2,9 @@ import os
 
 from dotenv import load_dotenv
 
-from src.business_object.utilisateur import verifier_password
-from src.dao.utilisateur_dao import UtilisateurDAO
-from src.utils.jtw_utils import creer_token
-from src.utils.jtw_utils import verifier_token as verif_token
+from dao.utilisateur_dao import UtilisateurDAO
+from utils.jtw_utils import creer_token
+from utils.jtw_utils import verifier_token as verif_token
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -49,7 +48,7 @@ class Auth_Service:
         if not utilisateur:
             raise ValueError("Utilisateur introuvable.")
 
-        if not verifier_password(mdp, utilisateur.password_hash):
+        if not utilisateur.verifier_password(mdp):
             raise ValueError("Mot de passe incorrect.")
 
         return creer_token(utilisateur.id, utilisateur.pseudo)
