@@ -79,6 +79,17 @@ CREATE TABLE IF NOT EXISTS messages (
     DEFERRABLE INITIALLY DEFERRED
 );
 
+-----------------------------------------------------
+-- Messages
+-----------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS sessions (
+  id           SERIAL PRIMARY KEY,
+  user_id      INT NOT NULL REFERENCES utilisateurs(id) ON DELETE CASCADE,
+  connexion    TIMESTAMPTZ NOT NULL,
+  deconnexion  TIMESTAMPTZ,                -- NULL si la session est encore ouverte
+);
+
 
 -----------------------------------------------------
 -- Index utiles 
@@ -93,3 +104,6 @@ CREATE INDEX IF NOT EXISTS idx_participants_utilisateur
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_utilisateurs_pseudo_lower
   ON utilisateurs (lower(pseudo));
+
+CREATE INDEX IF NOT EXISTS idx_sessions_user_time
+  ON sessions (user_id, connexion);
