@@ -61,8 +61,13 @@ class ConversationService:
                 raise ErreurNonTrouvee("Conversation introuvable.")
             logger.info(f"conversation d'id = {conversation.id} intitulée {conversation.nom} trouvée", conversation.id, conversation.nom)
             return conversation
-        except Exception as e:
-            logger.error("erreur lors de la recherche de la conversation : %s", e)
+        except ErreurNonTrouvee:
+            raise
+        except ErreurValidation:
+            raise
+        except Exception as e: 
+            logger.error("erreur lors de la recherche de la conversation d'id = %s : %s",id_conversation, e)
+            raise Exception("erreur interne lors de la recherche de la conversation.") from e
 
     def renommer_conversation(self, id_conversation: int, nouveau_titre: str) -> bool:
         """Renomme une conversation existante."""
