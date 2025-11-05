@@ -502,6 +502,7 @@ class ConversationDAO:
         else:
             raise Exception(f"L'utilisateur {id_user} n'est pas participant de la conversation {id_conv}")
 
+    @staticmethod
     def ajouter_echange(id_conv: int, echange: Echange) -> bool:
         """
         Ajoute un échange à une conversation dans la base de donnée.
@@ -539,6 +540,7 @@ class ConversationDAO:
                 message.id = cursor.fetchone()["id"]
         return message
 
+    @staticmethod
     def mettre_a_j_preprompt_id(conversation_id: preprompt_id: str) ->bool:
         """
         Permet de changer le profil du LLM via un système de préprompt
@@ -559,6 +561,7 @@ class ConversationDAO:
         """
         pass
 
+    @staticmethod
     def compter_conversations(id_user: int) -> int:
         """
         Compte le nombre total de conversation d'un utilisateur (compter aussi conv auxquelles il est invité ?).
@@ -576,8 +579,11 @@ class ConversationDAO:
         Raises
         ------
         """
-        pass
+        liste_CONV = lister_conversation(id_user)
+        liste_conv = [conv.id for conv in liste_CONV]
+        return len(liste_conv)
 
+    @staticmethod
     def compter_message_user(id_user: int) -> int:
         """
         Compte le nombre total de messages envoyés par un utilisateur.
@@ -595,8 +601,21 @@ class ConversationDAO:
         Raises
         ------
         """
-        pass
+        with DBConnection().connection as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                """
+                SELECT COUNT(*)
+                FROM message m
+                WHERE m.utilisateur_id = %(id_user)d AND m.emetteur = 'utilisateur'
+                """,
+                {"id_user": id_user}
+                )
+                nombre_messages = cursor.fetchall()
+        return nombre_messages
 
+
+    @staticmethod
     def sujets_plus_frequents(id_user: int, topK: int) -> List[str]:
         """
         Renvoie une liste des sujets les plus fréquents entretenus dans les conversations d'un utilisateur.
