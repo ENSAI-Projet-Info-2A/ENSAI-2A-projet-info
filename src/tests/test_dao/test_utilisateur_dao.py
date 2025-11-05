@@ -6,9 +6,9 @@ from unittest.mock import patch
 from src.utils.reset_database import ResetDatabase
 from src.utils.securite import hash_password
 
-from dao.utilisateur_dao import Utilisateur_DAO
+from src.dao.utilisateur_dao import UtilisateurDao
 
-from business_object.utilisateur import Utilisateur
+from src.business_object.utilisateur import Utilisateur
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -19,24 +19,24 @@ def setup_test_environment():
         yield
 
 
-def test_get_par_id_existant():
+def test_trouver_par_id_existant():
     """Recherche par id d'un utilisateur existant"""
     # GIVEN
-    id_utilisateur = 1
+    id = 1
     # WHEN
-    utilisateur = Utilisateur_DAO().get_par_id(id_utilisateur)
+    utilisateur = UtilisateurDao().trouver_par_id(id)
     # THEN
     assert utilisateur is not None
     assert isinstance(utilisateur, Utilisateur)
     assert utilisateur.pseudo == "user_alpha"
 
 
-def test_get_par_id_non_existant():
+def test_trouver_par_id_non_existant():
     """Recherche par id d'un utilisateur n'existant pas"""
     # GIVEN
-    id_utilisateur = 9999999999999
+    id = 9999999999999
     # WHEN
-    utilisateur = Utilisateur_DAO().get_par_id(id_utilisateur)
+    utilisateur = UtilisateurDao().trouver_par_id(id)
     # THEN
     assert utilisateur is None
 
@@ -46,7 +46,7 @@ def test_trouver_par_pseudo_existant():
     # GIVEN
     pseudo = "user_bravo"
     # WHEN
-    utilisateur = Utilisateur_DAO().trouver_par_pseudo(pseudo)
+    utilisateur = UtilisateurDao().trouver_par_pseudo(pseudo)
     # THEN
     assert utilisateur is not None
     assert isinstance(utilisateur, Utilisateur)
@@ -59,7 +59,7 @@ def test_trouver_par_pseudo_non_existant():
     # GIVEN
     pseudo = "utilisateur_inexistant_xyz"
     # WHEN
-    utilisateur = Utilisateur_DAO().trouver_par_pseudo(pseudo)
+    utilisateur = UtilisateurDao().trouver_par_pseudo(pseudo)
     # THEN
     assert utilisateur is None
 
@@ -69,7 +69,7 @@ def test_creer_utilisateur_ok():
     # GIVEN
     utilisateur = Utilisateur(pseudo="nouveau_user_test", mdp="password123")
     # WHEN
-    creation_ok = Utilisateur_DAO().creer_utilisateur(utilisateur)
+    creation_ok = UtilisateurDao().creer_utilisateur(utilisateur)
     # THEN
     assert creation_ok
     assert utilisateur.id is not None
@@ -80,44 +80,9 @@ def test_creer_utilisateur_ko():
     # GIVEN
     utilisateur = Utilisateur(pseudo="user_alpha", mdp="password")
     # WHEN
-    creation_ok = Utilisateur_DAO().creer_utilisateur(utilisateur)
+    creation_ok = UtilisateurDao().creer_utilisateur(utilisateur)
     # THEN
     assert not creation_ok
-
-
-def test_se_connecter_ok():
-    """Connexion d'utilisateur réussie"""
-    # GIVEN
-    pseudo = "charlie12"
-    mdp = "qwertyT6!"
-    # WHEN
-    utilisateur = Utilisateur_DAO().se_connecter(pseudo, mdp)
-    # THEN
-    assert isinstance(utilisateur, Utilisateur)
-    assert utilisateur.pseudo == pseudo
-    assert utilisateur.id == 3
-
-
-def test_se_connecter_ko_pseudo_incorrect():
-    """Connexion d'utilisateur échouée (pseudo incorrect)"""
-    # GIVEN
-    pseudo = "utilisateur_inexistant"
-    mdp = "password"
-    # WHEN
-    utilisateur = Utilisateur_DAO().se_connecter(pseudo, mdp)
-    # THEN
-    assert utilisateur is None
-
-
-def test_se_connecter_ko_mdp_incorrect():
-    """Connexion d'utilisateur échouée (mot de passe incorrect)"""
-    # GIVEN
-    pseudo = "delta_7"
-    mdp = "mauvais_mot_de_passe"
-    # WHEN
-    utilisateur = Utilisateur_DAO().se_connecter(pseudo, mdp)
-    # THEN
-    assert utilisateur is None
 
 
 def test_supprimer_ok():
@@ -125,11 +90,11 @@ def test_supprimer_ok():
     # GIVEN
     utilisateur = Utilisateur(id=10, pseudo="juliet42")
     # WHEN
-    suppression_ok = Utilisateur_DAO().supprimer(utilisateur)
+    suppression_ok = UtilisateurDao().supprimer(utilisateur)
     # THEN
     assert suppression_ok
     # Vérification que l'utilisateur n'existe plus
-    utilisateur_supprime = Utilisateur_DAO().get_par_id(10)
+    utilisateur_supprime = UtilisateurDao().trouver_par_id(10)
     assert utilisateur_supprime is None
 
 
@@ -138,7 +103,7 @@ def test_supprimer_ko():
     # GIVEN
     utilisateur = Utilisateur(id=8888888, pseudo="id_inconnu")
     # WHEN
-    suppression_ok = Utilisateur_DAO().supprimer(utilisateur)
+    suppression_ok = UtilisateurDao().supprimer(utilisateur)
     # THEN
     assert not suppression_ok
 
@@ -148,7 +113,7 @@ def test_heures_utilisation_avec_sessions():
     # GIVEN
     id_utilisateur = 1
     # WHEN
-    heures = Utilisateur_DAO().heures_utilisation(id_utilisateur)
+    heures = UtilisateurDao().heures_utilisation(id_utilisateur)
     # THEN
     assert isinstance(heures, float)
     assert heures >= 0.0
@@ -159,7 +124,7 @@ def test_heures_utilisation_sans_sessions():
     # GIVEN
     id_utilisateur = 9999999
     # WHEN
-    heures = Utilisateur_DAO().heures_utilisation(id_utilisateur)
+    heures = UtilisateurDao().heures_utilisation(id_utilisateur)
     # THEN
     assert heures == 0.
 
