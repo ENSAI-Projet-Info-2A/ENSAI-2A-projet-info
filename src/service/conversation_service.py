@@ -4,6 +4,8 @@ from business_object.echange import Echange
 from datetime import datetime as Date
 from dao.conversation_dao import ConversationDAO
 
+logger = logging.getLogger(__name__)
+
 class ErreurValidation(Exception):
     """Erreur levée quand les données reçues ne sont pas valides."""
     pass
@@ -31,7 +33,7 @@ class ConversationService:
         --------
             Message de succès de l'implémentation dans la DAO
         """
-        if titre is None:
+        if titre is None: #
             raise ErreurValidation("Le titre est nécéssaire.")
         if len(titre) > 255:
             raise ErreurValidation("Le titre est trop long (maximum 255 caractères).")
