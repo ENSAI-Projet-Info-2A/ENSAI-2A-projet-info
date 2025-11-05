@@ -508,7 +508,7 @@ class ConversationDAO:
         else:
             raise Exception(f"L'utilisateur {id_user} n'est pas participant de la conversation {id_conv}")
 
-    def ajouter_echange(conversation_id: int, echange: Echange) -> bool:
+    def ajouter_echange(id_conv: int, echange: Echange) -> bool:
         """
         Ajoute un échange à une conversation dans la base de donnée.
 
@@ -537,7 +537,7 @@ class ConversationDAO:
                         VALUES (%(conversation_id)d, %(utilisateur_id)d, %(emetteur)s, %(contenu)s)                          
                     RETURNING id;
                     """, 
-                    {"conversation_id": conversation_id,
+                    {"conversation_id": id_conv,
                      "utilisateur_id": utilisateur_id,
                      "emeteur": emetteur,
                      "contenu": contenu}  

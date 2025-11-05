@@ -16,7 +16,7 @@ class MenuUtilisateurVue(VueAbstraite):
         """Affiche le menu principal et renvoie la prochaine vue à afficher."""
 
         print("\n" + "-" * 50)
-        print(f"Bienvenue, {Session().utilisateur.pseudo} 👋")
+        print(f"Bienvenue, {Session().utilisateur.pseudo} !")
         print("-" * 50 + "\n")
 
         if self.message:
