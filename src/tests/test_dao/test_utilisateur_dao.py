@@ -1,0 +1,163 @@
+import os
+
+import pytest
+
+from unittest.mock import patch
+
+from src.utils.reset_database import ResetDatabase
+from src.utils.securite import hash_password
+
+from dao.utilisateur_dao import Utilisateur_DAO
+
+from business_object.utilisateur import Utilisateur
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_environment():
+    """Initialisation des données de test"""
+    with patch.dict(os.environ, {"SCHEMA": "projet_test_dao"}):
+        ResetDatabase().lancer(test_dao=True)
+        yield
+
+
+def test_get_par_id_existant():
+    """Recherche par id d'un utilisateur existant"""
+    # GIVEN
+    id_utilisateur = 1
+    # WHEN
+    utilisateur = Utilisateur_DAO().get_par_id(id_utilisateur)
+    # THEN
+    assert utilisateur is not None
+    assert isinstance(utilisateur, Utilisateur)
+
+
+def test_get_par_id_non_existant():
+    """Recherche par id d'un utilisateur n'existant pas"""
+    # GIVEN
+    id_utilisateur = 9999999999999
+    # WHEN
+    utilisateur = Utilisateur_DAO().get_par_id(id_utilisateur)
+    # THEN
+    assert utilisateur is None
+
+
+def test_trouver_par_pseudo_existant():
+    """Recherche par pseudo d'un utilisateur existant"""
+    # GIVEN
+    pseudo = "test_user"
+    # WHEN
+    utilisateur = Utilisateur_DAO().trouver_par_pseudo(pseudo)
+    # THEN
+    assert utilisateur is not None
+    assert isinstance(utilisateur, Utilisateur)
+    assert utilisateur.pseudo == pseudo
+
+
+def test_trouver_par_pseudo_non_existant():
+    """Recherche par pseudo d'un utilisateur n'existant pas"""
+    # GIVEN
+    pseudo = "utilisateur_inexistant_xyz"
+    # WHEN
+    utilisateur = Utilisateur_DAO().trouver_par_pseudo(pseudo)
+    # THEN
+    assert utilisateur is None
+
+
+def test_creer_utilisateur_ok():
+    """Création d'utilisateur réussie"""
+    # GIVEN
+    utilisateur = Utilisateur(pseudo="nouveau_user", mdp="password123")
+    # WHEN
+    creation_ok = Utilisateur_DAO().creer_utilisateur(utilisateur)
+    # THEN
+    assert creation_ok
+    assert utilisateur.id is not None
+
+
+def test_creer_utilisateur_ko():
+    """Création d'utilisateur échouée (pseudo déjà existant)"""
+    # GIVEN
+    utilisateur = Utilisateur(pseudo="test_user", mdp="password")
+    # WHEN
+    creation_ok = Utilisateur_DAO().creer_utilisateur(utilisateur)
+    # THEN
+    assert not creation_ok
+
+
+def test_se_connecter_ok():
+    """Connexion d'utilisateur réussie"""
+    # GIVEN
+    pseudo = "test_user"
+    mdp = "test_password"
+    # WHEN
+    utilisateur = Utilisateur_DAO().se_connecter(pseudo, mdp)
+    # THEN
+    assert isinstance(utilisateur, Utilisateur)
+    assert utilisateur.pseudo == pseudo
+
+
+def test_se_connecter_ko_pseudo_incorrect():
+    """Connexion d'utilisateur échouée (pseudo incorrect)"""
+    # GIVEN
+    pseudo = "utilisateur_inexistant"
+    mdp = "password"
+    # WHEN
+    utilisateur = Utilisateur_DAO().se_connecter(pseudo, mdp)
+    # THEN
+    assert utilisateur is None
+
+
+def test_se_connecter_ko_mdp_incorrect():
+    """Connexion d'utilisateur échouée (mot de passe incorrect)"""
+    # GIVEN
+    pseudo = "test_user"
+    mdp = "mauvais_mot_de_passe"
+    # WHEN
+    utilisateur = Utilisateur_DAO().se_connecter(pseudo, mdp)
+    # THEN
+    assert utilisateur is None
+
+
+def test_supprimer_ok():
+    """Suppression d'utilisateur réussie"""
+    # GIVEN
+    utilisateur = Utilisateur(id=999, pseudo="user_a_supprimer")
+    # WHEN
+    suppression_ok = Utilisateur_DAO().supprimer(utilisateur)
+    # THEN
+    assert suppression_ok
+
+
+def test_supprimer_ko():
+    """Suppression d'utilisateur échouée (id inconnu)"""
+    # GIVEN
+    utilisateur = Utilisateur(id=8888888, pseudo="id_inconnu")
+    # WHEN
+    suppression_ok = Utilisateur_DAO().supprimer(utilisateur)
+    # THEN
+    assert not suppression_ok
+
+
+def test_heures_utilisation_avec_sessions():
+    """Calcul des heures d'utilisation pour un utilisateur avec des sessions"""
+    # GIVEN
+    id_utilisateur = 1
+    # WHEN
+    heures = Utilisateur_DAO().heures_utilisation(id_utilisateur)
+    # THEN
+    assert isinstance(heures, float)
+    assert heures >= 0.0
+
+
+def test_heures_utilisation_sans_sessions():
+    """Calcul des heures d'utilisation pour un utilisateur sans sessions"""
+    # GIVEN
+    id_utilisateur = 9999999
+    # WHEN
+    heures = Utilisateur_DAO().heures_utilisation(id_utilisateur)
+    # THEN
+    assert heures == 0.0
+
+
+if __name__ == "__main__":
+    pytest.main([__file__])
