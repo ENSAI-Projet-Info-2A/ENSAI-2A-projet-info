@@ -1,9 +1,7 @@
-from utils.log_decorator import log
-from utils.securite import hash_password
-
-from business_object.utilisateur import Utilisateur
-from dao.utilisateur_dao import UtilisateurDao
-import hmac # Pour de la sécurité
+from src.business_object.utilisateur import Utilisateur
+from src.dao.utilisateur_dao import UtilisateurDao
+from src.utils.log_decorator import log
+from src.utils.securite import hash_password
 
 
 class UtilisateurService:
@@ -13,7 +11,7 @@ class UtilisateurService:
         if pseudo is None:
             return None
         p = pseudo.strip()
-        # p = p.lower() 
+        p = p.lower()
         return p or None
 
     @log
@@ -24,8 +22,7 @@ class UtilisateurService:
         if self.pseudo_deja_utilise(pseudo_n):
             return None
 
-        user = Utilisateur(id=None, pseudo=pseudo_n,
-                           password_hash=hash_password(mdp, pseudo_n))
+        user = Utilisateur(id=None, pseudo=pseudo_n, password_hash=hash_password(mdp, pseudo_n))
         created = UtilisateurDao().creer(user)
         return created if isinstance(created, Utilisateur) else (user if created else None)
 
@@ -53,15 +50,18 @@ class UtilisateurService:
     @log
     def pseudo_deja_utilise(self, pseudo: str) -> bool:
         pseudo_n = self._norm_pseudo(pseudo)
-        return False if not pseudo_n else (UtilisateurDao().trouver_par_pseudo(pseudo_n) is not None)
+        return (
+            False if not pseudo_n else (UtilisateurDao().trouver_par_pseudo(pseudo_n) is not None)
+        )
 
     @log
     def se_connecter(self, pseudo: str, mdp: str) -> Utilisateur | None:
         pseudo_n = self._norm_pseudo(pseudo)
         if not pseudo_n or not mdp:
             return None
+
         u = UtilisateurDao().trouver_par_pseudo(pseudo_n)
-        if not u or not u.password_hash:
+        if not u:
             return None
-        expected = hash_password(mdp, pseudo_n)
-        return u if hmac.compare_digest(u.password_hash, expected) else None
+
+        return u if u.verifier_password(mdp) else None
