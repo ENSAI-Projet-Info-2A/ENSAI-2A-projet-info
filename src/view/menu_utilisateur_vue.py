@@ -1,4 +1,4 @@
-# src/view/menu_utilisateur_vue.py
+import logging
 
 from InquirerPy import inquirer
 
@@ -7,88 +7,86 @@ from view.vue_abstraite import VueAbstraite
 
 
 class MenuUtilisateurVue(VueAbstraite):
-    """Vue du menu de l'utilisateur
-
-    Attributes
-    ----------
-    message : str
-        Message optionnel affiché en haut du menu.
-
-    Returns
-    -------
-    view
-        Retourne la prochaine vue, choisie par l'utilisateur.
-    """
+    """Vue principale du menu utilisateur (post-connexion)."""
 
     def __init__(self, message: str = ""):
         self.message = message
 
     def choisir_menu(self):
-        """Choix du menu suivant de l'utilisateur.
-
-        Returns
-        -------
-        vue
-            La vue suivante à afficher.
-        """
-        # Sécurité : si pas connecté, retour à l'accueil
-        if Session().utilisateur is None:
+        """Affiche le menu utilisateur et gère la navigation."""
+        # Vérifie que l'utilisateur est bien connecté
+        utilisateur = Session().utilisateur
+        if utilisateur is None:
             from view.accueil.accueil_vue import AccueilVue
 
-            return AccueilVue("Veuillez vous connecter.")
+            return AccueilVue("Veuillez vous connecter avant d'accéder au menu utilisateur.")
 
-        utilisateur = Session().utilisateur
-
-        print("\n" + "-" * 50 + f"\nMenu Utilisateur — {utilisateur.pseudo}\n" + "-" * 50 + "\n")
+        print("\n" + "-" * 50)
+        print(f"Menu Utilisateur — {utilisateur.pseudo}")
+        print("-" * 50 + "\n")
 
         if self.message:
             print(self.message + "\n")
 
-        choix = inquirer.select(
-            message="Faites votre choix : ",
-            choices=[
-                "Voir mes conversations",
-                "Créer une nouvelle conversation",
-                "Rechercher dans mes conversations",
-                "Voir mes statistiques",
-                "Personnaliser mon assistant",
-                "Infos de session",
-                "Se déconnecter",
-            ],
-        ).execute()
+        try:
+            choix = inquirer.select(
+                message="Faites votre choix : ",
+                choices=[
+                    "Voir mes conversations",
+                    "Créer une nouvelle conversation",
+                    "Rechercher dans mes conversations",
+                    "Voir mes statistiques",
+                    "Personnaliser mon assistant",
+                    "Infos de session",
+                    "Se déconnecter",
+                    "Quitter l'application",
+                ],
+            ).execute()
 
-        match choix:
-            case "Se déconnecter":
-                Session().deconnexion()
-                from view.accueil.accueil_vue import AccueilVue
+            match choix:
+                case "Se déconnecter":
+                    Session().deconnexion()
+                    from view.accueil.accueil_vue import AccueilVue
 
-                return AccueilVue("Déconnexion effectuée.")
+                    return AccueilVue("Déconnexion effectuée avec succès.")
 
-            case "Infos de session":
-                return MenuUtilisateurVue(Session().afficher())
+                case "Infos de session":
+                    return MenuUtilisateurVue(Session().afficher())
 
-            case "Voir mes conversations":
-                # Liste les conversations de l'utilisateur
-                from view.conversations_vue import ConversationsVue
+                case "Voir mes conversations":
+                    from view.conversations_vue import ConversationsVue
 
-                return ConversationsVue()
+                    return ConversationsVue()
 
-            case "Créer une nouvelle conversation":
-                from view.nouvelle_conversation_vue import NouvelleConversationVue
+                case "Créer une nouvelle conversation":
+                    from view.nouvelle_conversation_vue import NouvelleConversationVue
 
-                return NouvelleConversationVue()
+                    return NouvelleConversationVue()
 
-            case "Rechercher dans mes conversations":
-                from view.recherche_vue import RechercheVue
+                case "Rechercher dans mes conversations":
+                    from view.recherche_vue import RechercheVue
 
-                return RechercheVue()
+                    return RechercheVue()
 
-            case "Voir mes statistiques":
-                from view.stats_vue import StatsVue
+                case "Voir mes statistiques":
+                    from view.stats_vue import StatsVue
 
-                return StatsVue()
+                    return StatsVue()
 
-            case "Personnaliser mon assistant":
-                from view.personnalisation_vue import PersonnalisationVue
+                case "Personnaliser mon assistant":
+                    from view.personnalisation_vue import PersonnalisationVue
 
-                return PersonnalisationVue()
+                    return PersonnalisationVue()
+
+                case "Quitter l'application":
+                    print("\nDéconnexion et fermeture de l'application.\n")
+                    Session().deconnexion()
+                    return None  # provoque la sortie dans main.py
+
+        except Exception as e:
+            logging.error(f"[MenuUtilisateurVue] Erreur : {e}")
+            # Revenir sur la même vue avec un message d’erreur
+            return MenuUtilisateurVue("Une erreur est survenue, veuillez réessayer.")
+
+        # Par défaut, si rien n’a été choisi
+        return MenuUtilisateurVue("Choix invalide ou annulé, veuillez réessayer.")

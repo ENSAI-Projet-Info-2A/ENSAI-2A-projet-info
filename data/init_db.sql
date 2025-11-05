@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS utilisateurs (
   id              SERIAL PRIMARY KEY,
   pseudo          TEXT UNIQUE NOT NULL,
   mot_de_passe    TEXT NOT NULL,
+  temps_utilisation TIME,
   cree_le         TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
