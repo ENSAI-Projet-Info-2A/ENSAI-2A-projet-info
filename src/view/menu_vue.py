@@ -1,42 +1,35 @@
 from InquirerPy import inquirer
 
-from view.vue_abstraite import VueAbstraite
 from view.session import Session
+from view.vue_abstraite import VueAbstraite
 
-from service.joueur_service import JoueurService
 
-
-class MenuJoueurVue(VueAbstraite):
-    """Vue du menu du joueur
-
-    Attributes
-    ----------
-    message=''
-        str
-
-    Returns
-    ------
-    view
-        retourne la prochaine vue, celle qui est choisie par l'utilisateur
+class MenuUtilisateurVue(VueAbstraite):
+    """
+    Vue du menu principal de l'utilisateur (tableau de bord ensaiGPT).
     """
 
+    def __init__(self, message: str = ""):
+        self.message = message
+
     def choisir_menu(self):
-        """Choix du menu suivant de l'utilisateur
+        """Affiche le menu principal et renvoie la prochaine vue à afficher."""
 
-        Return
-        ------
-        vue
-            Retourne la vue choisie par l'utilisateur dans le terminal
-        """
+        print("\n" + "-" * 50)
+        print(f"Bienvenue, {Session().utilisateur.pseudo} 👋")
+        print("-" * 50 + "\n")
 
-        print("\n" + "-" * 50 + "\nMenu Joueur\n" + "-" * 50 + "\n")
+        if self.message:
+            print(self.message + "\n")
 
         choix = inquirer.select(
-            message="Faites votre choix : ",
+            message="Que souhaitez-vous faire ?",
             choices=[
-                "Afficher les joueurs de la base de données",
-                "Afficher des pokemons (par appel à un Webservice)",
-                "Infos de session",
+                "Voir mes conversations",
+                "Créer une nouvelle conversation",
+                "Rechercher dans mes conversations",
+                "Voir mes statistiques",
+                "Personnaliser mon assistant",
                 "Se déconnecter",
             ],
         ).execute()
@@ -44,18 +37,31 @@ class MenuJoueurVue(VueAbstraite):
         match choix:
             case "Se déconnecter":
                 Session().deconnexion()
-                from view.accueil.accueil_vue import AccueilVue
+                from view.accueil.connexion_vue import ConnexionVue
 
-                return AccueilVue()
+                return ConnexionVue()
 
-            case "Infos de session":
-                return MenuJoueurVue(Session().afficher())
+            case "Voir mes conversations":
+                from view.conversations_vue import ConversationsVue
 
-            case "Afficher les joueurs de la base de données":
-                joueurs_str = JoueurService().afficher_tous()
-                return MenuJoueurVue(joueurs_str)
+                return ConversationsVue()
 
-            case "Afficher des pokemons (par appel à un Webservice)":
-                from view.pokemon_vue import PokemonVue
+            case "Créer une nouvelle conversation":
+                from view.nouvelle_conversation_vue import NouvelleConversationVue
 
-                return PokemonVue()
+                return NouvelleConversationVue()
+
+            case "Rechercher dans mes conversations":
+                from view.recherche_vue import RechercheVue
+
+                return RechercheVue()
+
+            case "Voir mes statistiques":
+                from view.stats_vue import StatsVue
+
+                return StatsVue()
+
+            case "Personnaliser mon assistant":
+                from view.personnalisation_vue import PersonnalisationVue
+
+                return PersonnalisationVue()
