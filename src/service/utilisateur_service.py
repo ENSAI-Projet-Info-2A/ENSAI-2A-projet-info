@@ -23,7 +23,7 @@ class UtilisateurService:
             return None
 
         user = Utilisateur(id=None, pseudo=pseudo_n, password_hash=hash_password(mdp, pseudo_n))
-        created = UtilisateurDao().creer(user)
+        created = UtilisateurDao().creer_utilisateur(user)
         return created if isinstance(created, Utilisateur) else (user if created else None)
 
     @log
