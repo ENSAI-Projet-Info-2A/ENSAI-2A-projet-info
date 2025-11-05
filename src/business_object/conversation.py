@@ -21,8 +21,9 @@ class Conversation:
         liste des participants de la conversation
     """
 
-    def __init__(self, nom: str, personnalisation: str = "", 
-                 id: int = None, date_creation: datetime = None):
+    def __init__(
+        self, nom: str, personnalisation: str = None, id: int = None, date_creation: datetime = None
+    ):
         """Constructeur"""
         self.id = id
         self.nom = nom
