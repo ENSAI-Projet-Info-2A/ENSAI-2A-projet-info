@@ -547,7 +547,7 @@ class ConversationDAO:
         return message
 
     @staticmethod
-    def mettre_a_j_preprompt_id(conversation_id: preprompt_id: str) ->bool:
+    def mettre_a_j_preprompt_id(conversation_id:int, prompt_id: int) -> bool:
         """
         Permet de changer le profil du LLM via un système de préprompt
 
@@ -565,7 +565,14 @@ class ConversationDAO:
         Raises
         ------
         """
-        pass
+        with DBConnection().connection as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    UPDATE conversations
+                    SET prompt_id = %(prompt_id)d
+                    """
+                )
 
     @staticmethod
     def compter_conversations(id_user: int) -> int:
