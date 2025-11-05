@@ -14,7 +14,7 @@ class ErreurNonTrouvee(Exception):
 
 class ConversationService:
 
-    def creer_conv(self, titre: str, personnalisation: str, id_proprietaire: int):
+    def creer_conv(titre: str, personnalisation: str, id_proprietaire: int):
         """
         Crée une nouvelle conversation.
 
@@ -39,11 +39,11 @@ class ConversationService:
             raise ErreurValidation("La personnalisation est obligatoire.")
         conv = Conversation(nom = titre, personnalisation=personnalisation,id = id_proprietaire )
         try :
-            res = self.dao.creer_conversation(titre, personnalisation, id_proprietaire)
+            res = ConversationDAO.creer_conversation(conv)
             if not res: 
                 raise Exception("l'implémentation de la conversation dans la base de donnée a échouée")
             
-            logger.info("Conversation créée avec id=%s", getattr(conversation, "id", None))
+            logger.info("Conversation créée avec id=%s", getattr(conv, "id", None))
             
             return(f"conversation {titre} créée (id propriétaire = {id_proprietaire})")
         
@@ -51,12 +51,12 @@ class ConversationService:
             logger.error("erreur lors de la création de la conversation : %s", e)
             raise
 
-    def acceder_conversation(self, id_conversation: int):
+    def acceder_conversation(id_conversation: int):
         """Permet d'accéder à une conversation existante."""
         if id_conversation is None:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
         try:
-            conversation = self.dao.trouver_par_id(id_conv = id_conversation)
+            conversation = dao.trouver_par_id(id_conv = id_conversation)
             if conversation is None:
                 raise ErreurNonTrouvee("Conversation introuvable.")
             logger.info(f"conversation d'id = {conversation.id} intitulée {conversation.nom} trouvée", conversation.id, conversation.nom)
@@ -69,7 +69,7 @@ class ConversationService:
             logger.error("erreur lors de la recherche de la conversation d'id = %s : %s",id_conversation, e)
             raise Exception("erreur interne lors de la recherche de la conversation.") from e
 
-    def renommer_conversation(self, id_conversation: int, nouveau_titre: str) -> bool:
+    def renommer_conversation(id_conversation: int, nouveau_titre: str):
         """Renomme une conversation existante."""
         if not id_conversation:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
@@ -77,7 +77,7 @@ class ConversationService:
             raise ErreurValidation("Le nouveau titre est requis.")
 
         try:
-            succes = self.dao.renommer_conversation(id_conversation, nouveau_titre)
+            succes = dao.renommer_conversation(id_conversation, nouveau_titre)
             if succes:
                 logger.info("Conversation %s renommée en '%s'", id_conversation, nouveau_titre)
             else:
@@ -87,13 +87,13 @@ class ConversationService:
             logger.error("Erreur lors du renommage de la conversation %s : %s", id_conversation, e)
             raise
 
-    def supprimer_conversation(self, id_conversation: int) -> bool:
+    def supprimer_conversation(id_conversation: int) -> bool:
         """Supprime une conversation existante."""
         if not id_conversation:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
 
         try:
-            succes = self.dao.supprimer_conversation(id_conversation)
+            succes = dao.supprimer_conv(id_conversation)
             if succes:
                 logger.info("Conversation %s supprimée avec succès", id_conversation)
             else:
@@ -103,25 +103,28 @@ class ConversationService:
             logger.error("Erreur lors de la suppression de la conversation %s : %s", id_conversation, e)
             raise
 
-    def lister_conversations(self, id_utilisateur: int, limite: int) -> List['Conversation']:
+    def lister_conversations(id_utilisateur: int, limite: int) -> List['Conversation']:
         """Liste les conversations triées par date de mise à jour décroissante."""
         if id_utilisateur is None: 
             raise ErreurValidation("L'identifiant de l'utilisateur est requis.")
         if limite < 1 or limite > 100:
             raise ErreurValidation("La limite doit être comprise entre 1 et 100.")
-        return self.dao.lister_conversations(id_utilisateur, limite=limite)
+        try:
+            res = dao.lister_conversations(id_user = id_utilisateur)
+            if res:
+                return 
 
-    def rechercher_conversations(self, id_utilisateur: int, mot_cle: str, date_recherche: date) -> List['Conversation']:
+    def rechercher_conversations(id_utilisateur: int, mot_cle: str, date_recherche: date) -> List['Conversation']:
         """Recherche des conversations selon un mot-clé et une date."""
         if id_utilisateur is None:
             raise ErreurValidation("L'identifiant de l'utilisateur est requis.")
-        return self.dao.rechercher_conversations(id_utilisateur, mot_cle, date_recherche)
+        return dao.rechercher_conversations(id_utilisateur, mot_cle, date_recherche)
 
-    def lire_fil(self, id_conversation: int, decalage: int, limite: int) -> List['Echange']:
+    def lire_fil(id_conversation: int, decalage: int, limite: int) -> List['Echange']:
         """Lit les échanges d'une conversation avec pagination."""
         if id_conversation is None:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
-        return self.dao.lire_fil(id_conversation, decalage, limite)
+        return dao.lire_fil(id_conversation, decalage, limite)
 
     def rechercher_message(self, id_conversation: int, mot_cle: str, date_recherche: date) -> List['Echange']:
         """Recherche un message dans une conversation."""
@@ -129,19 +132,19 @@ class ConversationService:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
         if not mot_cle and not date_recherche:
             raise ErreurValidation("Un mot-clé ou une date doivent être fournis.")
-        return self.dao.rechercher_message(id_conversation, mot_cle, date_recherche)
+        return dao.rechercher_message(id_conversation, mot_cle, date_recherche)
 
     def ajouter_utilisateur(self, id_conversation: int, id_utilisateur: int, role: str) -> bool:
         """Ajoute un utilisateur à une conversation."""
         if not id_conversation or not id_utilisateur or not role:
             raise ErreurValidation("Les champs id_conversation, id_utilisateur et rôle sont requis.")
-        return self.dao.ajouter_utilisateur(id_conversation, id_utilisateur, role)
+        return dao.ajouter_utilisateur(id_conversation, id_utilisateur, role)
 
     def retirer_utilisateur(self, id_conversation: int, id_utilisateur: int) -> bool:
         """Retire un utilisateur d'une conversation."""
         if not id_conversation or not id_utilisateur:
             raise ErreurValidation("Les champs id_conversation et id_utilisateur sont requis.")
-        return self.dao.retirer_utilisateur(id_conversation, id_utilisateur)
+        return dao.retirer_utilisateur(id_conversation, id_utilisateur)
 
     def mettre_a_jour_personnalisation(self, id_conversation: int, personnalisation: str) -> bool:
         """Met à jour le profil de personnalisation de la conversation."""
@@ -151,7 +154,7 @@ class ConversationService:
             raise ErreurValidation("Le champ personnalisation est requis.")
 
         try:
-            succes = self.dao.mettre_a_jour_personnalisation(id_conversation, personnalisation)
+            succes = dao.mettre_a_jour_personnalisation(id_conversation, personnalisation)
             if succes:
                 logger.info("Personnalisation mise à jour pour la conversation %s", id_conversation)
             return succes
@@ -166,7 +169,7 @@ class ConversationService:
         if format_ not in ("json",):
             raise ErreurValidation("Format non supporté.")
         try:
-            echanges = self.dao.lire_fil(id_conversation, decalage=0, limite=10000)
+            echanges = dao.lire_fil(id_conversation, decalage=0, limite=10000)
             if format_ == "json":
                 import json
                 with open(f"conversation_{id_conversation}.json", "w", encoding="utf-8") as fichier:
