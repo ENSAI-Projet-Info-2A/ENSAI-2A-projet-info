@@ -39,7 +39,7 @@ class ConversationService:
             raise ErreurValidation("La personnalisation est obligatoire.")
         conv = Conversation(nom = titre, personnalisation=personnalisation,id = id_proprietaire )
         try :
-            res = dao.creer_conversation(titre, personnalisation, id_proprietaire)
+            res = ConversationDAO.creer_conversation(titre, personnalisation, id_proprietaire)
             if not res: 
                 raise Exception("l'implémentation de la conversation dans la base de donnée a échouée")
             
@@ -56,7 +56,7 @@ class ConversationService:
         if id_conversation is None:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
         try:
-            conversation = dao.trouver_par_id(id_conv = id_conversation)
+            conversation = ConversationDAO.trouver_par_id(id_conv = id_conversation)
             if conversation is None:
                 raise ErreurNonTrouvee("Conversation introuvable.")
             logger.info(f"conversation d'id = {conversation.id} intitulée {conversation.nom} trouvée", conversation.id, conversation.nom)
@@ -77,7 +77,7 @@ class ConversationService:
             raise ErreurValidation("Le nouveau titre est requis.")
 
         try:
-            succes = dao.renommer_conversation(id_conversation, nouveau_titre)
+            succes = ConversationDAO.renommer_conversation(id_conversation, nouveau_titre)
             if succes:
                 logger.info("Conversation %s renommée en '%s'", id_conversation, nouveau_titre)
             else:
@@ -91,9 +91,8 @@ class ConversationService:
         """Supprime une conversation existante."""
         if not id_conversation:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
-
         try:
-            succes = dao.supprimer_conv(id_conversation)
+            succes = ConversationDAO.supprimer_conv(id_conversation)
             if succes:
                 logger.info("Conversation %s supprimée avec succès", id_conversation)
             else:
@@ -110,7 +109,7 @@ class ConversationService:
         if limite < 1 or limite > 100:
             raise ErreurValidation("La limite doit être comprise entre 1 et 100.")
         try:
-            res = dao.lister_conversations(id_user = id_utilisateur)
+            res = ConversationDAO.lister_conversations(id_user = id_utilisateur)
             if res:
                 return 
 
@@ -118,13 +117,13 @@ class ConversationService:
         """Recherche des conversations selon un mot-clé et une date."""
         if id_utilisateur is None:
             raise ErreurValidation("L'identifiant de l'utilisateur est requis.")
-        return dao.rechercher_conversations(id_utilisateur, mot_cle, date_recherche)
+        return ConversationDAO.rechercher_conversations(id_utilisateur, mot_cle, date_recherche)
 
     def lire_fil(id_conversation: int, decalage: int, limite: int) -> List['Echange']:
         """Lit les échanges d'une conversation avec pagination."""
         if id_conversation is None:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
-        return dao.lire_fil(id_conversation, decalage, limite)
+        return ConversationDAO.lire_fil(id_conversation, decalage, limite)
 
     def rechercher_message(self, id_conversation: int, mot_cle: str, date_recherche: date) -> List['Echange']:
         """Recherche un message dans une conversation."""
@@ -132,19 +131,19 @@ class ConversationService:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
         if not mot_cle and not date_recherche:
             raise ErreurValidation("Un mot-clé ou une date doivent être fournis.")
-        return dao.rechercher_message(id_conversation, mot_cle, date_recherche)
+        return ConversationDAO.rechercher_message(id_conversation, mot_cle, date_recherche)
 
     def ajouter_utilisateur(self, id_conversation: int, id_utilisateur: int, role: str) -> bool:
         """Ajoute un utilisateur à une conversation."""
         if not id_conversation or not id_utilisateur or not role:
             raise ErreurValidation("Les champs id_conversation, id_utilisateur et rôle sont requis.")
-        return dao.ajouter_utilisateur(id_conversation, id_utilisateur, role)
+        return ConversationDAO.ajouter_utilisateur(id_conversation, id_utilisateur, role)
 
     def retirer_utilisateur(self, id_conversation: int, id_utilisateur: int) -> bool:
         """Retire un utilisateur d'une conversation."""
         if not id_conversation or not id_utilisateur:
             raise ErreurValidation("Les champs id_conversation et id_utilisateur sont requis.")
-        return dao.retirer_utilisateur(id_conversation, id_utilisateur)
+        return ConversationDAO.retirer_utilisateur(id_conversation, id_utilisateur)
 
     def mettre_a_jour_personnalisation(self, id_conversation: int, personnalisation: str) -> bool:
         """Met à jour le profil de personnalisation de la conversation."""
@@ -152,9 +151,8 @@ class ConversationService:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
         if not personnalisation:
             raise ErreurValidation("Le champ personnalisation est requis.")
-
         try:
-            succes = dao.mettre_a_jour_personnalisation(id_conversation, personnalisation)
+            succes = ConversationDAO.mettre_a_jour_personnalisation(id_conversation, personnalisation)
             if succes:
                 logger.info("Personnalisation mise à jour pour la conversation %s", id_conversation)
             return succes
@@ -169,7 +167,7 @@ class ConversationService:
         if format_ not in ("json",):
             raise ErreurValidation("Format non supporté.")
         try:
-            echanges = dao.lire_fil(id_conversation, decalage=0, limite=10000)
+            echanges = ConversationDAO.lire_fil(id_conversation, decalage=0, limite=10000)
             if format_ == "json":
                 import json
                 with open(f"conversation_{id_conversation}.json", "w", encoding="utf-8") as fichier:
