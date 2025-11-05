@@ -364,7 +364,38 @@ class ConversationDAO:
         Raises
         ------
         """
-        pass
+        with DBConnection().connection as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT * 
+                    FROM messages 
+                    WHERE conversation_id = %(id_conv)s
+                    AND contenu ILIKE %(mot_clef)s
+                    AND DATE(cree_le) = DATE(%(date)s);
+                    """,
+                    {
+                        "id_conv": id_conv,
+                        "mot_clef": f"%{mot_clef}%",
+                        "date": date
+                    }
+                )
+                res = cursor.fetchall()
+            
+            if not res:
+                raise Exception(f"Aucun échange trouvé pour la conversation {id_conv} avec le mot-clé '{mot_clef}' à la date {date}")
+            
+            liste_echanges = []
+            for msg in res:
+                liste_echanges.append(Echange(
+                    id=msg["id"],
+                    agent=msg["emetteur"],
+                    message=msg["contenu"],
+                    date_msg=msg["cree_le"]
+                ))
+            
+            return liste_echanges
+            
 
     def ajouter_participant(conversation_id: int, id_user: int, role: str) -> bool:
         """
@@ -386,7 +417,39 @@ class ConversationDAO:
         Raises
         ------
         """
-        pass
+        with DBConnection().connection as conn:
+            with conn.cursor() as cursor:
+                # 
+                cursor.execute(
+                    """
+                    SELECT COUNT(*) as count
+                    FROM conversations_participants
+                    WHERE conversation_id = %(id_conv)s
+                    AND utilisateur_id = %(id_user)s;
+                    """,
+                    {"id_conv": id_conv, "id_user": id_user}
+                )
+                existe = cursor.fetchone()["count"]
+                
+                if existe > 0:
+                    raise Exception(f"L'utilisateur {id_user} est déjà participant de la conversation {id_conv}")
+                
+                cursor.execute(
+                    """
+                    INSERT INTO conversations_participants (conversation_id, utilisateur_id)
+                    VALUES (%(id_conv)s, %(id_user)s);
+                    """,
+                    {"id_conv": id_conv, "id_user": id_user}
+                )
+                count = cursor.rowcount
+        
+            if count > 0:
+                return True
+            else:
+                raise Exception(f"Erreur lors de l'ajout de l'utilisateur {id_user} à la conversation {id_conv}")
+
+
+        
 
     def retirer_participant(conversation_id: int, id_user: int) -> bool:
         """
@@ -407,7 +470,37 @@ class ConversationDAO:
         Raises
         ------
         """
-        pass
+        with DBConnection().connection as conn:
+            with conn.cursor() as cursor:
+                # 
+                cursor.execute(
+                    """
+                    SELECT COUNT(*) as count
+                    FROM conversations_participants
+                    WHERE conversation_id = %(id_conv)s;
+                    """,
+                    {"id_conv": id_conv}
+                )
+                nb_participants = cursor.fetchone()["count"]
+                
+                if nb_participants <= 1:
+                    raise Exception(f"Impossible de retirer le dernier participant de la conversation {id_conv}")
+                
+                
+                cursor.execute(
+                    """
+                    DELETE FROM conversations_participants
+                    WHERE conversation_id = %(id_conv)s
+                    AND utilisateur_id = %(id_user)s;
+                    """,
+                    {"id_conv": id_conv, "id_user": id_user}
+                )
+                count = cursor.rowcount
+        
+        if count > 0:
+            return True
+        else:
+            raise Exception(f"L'utilisateur {id_user} n'est pas participant de la conversation {id_conv}")
 
     def ajouter_echange(conversation_id: int, echange: Echange) -> bool:
         """
