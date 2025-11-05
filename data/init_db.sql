@@ -89,3 +89,6 @@ CREATE INDEX IF NOT EXISTS idx_messages_conv_cree
 
 CREATE INDEX IF NOT EXISTS idx_participants_utilisateur
   ON conversations_participants (utilisateur_id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_utilisateurs_pseudo_lower
+  ON utilisateurs (lower(pseudo));
