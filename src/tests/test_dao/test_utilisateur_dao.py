@@ -1,5 +1,4 @@
 import os
-
 import pytest
 
 from unittest.mock import patch
@@ -29,6 +28,7 @@ def test_get_par_id_existant():
     # THEN
     assert utilisateur is not None
     assert isinstance(utilisateur, Utilisateur)
+    assert utilisateur.pseudo == "user_alpha"
 
 
 def test_get_par_id_non_existant():
@@ -44,13 +44,14 @@ def test_get_par_id_non_existant():
 def test_trouver_par_pseudo_existant():
     """Recherche par pseudo d'un utilisateur existant"""
     # GIVEN
-    pseudo = "test_user"
+    pseudo = "user_bravo"
     # WHEN
     utilisateur = Utilisateur_DAO().trouver_par_pseudo(pseudo)
     # THEN
     assert utilisateur is not None
     assert isinstance(utilisateur, Utilisateur)
     assert utilisateur.pseudo == pseudo
+    assert utilisateur.id == 2
 
 
 def test_trouver_par_pseudo_non_existant():
@@ -66,7 +67,7 @@ def test_trouver_par_pseudo_non_existant():
 def test_creer_utilisateur_ok():
     """Création d'utilisateur réussie"""
     # GIVEN
-    utilisateur = Utilisateur(pseudo="nouveau_user", mdp="password123")
+    utilisateur = Utilisateur(pseudo="nouveau_user_test", mdp="password123")
     # WHEN
     creation_ok = Utilisateur_DAO().creer_utilisateur(utilisateur)
     # THEN
@@ -77,7 +78,7 @@ def test_creer_utilisateur_ok():
 def test_creer_utilisateur_ko():
     """Création d'utilisateur échouée (pseudo déjà existant)"""
     # GIVEN
-    utilisateur = Utilisateur(pseudo="test_user", mdp="password")
+    utilisateur = Utilisateur(pseudo="user_alpha", mdp="password")
     # WHEN
     creation_ok = Utilisateur_DAO().creer_utilisateur(utilisateur)
     # THEN
@@ -87,13 +88,14 @@ def test_creer_utilisateur_ko():
 def test_se_connecter_ok():
     """Connexion d'utilisateur réussie"""
     # GIVEN
-    pseudo = "test_user"
-    mdp = "test_password"
+    pseudo = "charlie12"
+    mdp = "qwertyT6!"
     # WHEN
     utilisateur = Utilisateur_DAO().se_connecter(pseudo, mdp)
     # THEN
     assert isinstance(utilisateur, Utilisateur)
     assert utilisateur.pseudo == pseudo
+    assert utilisateur.id == 3
 
 
 def test_se_connecter_ko_pseudo_incorrect():
@@ -110,7 +112,7 @@ def test_se_connecter_ko_pseudo_incorrect():
 def test_se_connecter_ko_mdp_incorrect():
     """Connexion d'utilisateur échouée (mot de passe incorrect)"""
     # GIVEN
-    pseudo = "test_user"
+    pseudo = "delta_7"
     mdp = "mauvais_mot_de_passe"
     # WHEN
     utilisateur = Utilisateur_DAO().se_connecter(pseudo, mdp)
@@ -121,11 +123,14 @@ def test_se_connecter_ko_mdp_incorrect():
 def test_supprimer_ok():
     """Suppression d'utilisateur réussie"""
     # GIVEN
-    utilisateur = Utilisateur(id=999, pseudo="user_a_supprimer")
+    utilisateur = Utilisateur(id=10, pseudo="juliet42")
     # WHEN
     suppression_ok = Utilisateur_DAO().supprimer(utilisateur)
     # THEN
     assert suppression_ok
+    # Vérification que l'utilisateur n'existe plus
+    utilisateur_supprime = Utilisateur_DAO().get_par_id(10)
+    assert utilisateur_supprime is None
 
 
 def test_supprimer_ko():
@@ -156,8 +161,7 @@ def test_heures_utilisation_sans_sessions():
     # WHEN
     heures = Utilisateur_DAO().heures_utilisation(id_utilisateur)
     # THEN
-    assert heures == 0.0
-
+    assert heures == 0.
 
 if __name__ == "__main__":
     pytest.main([__file__])
