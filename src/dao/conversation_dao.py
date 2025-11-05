@@ -571,8 +571,15 @@ class ConversationDAO:
                     """
                     UPDATE conversations
                     SET prompt_id = %(prompt_id)d
-                    """
+                    WHERE id = %(conversation_id)s
+                    """,
+                    {"prompt_id": prompt_id, "conversation_id": conversation_id}
                 )
+                count = cursor.rowcount
+        if count > 0:
+            return "personnalité modifié avec succès"
+        else:
+            raise Exception(f"Erreur dans la modification de la personnalisation pour conversation_id = {conversation_id}")
 
     @staticmethod
     def compter_conversations(id_user: int) -> int:
@@ -592,9 +599,8 @@ class ConversationDAO:
         Raises
         ------
         """
-        liste_CONV = lister_conversation(id_user)
-        liste_conv = [conv.id for conv in liste_CONV]
-        return len(liste_conv)
+        liste_CONV = ConversationDAO.lister_conversations(id_user=id_user)
+        return len(liste_CONV)
 
     @staticmethod
     def compter_message_user(id_user: int) -> int:
