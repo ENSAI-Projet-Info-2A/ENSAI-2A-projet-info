@@ -1,35 +1,41 @@
 from datetime import datetime
 
+from dao.session_dao import SessionDAO
 from utils.singleton import Singleton
 
 
 class Session(metaclass=Singleton):
-    """Stocke les données liées à une session.
-    Cela permet par exemple de connaitre le joueur connecté à tout moment
-    depuis n'importe quelle classe.
-    Sans cela, il faudrait transmettre ce joueur entre les différentes vues.
-    """
+    """Stocke l'état local + journalise en base via SessionDAO."""
 
     def __init__(self):
-        """Création de la session"""
         self.utilisateur = None
         self.debut_connexion = None
+        self.session_db_id = None
 
     def connexion(self, utilisateur):
-        """Enregistement des données en session"""
+        """Enregistre la session et crée la ligne en base."""
         self.utilisateur = utilisateur
         self.debut_connexion = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        try:
+            self.session_db_id = SessionDAO().ouvrir(utilisateur.id)
+        except Exception:
+            # On ne casse pas l'UX si la BDD plante : on loguera côté main
+            self.session_db_id = None
 
     def deconnexion(self):
-        """Suppression des données de la session"""
-        self.utilisateur = None
-        self.debut_connexion = None
+        """Ferme la session locale + met à jour la BDD si possible."""
+        try:
+            if self.utilisateur:
+                SessionDAO().fermer_derniere_ouverte(self.utilisateur.id)
+        finally:
+            self.utilisateur = None
+            self.debut_connexion = None
+            self.session_db_id = None
 
     def afficher(self) -> str:
-        """Afficher les informations de connexion"""
         res = "Actuellement en session :\n"
         res += "-------------------------\n"
-        for att in list(self.__dict__.items()):
-            res += f"{att[0]} : {att[1]}\n"
-
+        res += f"utilisateur : {getattr(self.utilisateur, 'pseudo', None)}\n"
+        res += f"debut_connexion : {self.debut_connexion}\n"
+        res += f"session_db_id : {self.session_db_id}\n"
         return res

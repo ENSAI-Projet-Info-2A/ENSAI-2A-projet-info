@@ -1,6 +1,8 @@
 import logging
 from typing import Optional
 
+from psycopg2.extras import RealDictCursor
+
 from business_object.utilisateur import Utilisateur
 from dao.db_connection import DBConnection
 from utils.log_decorator import log
@@ -129,29 +131,46 @@ class UtilisateurDao(metaclass=Singleton):
         return res > 0
 
     @log
-    def heures_utilisation(self, id: int) -> float:
-        """
-        Si ta table s'appelle `session` et référence l'utilisateur par `id`,
-        sinon ajuste les noms ici aussi.
-        """
-        res = None
+    def heures_utilisation(self, user_id: int) -> float:
+        """Somme des sessions terminées (en heures)."""
         try:
-            with DBConnection().connection as connection:
-                with connection.cursor() as cursor:
-                    cursor.execute(
+            with DBConnection().connection as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                    cur.execute(
                         """
-                        SELECT SUM(EXTRACT(EPOCH FROM (deconnexion - connexion)) / 3600) AS total_heures
-                        FROM session
-                        WHERE id = %(id)s
+                        SELECT COALESCE(
+                          SUM(EXTRACT(EPOCH FROM (deconnexion - connexion))) / 3600.0, 0
+                        ) AS total_heures
+                        FROM sessions
+                        WHERE user_id = %(uid)s
                           AND deconnexion IS NOT NULL;
                         """,
-                        {"id": id},
+                        {"uid": user_id},
                     )
-                    res = cursor.fetchone()
-        except Exception as e:
-            logging.error(
-                f"Erreur lors du calcul des heures d'utilisation pour l'utilisateur {id}: {e}"
-            )
+                    row = cur.fetchone()
+                    return float(row["total_heures"] or 0.0)
+        except Exception:
+            logging.exception("Erreur heures_utilisation")
             raise
 
-        return float(res["total_heures"]) if res and res["total_heures"] is not None else 0.0
+    @log
+    def heures_utilisation_incl_courante(self, user_id: int) -> float:
+        """Somme des sessions en tenant compte de la session en cours (NOW())."""
+        try:
+            with DBConnection().connection as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                    cur.execute(
+                        """
+                        SELECT COALESCE(
+                          SUM(EXTRACT(EPOCH FROM (COALESCE(deconnexion, NOW()) - connexion))) / 3600.0, 0
+                        ) AS total_heures
+                        FROM sessions
+                        WHERE user_id = %(uid)s;
+                        """,
+                        {"uid": user_id},
+                    )
+                    row = cur.fetchone()
+                    return float(row["total_heures"] or 0.0)
+        except Exception:
+            logging.exception("Erreur heures_utilisation_incl_courante")
+            raise
