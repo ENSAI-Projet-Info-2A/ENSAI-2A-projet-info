@@ -1,7 +1,5 @@
 import logging
 
-import bcrypt
-
 from utils.singleton import Singleton
 from utils.log_decorator import log
 from utils.securite import hash_password
@@ -42,7 +40,7 @@ class Utilisateur_DAO(metaclass=Singleton):
                         " RETURNING id;                                      ",
                         {
                             "pseudo": utilisateur.pseudo,
-                            "mdp": hash_password(mdp),
+                            "mdp": hash_password(utilisateur.mdp),
                         },
                     )
                     res = cursor.fetchone()
@@ -89,8 +87,6 @@ class Utilisateur_DAO(metaclass=Singleton):
         utilisateur = None
 
         if res:
-            # Vérifier le mot de passe avec bcrypt
-            mdp_hash_stocke = res["mdp"]
             try:
                 if verifier_mot_de_passe(mdp, hash_password(mdp)):
                     # Mot de passe correct
@@ -202,9 +198,7 @@ class Utilisateur_DAO(metaclass=Singleton):
         except Exception as e:
             logging.info(e)
             raise
-
         return res > 0
-
     
     @log
     def heures_utilisation(id: int) -> float:
