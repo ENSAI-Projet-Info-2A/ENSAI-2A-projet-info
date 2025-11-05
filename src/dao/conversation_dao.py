@@ -12,7 +12,7 @@ class ConversationDAO:
     
     ####faudra revenir dessus car il manque potentiellement le param preprompt_id/traduction
     #### faut rajouter aussi 
-    def create(self, conversation):
+    def creer_conversation(self, conversation):
         """
         créer une nouvelle conversation dans la table Conversation
 
@@ -239,6 +239,7 @@ class ConversationDAO:
             for conv in res:
                 liste_finale.append(Conversation(id= conv["id"], nom= conv["titre"], 
                 personnalisation = conv["prompt_id"], date_creation = conv["cree_le"]))
+            return liste_finale
 
 
     def rechercher_date(id_user: int, date: Date) -> List[Conversation]:
@@ -337,10 +338,9 @@ class ConversationDAO:
                 liste_conv = []
                 for conv in res:
                     liste_conv.append(Echange(id = conv["id"] , agent = conv["emetteur"], 
-                    message = conv[], date_msg = conv[], agent_name = conv[]))
+                    message = conv["contenu"], date_msg = conv["cree_le"]))
+                return liste_conv
 
-                
-        pass
 
     def rechercher_echange(id_conv: int, mot_clef: str, date: Date) -> List[Echange]:
         """
