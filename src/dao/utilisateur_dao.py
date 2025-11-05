@@ -1,17 +1,17 @@
 import logging
 from typing import Optional
 
-from business_object.utilisateur import Utilisateur
-from dao.db_connection import DBConnection
-from utils.log_decorator import log
-from utils.singleton import Singleton
+from src.business_object.utilisateur import Utilisateur
+from src.dao.db_connection import DBConnection
+from src.utils.log_decorator import log
+from src.utils.singleton import Singleton
 
 
 class UtilisateurDao(metaclass=Singleton):
     """Accès base de données pour les utilisateurs (table: utilisateurs)"""
 
     @log
-    def creer(self, utilisateur: Utilisateur) -> bool:
+    def creer_utilisateur(self, utilisateur: Utilisateur) -> bool:
         """
         Insère l'utilisateur.
         On attend:
