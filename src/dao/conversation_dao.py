@@ -163,14 +163,14 @@ class ConversationDAO:
         ------
         """
         query = """
-                    SELECT c.*, MAX(m.cree_le) AS dernier_message
-                    FROM conversations c
-                    JOIN conversations_participants uc ON c.id = uc.conversation_id
-                    LEFT JOIN messages m ON c.id = m.conversation_id
-                    WHERE uc.utilisateur_id = %(id_user)s
-                    GROUP BY c.id
-                    ORDER BY dernier_message DESC NULLS LAST;
-                    """
+                SELECT c.*, MAX(m.cree_le) AS dernier_message
+                FROM conversations c
+                JOIN conversations_participants uc ON c.id = uc.conversation_id
+                LEFT JOIN messages m ON c.id = m.conversation_id
+                WHERE uc.utilisateur_id = %(id_user)s
+                GROUP BY c.id
+                ORDER BY dernier_message DESC NULLS LAST;
+                """
         params = {"id_user": id_user}
         if n and n>0:
             query +=" Limit %(10)s"
