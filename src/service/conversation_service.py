@@ -120,11 +120,53 @@ class ConversationService:
             raise
                 
 
-    def rechercher_conversations(id_utilisateur: int, mot_cle: str, date_recherche: date) -> List['Conversation']:
+    def rechercher_conversations(id_utilisateur: int, mot_cle = None, date_recherche= None) -> List['Conversation']:
         """Recherche des conversations selon un mot-clé et une date."""
         if id_utilisateur is None:
             raise ErreurValidation("L'identifiant de l'utilisateur est requis.")
-        return ConversationDAO.rechercher_conversation(id_utilisateur, mot_cle, date_recherche)
+        if not (mot_cle and date_recherche):
+            try:
+                res = ConversationDAO.lister_conversations(id_user = id_utilisateur)
+                if res:
+                    logger.info(f"conversations de {id_utilisateur} trouvées")
+                    return res
+                else:
+                    logger.warning(f"Aucune conversation trouvée pour {id_utilisateur}")
+            except Exception as e:
+                logger.error("Erreur lors de la recherche des conversations de l'utilisateur %s : %s", id_utilisateur, e)
+                raise
+
+        elif mot_cle and not date_recherche:
+            try:
+                res = ConversationDAO.rechercher_mot_clef(id_user=id_utilisateur, mot_clef=mot_cle)
+                if res:
+                    logger.info(f"conversations de {id_utilisateur} trouvées")
+                    return res
+                else:
+                    logger.warning(f"Aucune conversation trouvée pour {id_utilisateur} pour le mot clef {mot_cle}")
+            except Exception as e:
+                logger.error("Erreur lors de la recherche des conversations de l'utilisateur %s pour le mot_cle %s : %s", 
+                id_utilisateur, mot_cle, e)
+                raise
+        elif date_recherche and not mot_cle:
+            try:
+                res = ConversationDAO.rechercher_date(id_user=id_utilisateur, date=date_recherche)
+                if res:
+                    logger.info(f"conversations de {id_utilisateur} trouvées")
+                    return res
+                else:
+                    logger.warning(f"Aucune conversation trouvée pour {id_utilisateur} pour la date {date_recherche}")
+            except Exception as e:
+                logger.error("Erreur lors de la recherche des conversations de l'utilisateur %s pour la date %s : %s", 
+                id_utilisateur, date_recherche, e)
+                raise
+        elif date_recherche and mot_cle:
+            try:
+                res = ConversationDAO.
+
+
+
+
 
     def lire_fil(id_conversation: int, decalage: int, limite: int) -> List['Echange']:
         """Lit les échanges d'une conversation avec pagination."""
