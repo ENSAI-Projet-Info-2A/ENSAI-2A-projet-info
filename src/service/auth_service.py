@@ -1,6 +1,6 @@
 
 from dao.utilisateur_dao import Utilisateur_DAO 
-from utils.securite import verifier_mot_de_passe
+from business_object import verifier_password
 from utils.jtw_utils import creer_token, verifier_token as verif_token
 import os
 from dotenv import load_dotenv
