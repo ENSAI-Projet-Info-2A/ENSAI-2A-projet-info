@@ -1,9 +1,11 @@
-
-from dao.utilisateur_dao import Utilisateur_DAO 
-from business_object import verifier_password
-from utils.jtw_utils import creer_token, verifier_token as verif_token
 import os
+
 from dotenv import load_dotenv
+
+from src.business_object.utilisateur import verifier_password
+from src.dao.utilisateur_dao import UtilisateurDAO
+from src.utils.jtw_utils import creer_token
+from src.utils.jtw_utils import verifier_token as verif_token
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -13,7 +15,8 @@ class Auth_Service:
     """
     Service d'authentification pour gérer les connexions utilisateurs
     """
-    def __init__(self, utilisateur_dao: Utilisateur_DAO):
+
+    def __init__(self, utilisateur_dao: UtilisateurDAO):
         """
         Initialise le service d'authentification avec un DAO utilisateur.
 
