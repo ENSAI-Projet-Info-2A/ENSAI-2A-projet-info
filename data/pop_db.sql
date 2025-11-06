@@ -7,7 +7,7 @@
 -- ('gilbert',    'toto',     21,      'gilbert@projet.fr',    false),
 -- ('junior',     'aaaa',     15,      'junior@projet.fr',     true);
 
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
 
 INSERT INTO utilisateurs (pseudo, mot_de_passe)
 VALUES ('admin', encode(digest('admin' || 'admin', 'sha256'), 'hex'));
