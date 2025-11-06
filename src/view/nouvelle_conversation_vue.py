@@ -2,12 +2,7 @@ import logging
 
 from InquirerPy import inquirer
 
-print("Check OK")
-
 from service.conversation_service import ConversationService, ErreurValidation
-
-print("Check OK 2")
-
 from view.session import Session
 from view.vue_abstraite import VueAbstraite
 
