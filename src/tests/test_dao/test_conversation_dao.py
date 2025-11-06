@@ -3,12 +3,12 @@ import pytest
 
 from unittest.mock import patch
 
-from src.utils.reset_database import ResetDatabase
-from src.utils.securite import hash_password
+from utils.reset_database import ResetDatabase
+from utils.securite import hash_password
 
-from src.dao.conversation_dao import ConversationDAO
+from dao.conversation_dao import ConversationDAO
 
-from src.business_object.conversation import Conversation
+from business_object.conversation import Conversation
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -25,5 +25,14 @@ def test_creer_conversation_valide():
     print(conv)
     # WHEN
     res = ConversationDAO.creer_conversation(conv)
-    #THEN
+    # THEN
     assert isinstance(res, Conversation)
+
+def test_trouver_par_id():
+    # GIVEN
+    id_conv = 3
+    # WHEN 
+    res = ConversationDAO.trouver_par_id(id_conv=id_conv)
+    # THEN 
+    assert isinstance(res, Conversation) 
+
