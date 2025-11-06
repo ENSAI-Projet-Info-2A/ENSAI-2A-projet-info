@@ -1,3 +1,5 @@
+print("HEREEEE")
+
 import logging
 from datetime import datetime as Date
 from typing import List
@@ -5,9 +7,14 @@ from typing import List
 from business_object.conversation import Conversation
 from business_object.echange import Echange
 from dao.conversation_dao import ConversationDAO
+
+print("ici")
+
 from dao.prompt_dao import PromptDAO
 
 logger = logging.getLogger(__name__)
+
+print("Load - Conversation service : import")
 
 
 class ErreurValidation(Exception):
@@ -143,19 +150,23 @@ class ConversationService:
             raise
 
     def lister_conversations(id_utilisateur: int, limite=None) -> List["Conversation"]:
-        """Liste n conversations de la"""
+        """Liste les conversations d'un utilisateur. Renvoie [] s'il n'y en a pas."""
         if id_utilisateur is None:
             raise ErreurValidation("L'identifiant de l'utilisateur est requis.")
-        if limite < 1:  # pas de limite supérieure ?
+        if limite is not None and limite < 1:
             raise ErreurValidation("La limite doit être plus grande ou égale à 1.")
+
         try:
             res = ConversationDAO.lister_conversations(id_user=id_utilisateur, n=limite)
-            if res:
-                logger.info(f"Conversations de {id_utilisateur} listées avec succès")
-                return res
-            else:
-                logger.warning(f"Aucune conversation trouvée pour l'id {id_utilisateur}")
+            # Si la DAO renvoie une liste, on la passe telle quelle
+            return res or []
         except Exception as e:
+            # La DAO lève actuellement une Exception quand aucun résultat.
+            # On transforme proprement en liste vide pour la vue.
+            msg = str(e).lower()
+            if "aucune conversation trouvée" in msg or "aucune conversation" in msg:
+                return []
+            # Autre erreur = vraie erreur
             logger.error(
                 "Erreur lors de la récupération des conversations de l'utilisateur %s : %s",
                 id_utilisateur,
@@ -200,19 +211,22 @@ class ConversationService:
             logger.error("Erreur lors de la recherche des conversations : %s", e)
             raise
 
-    def lire_fil(id_conversation: int, decalage: int, limite: int) -> List["Echange"]:
-        """Lit les échanges d'une conversation avec pagination."""
+    def lire_fil(id_conversation: int, decalage: int, limite: int):
         if id_conversation is None:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
+
+        # petites sécurités
+        decalage = max(0, int(decalage or 0))
+        limite = max(1, int(limite or 20))
+
         try:
-            res = ConversationDAO.lire_fil(id_conversation, decalage, limite)
-            if res:
-                logger.info(
-                    f"Lecture du fil de la conversation {id_conversation} réussie (offset={decalage}, limit={limite})"
-                )
-                return res
-            else:
+            # La DAO n’a pas d’offset: on récupère un peu plus et on tranche côté Python
+            brut = ConversationDAO.lire_echanges(id_conversation, limite + decalage)
+            if not brut:
                 logger.warning(f"Aucun échange trouvé pour la conversation {id_conversation}")
+                return []
+
+            return brut[decalage : decalage + limite]
         except Exception as e:
             logger.error(
                 "Erreur lors de la lecture du fil de la conversation %s : %s", id_conversation, e
@@ -350,3 +364,6 @@ class ConversationService:
 
         # self.dao.ajouter_echange(echange)
         return echange
+
+
+print("Load : Conversation service")
