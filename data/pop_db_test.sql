@@ -23,10 +23,10 @@ INSERT INTO utilisateurs (id, pseudo, mot_de_passe) VALUES
 
 -- prompts
 INSERT INTO prompts(id, nom, contenu,version) VALUES
-(1,'fr_tuteur_strict_v2','Tu es tuteur strict en français.Corrige toutes les fautes d''orthographe et de grammaire.',1)
-(2,'math_tuteur','Tu es tuteur en maths.Expliquer les concepts fondamentaux de la geometrie',2)
-(3,'codeur_python','vous êtes un excellent codeur python. Veuillez expliquer les concepts suivants:mock, swagg',1)
-(4,'math_prof', 'Tu es un professeur de mathématiques patient. Explique les concepts étape par étape avec des exemples concrets.', 3),
+(1,'fr_tuteur_strict_v2','Tu es tuteur strict en français.Corrige toutes les fautes d''orthographe et de grammaire.',1),
+(2,'math_tuteur','Tu es tuteur en maths.Expliquer les concepts fondamentaux de la geometrie',2),
+(3,'codeur_python','vous êtes un excellent codeur python. Veuillez expliquer les concepts suivants:mock, swagg',1),
+(4,'math_prof', 'Tu es un professeur de mathématiques patient. Explique les concepts étape par étape avec des exemples concrets.', 3);
 
 
 INSERT INTO conversations (id, titre, prompt_id, cree_le) VALUES
