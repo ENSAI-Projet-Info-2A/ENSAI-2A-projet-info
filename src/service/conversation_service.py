@@ -170,37 +170,37 @@ class ConversationService:
     def rechercher_conversations(
         id_utilisateur: int, mot_cle=None, date_recherche=None
     ) -> List["Conversation"]:
-        """Recherche des conversations selon un mot-clé et une date."""
         if id_utilisateur is None:
             raise ErreurValidation("L'identifiant de l'utilisateur est requis.")
 
+        # Normaliser les entrées
+        if isinstance(mot_cle, str):
+            mot_cle = mot_cle.strip()
+            if mot_cle == "":
+                mot_cle = None
+
         try:
-            if mot_cle and date_recherche:
-                # Appel d'une méthode DAO combinant les deux critères
+            if mot_cle is not None and date_recherche is not None:
                 res = ConversationDAO.rechercher_conv_motC_et_date(
                     id_user=id_utilisateur, mot_cle=mot_cle, date=date_recherche
                 )
                 logger.info("Recherche combinée par mot-clé et date effectuée.")
-
-            elif mot_cle and not date_recherche:
+            elif mot_cle is not None:
                 res = ConversationDAO.rechercher_mot_clef(id_user=id_utilisateur, mot_clef=mot_cle)
                 logger.info("Recherche par mot-clé effectuée.")
-
-            elif date_recherche and not mot_cle:
+            elif date_recherche is not None:
                 res = ConversationDAO.rechercher_date(id_user=id_utilisateur, date=date_recherche)
                 logger.info("Recherche par date effectuée.")
-
             else:
                 res = ConversationDAO.lister_conversations(id_user=id_utilisateur)
                 logger.info("Aucun critère fourni, listing général.")
 
-            if res:
-                logger.info("Conversations trouvées pour %s", id_utilisateur)
-                return res
-            else:
-                logger.warning("Aucune conversation trouvée pour %s", id_utilisateur)
-                return []
+            return res or []
+
         except Exception as e:
+            msg = str(e).lower()
+            if "aucune conversation" in msg or "pas de messages" in msg:
+                return []
             logger.error("Erreur lors de la recherche des conversations : %s", e)
             raise
 
