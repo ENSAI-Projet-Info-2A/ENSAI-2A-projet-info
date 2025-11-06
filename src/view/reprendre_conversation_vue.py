@@ -55,13 +55,11 @@ class ReprendreConversationVue(VueAbstraite):
         texte = inquirer.text(message="Votre message :", default="").execute().strip()
         if not texte:
             return ReprendreConversationVue(self.conv, "Message vide, rien envoyé.")
-
-        # Options (simples et optionnelles)
-        opts = {}
         try:
             rep = ConversationService.demander_assistant(
-                message=texte, options=opts, id_conversation=self.conv.id
+                message=texte, options=None, id_conversation=self.conv.id
             )
+            print(rep)
         except ErreurValidation as e:
             return ReprendreConversationVue(self.conv, f"Erreur de validation : {e}")
         except Exception as e:

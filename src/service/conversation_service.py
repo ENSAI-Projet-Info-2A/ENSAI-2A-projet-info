@@ -2,10 +2,10 @@ import logging
 from datetime import datetime as Date
 from typing import List
 
-from business_object.conversation import Conversation
-from business_object.echange import Echange
-from dao.conversation_dao import ConversationDAO
-from dao.prompt_dao import PromptDAO
+from src.business_object.conversation import Conversation
+from src.business_object.echange import Echange
+from src.dao.conversation_dao import ConversationDAO
+from src.dao.prompt_dao import PromptDAO
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +40,39 @@ class ConversationService:
         if pid is None:
             raise ErreurValidation(f"Prompt inconnu: '{personnalisation}'")
         return pid
+
+    DEFAULT_SYSTEM_PROMPT = "Tu es un assistant utile."
+
+    @staticmethod
+    def _resolve_system_prompt_for_conv(id_conversation: int | None) -> str:
+        """
+        Texte 'system' à placer en tête du history pour le LLM.
+        - Si la conversation a une personnalisation (prompt_id), on tente d'en récupérer le contenu.
+        - Sinon, on renvoie un prompt par défaut.
+        """
+        if not id_conversation:
+            return ConversationService.DEFAULT_SYSTEM_PROMPT
+
+        try:
+            conv = ConversationDAO.trouver_par_id(id_conv=id_conversation)
+            prompt_id = getattr(conv, "personnalisation", None)
+            if not prompt_id:
+                return ConversationService.DEFAULT_SYSTEM_PROMPT
+
+            # Essaie des API possibles de PromptDAO selon ton code réel
+            if hasattr(PromptDAO, "get_prompt_text_by_id"):
+                txt = PromptDAO.get_prompt_text_by_id(prompt_id)
+                return txt or ConversationService.DEFAULT_SYSTEM_PROMPT
+
+            if hasattr(PromptDAO, "get_by_id"):
+                p = PromptDAO.get_by_id(prompt_id)
+                for attr in ("contenu", "content", "texte", "text", "prompt"):
+                    if hasattr(p, attr) and getattr(p, attr):
+                        return getattr(p, attr)
+
+            return ConversationService.DEFAULT_SYSTEM_PROMPT
+        except Exception:
+            return ConversationService.DEFAULT_SYSTEM_PROMPT
 
     @staticmethod
     def creer_conv(titre: str, personnalisation, id_proprietaire: int | None = None) -> str:
@@ -229,7 +262,7 @@ class ConversationService:
         if not mot_cle and not date_recherche:
             raise ErreurValidation("Un mot-clé ou une date doivent être fournis.")
         try:
-            res = ConversationDAO.rechercher_message(id_conversation, mot_cle, date_recherche)
+            res = ConversationDAO.rechercher_echange(id_conversation, mot_cle, date_recherche)
             if res:
                 logger.info(
                     f"Messages trouvés dans la conversation {id_conversation} (mot-clé: {mot_cle})"
@@ -298,17 +331,21 @@ class ConversationService:
             raise
 
     def mettre_a_jour_personnalisation(self, id_conversation: int, personnalisation: str) -> bool:
-        """Met à jour le profil de personnalisation de la conversation."""
+        """Met à jour le profil (prompt) de la conversation."""
         if not id_conversation:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
-        if not personnalisation:
+        if personnalisation is None:
             raise ErreurValidation("Le champ personnalisation est requis.")
         try:
-            succes = ConversationDAO.mettre_a_jour_personnalisation(
-                id_conversation, personnalisation
-            )
+            prompt_id = ConversationService._resolve_prompt_id(personnalisation)
+            print(prompt_id)
+            succes = ConversationDAO.mettre_a_j_preprompt_id(id_conversation, prompt_id)
             if succes:
-                logger.info("Personnalisation mise à jour pour la conversation %s", id_conversation)
+                logger.info(
+                    "Personnalisation mise à jour (prompt_id=%s) pour la conversation %s",
+                    prompt_id,
+                    id_conversation,
+                )
             return succes
         except Exception as e:
             logger.error("Erreur lors de la mise à jour de la personnalisation : %s", e)
@@ -336,53 +373,67 @@ class ConversationService:
             )
             raise
 
-    def demander_assistant(self, message: str, options=None, id_conversation: int | None = None):
+    DEFAULT_SYSTEM_PROMPT = "Tu es un assistant utile."
+
+    @staticmethod
+    def demander_assistant(message: str, options=None, id_conversation: int | None = None):
         """
         Envoie un message à l'assistant et reçoit une réponse du LLM.
-        - Si une conversation est donnée, ajoute le message à son historique.
-        - Récupère la réponse du modèle et la persiste (si possible).
+        Injecte un message 'system' en tête du history (non stocké en BDD).
         """
         from business_object.echange import Echange
-        from client.llm_client import LLM_API
+
+        # Charge le client LLM
+        try:
+            try:
+                from client.llm_client import LLM_API
+            except ImportError:
+                from src.client.llm_client import LLM_API
+        except Exception as imp_err:
+            logger.error("Impossible de charger LLM_API: %s", imp_err)
+            raise
 
         if not message or not message.strip():
             raise ErreurValidation("Le message est requis.")
 
         logger.info("Assistant appelé avec le message : %s", message[:80])
 
-        # Valeurs par défaut simples
         temperature = float(options.get("temperature", 0.7)) if options else 0.7
         top_p = float(options.get("top_p", 1.0)) if options else 1.0
         max_tokens = int(options.get("max_tokens", 512)) if options else 512
         stop = options.get("stop") if options and "stop" in options else None
 
-        # Historique existant (si la conversation est connue)
-        history = []
+        # 1) Prompt système (non persisté)
+        system_prompt = ConversationService._resolve_system_prompt_for_conv(id_conversation)
+
+        # 2) Historique existant -> rôles LLM
+        history = [{"role": "system", "content": system_prompt}]
         if id_conversation:
             try:
                 anciens = ConversationDAO.lire_echanges(id_conversation, offset=0, limit=1000) or []
                 for e in anciens:
-                    role = (
-                        "assistant"
-                        if getattr(e, "expediteur", "").lower() == "assistant"
-                        else "user"
-                    )
-                    history.append({"role": role, "content": e.message})
+                    emet = (
+                        getattr(e, "expediteur", "")
+                        or getattr(e, "agent", "")
+                        or getattr(e, "emetteur", "")
+                    ).lower()
+                    # BDD: 'ia' / 'utilisateur'  -> LLM: 'assistant' / 'user'
+                    role = "assistant" if emet in ("ia", "assistant") else "user"
+                    contenu = getattr(e, "message", getattr(e, "contenu", ""))
+                    history.append({"role": role, "content": contenu})
             except Exception as e:
                 logger.warning(
                     "Impossible de récupérer l'historique (conv=%s) : %s", id_conversation, e
                 )
 
-        # Ajouter le message utilisateur courant
+        # 3) Ajoute le message utilisateur courant
         history.append({"role": "user", "content": message})
 
-        # Appel au client LLM
+        # 4) Appel LLM (ton client attend des Echange)
         client = LLM_API()
         reponse = client.generate(
             history=[
-                # Conversion vers Echange pour respecter l’API du client
-                Echange(agent=h["role"], message=h["content"], agent_name=None)
-                for h in history
+                Echange(agent=h["role"], message=h["content"], agent_name=None) for h in history
             ],
             temperature=temperature,
             top_p=top_p,
@@ -390,29 +441,37 @@ class ConversationService:
             stop=stop,
         )
 
-        # Création de l’objet Echange pour la réponse
+        # 5) Réponse applicative
         echange_assistant = Echange(
             id_conversation=id_conversation,
-            expediteur="assistant",
-            message=reponse.message,
+            expediteur="assistant",  # côté app (pour la vue); en BDD on utilisera 'ia'
+            message=getattr(reponse, "message", str(reponse)),
             date_echange=Date.today(),
         )
 
-        # Persistance du message utilisateur + réponse (si possible)
-        if id_conversation:
+        # 6) Persistance en BDD (si conversation connue)
+        if id_conversation and hasattr(ConversationDAO, "ajouter_echange"):
             try:
-                e_user = Echange(
+                # En BDD: emetteur attendu = 'utilisateur' / 'ia'
+                e_user_db = Echange(
                     id_conversation=id_conversation,
-                    expediteur="user",
-                    message=message,
-                    date_echange=Date.today(),
+                    emetteur="utilisateur",
+                    contenu=message,
+                    utilisateur_id=None,  # mets l'id user si on le veux/peux
                 )
-                if hasattr(ConversationDAO, "ajouter_echange"):
-                    ConversationDAO.ajouter_echange(e_user)
-                    ConversationDAO.ajouter_echange(echange_assistant)
-                else:
-                    logger.info("La DAO ne supporte pas encore l’ajout d’échanges.")
+                e_assistant_db = Echange(
+                    id_conversation=id_conversation,
+                    emetteur="ia",
+                    contenu=echange_assistant.message,
+                    utilisateur_id=None,
+                )
+                ConversationDAO.ajouter_echange(id_conversation, e_user_db)
+                ConversationDAO.ajouter_echange(id_conversation, e_assistant_db)
             except Exception as e:
                 logger.warning("Échec de la persistance des échanges : %s", e)
+        else:
+            logger.info(
+                "Historique non persisté (pas d'id_conversation ou DAO sans ajouter_echange)."
+            )
 
         return echange_assistant

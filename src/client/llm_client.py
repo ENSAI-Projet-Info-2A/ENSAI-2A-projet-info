@@ -7,7 +7,6 @@ import requests
 
 from src.business_object.echange import Echange
 
-
 class LLM_API:
     """
     Client pour l'API LLM (Large Language Model).
