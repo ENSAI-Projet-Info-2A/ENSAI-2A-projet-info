@@ -33,11 +33,11 @@ INSERT INTO conversations (titre, prompt_id, cree_le) VALUES
 ('Recette de pastèque au maroilles', 1, '2025-01-12 10:23:45+00'),
 ('comment faire disparaître un corps rapidement', 1, '2025-02-03 22:41:09+00'),
 ('comment diagonaliser une matrice', 1, '2025-03-15 09:12:30+00'),
-('j ai peur des fraises et j ai 50 ans', 1, '2025-04-28 17:05:12+00'),
-('j ai regardé one piece et depuis je vote à gauche', 1, '2025-05-09 14:56:33+00'),
-('j adore Harry potter et Bernard Henry-Levy', 1, '2025-07-21 08:44:18+00'),
+('j''ai peur des fraises et j''ai 50 ans', 1, '2025-04-28 17:05:12+00'),
+('j''ai regardé one piece et depuis je vote à gauche', 1, '2025-05-09 14:56:33+00'),
+('j''adore Harry potter et Bernard Henry-Levy', 1, '2025-07-21 08:44:18+00'),
 ('pourquoi la terre est plate ?', 1, '2025-09-11 23:19:00+00'),
-('Je suis fan de tokyo hotel et ma femme m a quitté', 1, '2025-10-30 12:31:55+00');
+('Je suis fan de tokyo hotel et ma femme m''a quitté', 1, '2025-10-30 12:31:55+00');
 
 
 
