@@ -41,7 +41,7 @@ INSERT INTO conversations (titre, prompt_id, cree_le) VALUES
 
 
 
-INSERT INTO conversations_participants (id, conversation_id, utilisateur_id) VALUES
+INSERT INTO conversations_participants (conversation_id, utilisateur_id) VALUES
 (2, 10),
 (2, 4),
 (2, 6),
