@@ -20,3 +20,11 @@ INSERT INTO utilisateurs (id, pseudo, mot_de_passe) VALUES
 (9, 'india7',      encode(digest('Ind1aPass'   || 'india7',     'sha256'), 'hex')),
 (10, 'juliet42',    encode(digest('JuLieT_42'   || 'juliet42',   'sha256'), 'hex'));
 
+-- prompts
+INSERT INTO prompts(id, nom, contenu,version) VALUES
+(1,'fr_tuteur_strict_v2','Tu es tuteur strict en français.Corrige toutes les fautes d''orthographe et de grammaire.',1)
+(2,'math_tuteur','Tu es tuteur en maths.Expliquer les concepts fondamentaux de la geometrie',2)
+(3,'codeur_python','vous êtes un excellent codeur python. Veuillez expliquer les concepts suivants:mock, swagg',1)
+(4,'math_prof', 'Tu es un professeur de mathématiques patient. Explique les concepts étape par étape avec des exemples concrets.', 3),
+
+
