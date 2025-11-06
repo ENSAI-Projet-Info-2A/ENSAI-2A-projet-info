@@ -113,7 +113,7 @@ class ConversationService:
             raise ErreurValidation("Le nouveau titre est requis.")
 
         try:
-            succes = ConversationDAO.renommer_conversation(id_conversation, nouveau_titre)
+            succes = ConversationDAO.renommer_conv(id_conversation, nouveau_titre)
             if succes:
                 logger.info("Conversation %s renommée en '%s'", id_conversation, nouveau_titre)
             else:

@@ -160,3 +160,7 @@ cython_debug/
 #.idea/
 
 logs/*
+
+
+#connexion perso à la Base de donnée 
+.env
