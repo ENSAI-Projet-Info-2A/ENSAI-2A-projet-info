@@ -342,7 +342,7 @@ class ConversationService:
             )
             raise
 
-    def demander_assistant(self, message: str, options=None):
+    def demander_assistant(self, message: str, options=None):  # A modifier
         """Envoie un message à l'assistant et reçoit une réponse."""
         if not message or not message.strip():
             raise ErreurValidation("Le message est requis.")
