@@ -138,6 +138,8 @@ class ConversationDAO:
         Raises
         ------
         """
+        if not isinstance(id_conv, int):
+            raise Exception(f"l'id {id_conv} est invalide et doit être un entier naturel")
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
                 cursor.execute(

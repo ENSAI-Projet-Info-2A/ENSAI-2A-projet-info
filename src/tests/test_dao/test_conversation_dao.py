@@ -78,8 +78,24 @@ def test_supprimer_conv():
     id_conv_a_sup = conv_a_sup.id
     # WHEN
     res = ConversationDAO.supprimer_conv(id_conv_a_sup)
-    #THEN 
+    # THEN 
     assert res == f"la conversation d'id={id_conv_a_sup} a bien été supprimée"
 
+def test_supprimer_conv_fail():
+    # GIVEN 
+    id_conv = 200000
+    # WHEN + THEN 
+    with pytest.raises(Exception) as exc_info:
+        ConversationDAO.supprimer_conv(id_conv)
+    assert "echec de la suppression de la conversation d'identifiant 20000" in str(exc_info.value)
 
+def test_supprimer_conv_fail_2():
+    # GIVEN 
+    id_conv = "mauvais_id"
+    # WHEN + THEN 
+    with pytest.raises(Exception) as exc_info:
+        ConversationDAO.supprimer_conv(id_conv)
+    assert "l'id mauvais_id est invalide et doit être un entier naturel" in str(exc_info.value)
+
+def
 
