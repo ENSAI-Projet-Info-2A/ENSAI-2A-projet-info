@@ -208,18 +208,12 @@ class ConversationService:
         if id_conversation is None:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
 
-        # petites sécurités
-        decalage = max(0, int(decalage or 0))
-        limite = max(1, int(limite or 20))
+        offset = max(0, int(decalage or 0))
+        limit = max(1, int(limite or 20))
 
         try:
-            # La DAO n’a pas d’offset: on récupère un peu plus et on tranche côté Python
-            brut = ConversationDAO.lire_echanges(id_conversation, limite + decalage)
-            if not brut:
-                logger.warning(f"Aucun échange trouvé pour la conversation {id_conversation}")
-                return []
-
-            return brut[decalage : decalage + limite]
+            # pagination/tri faits en SQL
+            return ConversationDAO.lire_echanges(id_conversation, offset=offset, limit=limit) or []
         except Exception as e:
             logger.error(
                 "Erreur lors de la lecture du fil de la conversation %s : %s", id_conversation, e
@@ -260,7 +254,7 @@ class ConversationService:
                 "Les champs id_conversation, id_utilisateur et rôle sont requis."
             )
         try:
-            res = ConversationDAO.ajouter_utilisateur(id_conversation, id_utilisateur, role)
+            res = ConversationDAO.ajouter_participant(id_conversation, id_utilisateur, role)
             if res:
                 logger.info(
                     f"Utilisateur {id_utilisateur} ajouté à la conversation {id_conversation} avec le rôle {role}"
@@ -284,7 +278,7 @@ class ConversationService:
         if not id_conversation or not id_utilisateur:
             raise ErreurValidation("Les champs id_conversation et id_utilisateur sont requis.")
         try:
-            res = ConversationDAO.retirer_utilisateur(id_conversation, id_utilisateur)
+            res = ConversationDAO.retirer_participant(id_conversation, id_utilisateur)
             if res:
                 logger.info(
                     f"Utilisateur {id_utilisateur} retiré de la conversation {id_conversation}"
@@ -327,7 +321,7 @@ class ConversationService:
         if format_ not in ("json",):
             raise ErreurValidation("Format non supporté.")
         try:
-            echanges = ConversationDAO.lire_fil(id_conversation, decalage=0, limite=10000)
+            echanges = ConversationDAO.lire_echanges(id_conversation, offset=0, limit=10000)
             if format_ == "json":
                 import json
 
@@ -342,18 +336,83 @@ class ConversationService:
             )
             raise
 
-    def demander_assistant(self, message: str, options=None):  # A modifier
-        """Envoie un message à l'assistant et reçoit une réponse."""
+    def demander_assistant(self, message: str, options=None, id_conversation: int | None = None):
+        """
+        Envoie un message à l'assistant et reçoit une réponse du LLM.
+        - Si une conversation est donnée, ajoute le message à son historique.
+        - Récupère la réponse du modèle et la persiste (si possible).
+        """
+        from business_object.echange import Echange
+        from client.llm_client import LLM_API
+
         if not message or not message.strip():
             raise ErreurValidation("Le message est requis.")
 
-        logger.info("Assistant appelé avec le message : %s", message[:50])
+        logger.info("Assistant appelé avec le message : %s", message[:80])
 
-        reponse = f"Voici une réponse simulée à : {message[:50]}"
+        # Valeurs par défaut simples
+        temperature = float(options.get("temperature", 0.7)) if options else 0.7
+        top_p = float(options.get("top_p", 1.0)) if options else 1.0
+        max_tokens = int(options.get("max_tokens", 512)) if options else 512
+        stop = options.get("stop") if options and "stop" in options else None
 
-        echange = Echange(
-            id_conversation=None, expediteur="assistant", message=reponse, date_echange=Date.today()
+        # Historique existant (si la conversation est connue)
+        history = []
+        if id_conversation:
+            try:
+                anciens = ConversationDAO.lire_echanges(id_conversation, offset=0, limit=1000) or []
+                for e in anciens:
+                    role = (
+                        "assistant"
+                        if getattr(e, "expediteur", "").lower() == "assistant"
+                        else "user"
+                    )
+                    history.append({"role": role, "content": e.message})
+            except Exception as e:
+                logger.warning(
+                    "Impossible de récupérer l'historique (conv=%s) : %s", id_conversation, e
+                )
+
+        # Ajouter le message utilisateur courant
+        history.append({"role": "user", "content": message})
+
+        # Appel au client LLM
+        client = LLM_API()
+        reponse = client.generate(
+            history=[
+                # Conversion vers Echange pour respecter l’API du client
+                Echange(agent=h["role"], message=h["content"], agent_name=None)
+                for h in history
+            ],
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            stop=stop,
         )
 
-        # self.dao.ajouter_echange(echange)
-        return echange
+        # Création de l’objet Echange pour la réponse
+        echange_assistant = Echange(
+            id_conversation=id_conversation,
+            expediteur="assistant",
+            message=reponse.message,
+            date_echange=Date.today(),
+        )
+
+        # Persistance du message utilisateur + réponse (si possible)
+        if id_conversation:
+            try:
+                e_user = Echange(
+                    id_conversation=id_conversation,
+                    expediteur="user",
+                    message=message,
+                    date_echange=Date.today(),
+                )
+                if hasattr(ConversationDAO, "ajouter_echange"):
+                    ConversationDAO.ajouter_echange(e_user)
+                    ConversationDAO.ajouter_echange(echange_assistant)
+                else:
+                    logger.info("La DAO ne supporte pas encore l’ajout d’échanges.")
+            except Exception as e:
+                logger.warning("Échec de la persistance des échanges : %s", e)
+
+        return echange_assistant
