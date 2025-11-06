@@ -36,7 +36,10 @@ class UtilisateurDao(metaclass=Singleton):
                         },
                     )
                     res = cursor.fetchone()
+        #except Exception as e:
+        #    logging.info(e)
         except Exception as e:
+            print("ERREUR SQL :", e)
             logging.info(e)
 
         if res:
