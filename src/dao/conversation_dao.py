@@ -118,7 +118,7 @@ class ConversationDAO:
             raise Exception(f"Erreur dans la modification du titre pour id_conv = {id_conv}")
 
     @staticmethod
-    def supprimmer_conv(id_conv: int) -> str:
+    def supprimer_conv(id_conv: int) -> str:
         """
         Supprimme une conversation dans la base de donnée.
 
@@ -220,7 +220,7 @@ class ConversationDAO:
                     """,
                     {"uid": id_user, "pattern": pattern},
                 )
-                rows = cur.fetchall() or []
+                rows = cur.fetchall()
         return [
             Conversation(
                 id=r["id"],
