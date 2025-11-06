@@ -59,6 +59,7 @@ class ReprendreConversationVue(VueAbstraite):
             rep = ConversationService.demander_assistant(
                 message=texte, options=None, id_conversation=self.conv.id
             )
+            print(rep)
         except ErreurValidation as e:
             return ReprendreConversationVue(self.conv, f"Erreur de validation : {e}")
         except Exception as e:
