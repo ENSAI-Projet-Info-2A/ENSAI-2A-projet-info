@@ -34,7 +34,7 @@ def test_trouver_par_id():
     # WHEN 
     res = ConversationDAO.trouver_par_id(id_conv=id_conv)
     # THEN 
-    assert isinstance(res, Conversation) 
+    assert id_conv == res.id
 
 def test_trouver_par_id_fail():
     # GIVEN 
@@ -70,3 +70,16 @@ def test_renommer_conv_fail_2():
     with pytest.raises(Exception) as exc_info:
         ConversationDAO.renommer_conv(id_conv, nouveau_nom)
     assert "l'id mauvais_id est invalide et doit être un entier naturel" in str(exc_info.value)
+
+def test_supprimer_conv():
+    # GIVEN
+    conv = Conversation(nom= "conv_test_a_supprimer")
+    conv_a_sup = ConversationDAO.creer_conversation(conv)
+    id_conv_a_sup = conv_a_sup.id
+    # WHEN
+    res = ConversationDAO.supprimer_conv(id_conv_a_sup)
+    #THEN 
+    assert res == f"la conversation d'id={id_conv_a_sup} a bien été supprimée"
+
+
+

@@ -148,7 +148,7 @@ class ConversationDAO:
                 )
             count = cursor.rowcount
         if count > 0:
-            return f"la conversation d'id={id_conv} a bien été supprimmée"
+            return f"la conversation d'id={id_conv} a bien été supprimée"
         else:
             raise Exception(f"echec de la suppression de la conversation d'identifiant {id_conv}")
 
