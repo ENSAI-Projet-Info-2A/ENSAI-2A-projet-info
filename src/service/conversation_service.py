@@ -1,5 +1,3 @@
-print("HEREEEE")
-
 import logging
 from datetime import datetime as Date
 from typing import List
@@ -7,14 +5,9 @@ from typing import List
 from business_object.conversation import Conversation
 from business_object.echange import Echange
 from dao.conversation_dao import ConversationDAO
-
-print("ici")
-
 from dao.prompt_dao import PromptDAO
 
 logger = logging.getLogger(__name__)
-
-print("Load - Conversation service : import")
 
 
 class ErreurValidation(Exception):
@@ -364,6 +357,3 @@ class ConversationService:
 
         # self.dao.ajouter_echange(echange)
         return echange
-
-
-print("Load : Conversation service")
