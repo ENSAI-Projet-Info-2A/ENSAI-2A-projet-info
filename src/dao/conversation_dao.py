@@ -1,6 +1,7 @@
 import datetime
 import re
 from collections import Counter
+from typing import List
 
 from business_object.conversation import Conversation
 from business_object.echange import Echange
@@ -17,7 +18,7 @@ class ConversationDAO:
         if not titre:
             raise ValueError("Le nom (titre) de la conversation est obligatoire.")
 
-        # Resolve prompt_id (comme tu fais déjà) :
+        # Resolve prompt_id :
         perso = conversation.personnalisation
         prompt_id = None
         if isinstance(perso, str):
@@ -333,48 +334,48 @@ class ConversationDAO:
         ]
 
     @staticmethod
-    def lire_echanges(id_conv: int, limit: int) -> list[Echange]:
+    def lire_echanges(id_conv: int, offset: int = 0, limit: int = 20) -> List[Echange]:
         """
-        Permet de lire les messages d'une conversation donnée.
-
-        Parameters
-        ----------
-            id_conv : int
-                l'identifiant du joueur
-
-        Returns
-        -------
-            List[Echange]
-
-
-        Raises
-        ------
+        Retourne les messages d'une conversation, triés du plus récent au plus ancien,
+        avec pagination SQL (offset/limit).
         """
+        if limit <= 0:
+            limit = 20
+        if offset < 0:
+            offset = 0
+
+        sql = """
+            SELECT id, emetteur, contenu, cree_le
+            FROM messages
+            WHERE conversation_id = %(id_conv)s
+            ORDER BY cree_le DESC
+            LIMIT %(limit)s OFFSET %(offset)s;
+        """
+
         with DBConnection().connection as conn:
-            with conn.cursor() as cursor:
-                cursor.execute(
-                    """
-                    SELECT * 
-                    FROM messages 
-                    WHERE conversation_id = %(id_conv)s
-                    """,
-                    {"id_conv": id_conv},
-                )
-                res = cursor.fetchall()
-            if not res:
-                raise Exception(f"pas de messages trouvés pour l'identifiant {id_conv}")
-            else:
-                liste_conv = []
-                for conv in res:
-                    liste_conv.append(
-                        Echange(
-                            id=conv["id"],
-                            agent=conv["emetteur"],
-                            message=conv["contenu"],
-                            date_msg=conv["cree_le"],
-                        )
-                    )
-                return liste_conv
+            with conn.cursor() as cur:
+                cur.execute(sql, {"id_conv": id_conv, "limit": limit, "offset": offset})
+                rows = cur.fetchall() or []
+
+        echanges: List[Echange] = []
+        for r in rows:
+            e = Echange(
+                id=r["id"],
+                expediteur=r["emetteur"],  # 'utilisateur' ou 'ia'
+                message=r["contenu"],
+                date_echange=r["cree_le"],
+            )
+
+            # (Compat : si ton BO Echange attend d'autres alias, on peut doubler)
+            try:
+                setattr(e, "agent", r["emetteur"])
+                setattr(e, "date_msg", r["cree_le"])
+            except Exception:
+                pass
+
+            echanges.append(e)
+
+        return echanges
 
     def rechercher_echange(
         conversation_id: int, mot_clef: str, date: datetime.date
@@ -562,23 +563,34 @@ class ConversationDAO:
             ExceptionType
                 Description des exceptions levées (optionnel).
         """
+        emetteur = getattr(echange, "emetteur", None) or getattr(echange, "expediteur", None)
+        contenu = getattr(echange, "contenu", None) or getattr(echange, "message", None)
+        utilisateur_id = getattr(echange, "utilisateur_id", None)
+
+        if emetteur not in ("utilisateur", "ia"):
+            raise Exception(f"emetteur invalide: {emetteur!r} (attendu 'utilisateur' ou 'ia')")
+
+        # Contrainte fonctionnelle cohérente avec le CHECK de la table
+        if emetteur == "utilisateur" and utilisateur_id is None:
+            raise Exception("utilisateur_id requis quand emetteur='utilisateur'")
+
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
                     """
                     INSERT INTO messages (conversation_id, utilisateur_id, emetteur, contenu)
-                        VALUES (%(conversation_id)d, %(utilisateur_id)d, %(emetteur)s, %(contenu)s)                          
+                    VALUES (%(conversation_id)s, %(utilisateur_id)s, %(emetteur)s, %(contenu)s)
                     RETURNING id;
                     """,
                     {
                         "conversation_id": id_conv,
-                        "utilisateur_id": echange.utilisateur_id,
-                        "emetteur": echange.emetteur,
-                        "contenu": echange.contenu,
+                        "utilisateur_id": utilisateur_id,
+                        "emetteur": emetteur,
+                        "contenu": contenu,
                     },
                 )
                 echange.id = cursor.fetchone()["id"]
-        return echange
+        return True
 
     @staticmethod
     def mettre_a_j_preprompt_id(conversation_id: int, prompt_id: int) -> bool:

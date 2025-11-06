@@ -62,7 +62,6 @@ class ConversationsVue(VueAbstraite):
         mapping = {}
         items = []
         for conv in conversations:
-            # conv.nom / conv.id présents selon ton BO
             label = f"[{conv.id}] {conv.nom}"
             items.append(label)
             mapping[label] = conv
@@ -87,7 +86,7 @@ class ConversationsVue(VueAbstraite):
             action = inquirer.select(
                 message=f"Conversation « {conv.nom} » — que voulez-vous faire ?",
                 choices=[
-                    "Ouvrir (voir les derniers messages)",
+                    "Reprendre la discussion",
                     "Renommer",
                     "Supprimer",
                     "↩︎ Retour à la liste",
@@ -96,43 +95,11 @@ class ConversationsVue(VueAbstraite):
             ).execute()
 
             match action:
-                case "Ouvrir (voir les derniers messages)":
-                    # On lit les 20 derniers messages (offset 0, limit 20)
-                    try:
-                        echanges = (
-                            ConversationService.lire_fil(
-                                id_conversation=conv.id, decalage=0, limite=20
-                            )
-                            or []
-                        )
-                    except Exception as e:
-                        logging.error(f"[ConversationsVue] Erreur lire_fil conv={conv.id} : {e}")
-                        return ConversationsVue(
-                            "Impossible d'afficher les messages de cette conversation."
-                        )
+                case "Reprendre la discussion":
+                    # On bascule vers la vue détaillée qui gère l'affichage + envoi de messages, etc.
+                    from view.reprendre_conversation_vue import ReprendreConversationVue
 
-                    print("\n" + "-" * 50)
-                    print(f"Conversation « {conv.nom} » — derniers messages")
-                    print("-" * 50 + "\n")
-
-                    if not echanges:
-                        print("(Aucun message pour l’instant)\n")
-                    else:
-                        # echange.agent / echange.message / echange.date_msg selon ton BO côté DAO
-                        for e in echanges:
-                            auteur = getattr(e, "agent", getattr(e, "expediteur", ""))
-                            contenu = getattr(e, "message", getattr(e, "contenu", ""))
-                            date_msg = getattr(e, "date_msg", getattr(e, "date_echange", ""))
-                            print(f"- {auteur} | {date_msg} : {contenu}")
-
-                        print()
-
-                    # Attendre entrée pour revenir à la liste
-                    inquirer.text(
-                        message="Appuyez sur Entrée pour revenir à la liste...",
-                        default="",
-                    ).execute()
-                    return ConversationsVue()
+                    return ReprendreConversationVue(conv)
 
                 case "Renommer":
                     try:
