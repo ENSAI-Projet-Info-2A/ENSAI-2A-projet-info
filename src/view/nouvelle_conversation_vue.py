@@ -2,7 +2,12 @@ import logging
 
 from InquirerPy import inquirer
 
+print("Check OK")
+
 from service.conversation_service import ConversationService, ErreurValidation
+
+print("Check OK 2")
+
 from view.session import Session
 from view.vue_abstraite import VueAbstraite
 
@@ -15,7 +20,6 @@ class NouvelleConversationVue(VueAbstraite):
 
     def choisir_menu(self):
         # 1) Sécurité : utilisateur connecté
-        print("here")
         utilisateur = Session().utilisateur
         if utilisateur is None:
             from view.accueil.accueil_vue import AccueilVue
@@ -40,9 +44,15 @@ class NouvelleConversationVue(VueAbstraite):
             # Tu peux mettre ici un select si tu as une liste de prompts en BDD
             personnalisation = inquirer.text(
                 message="Nom du profil de personnalisation (ex: 'par_defaut') : ",
-                default="par_defaut",
+                default="",
             ).execute()
 
+            # Normaliser : vide -> None
+            if not personnalisation or not personnalisation.strip():
+                personnalisation = None
+            print(personnalisation)
+
+            print("coucou")
             # 3) Appel service
             # ConversationService.creer_conv(...) doit lever ErreurValidation en cas d'inputs invalides
             msg = ConversationService.creer_conv(
@@ -50,6 +60,8 @@ class NouvelleConversationVue(VueAbstraite):
                 personnalisation=personnalisation,
                 id_proprietaire=utilisateur.id,
             )
+
+            print(msg)
 
             # 4) Succès → retour au menu utilisateur avec message
             from view.menu_utilisateur_vue import MenuUtilisateurVue

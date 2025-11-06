@@ -39,7 +39,6 @@ class MenuUtilisateurVue(VueAbstraite):
                     "Personnaliser mon assistant",
                     "Infos de session",
                     "Se déconnecter",
-                    "Quitter l'application",
                 ],
             ).execute()
 
@@ -59,9 +58,10 @@ class MenuUtilisateurVue(VueAbstraite):
                     return ConversationsVue()
 
                 case "Créer une nouvelle conversation":
+                    print("here 1")
                     from view.nouvelle_conversation_vue import NouvelleConversationVue
 
-                    print("here 12")
+                    print("here 2")
                     return NouvelleConversationVue()
 
                 case "Rechercher dans mes conversations":
@@ -78,11 +78,6 @@ class MenuUtilisateurVue(VueAbstraite):
                     from view.personnalisation_vue import PersonnalisationVue
 
                     return PersonnalisationVue()
-
-                case "Quitter l'application":
-                    print("\nDéconnexion et fermeture de l'application.\n")
-                    Session().deconnexion()
-                    return None  # provoque la sortie dans main.py
 
         except Exception as e:
             logging.error(f"[MenuUtilisateurVue] Erreur : {e}")
