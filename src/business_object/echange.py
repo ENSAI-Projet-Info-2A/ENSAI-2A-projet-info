@@ -18,11 +18,18 @@ class Echange:
     """
 
     def __init__(
-        self, message: str, agent: str = "utilisateur", id: int = None, date_msg: datetime = None
+        self,
+        message: str,
+        agent: str = "utilisateur",
+        agent_name: str = "",
+        id: int = None,
+        date_msg: datetime = None,
     ):
+        """Constructeur"""
         self.id = id
         self.agent = agent
         self.message = message
+        self.agent_name = agent_name
         self.date_msg = date_msg if date_msg else datetime.now()
 
     def afficher_echange(self) -> str:
