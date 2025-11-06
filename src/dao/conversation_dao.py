@@ -1,85 +1,84 @@
+import re
+from collections import Counter
+from datetime import datetime
 from datetime import datetime as Date
 
 from business_object.conversation import Conversation
 from business_object.echange import Echange
 from dao.db_connection import DBConnection
+from dao.prompt_dao import PromptDAO
 
-import psycopg2.extras
-from datetime import datetime as Date
-
-from collections import Counter
-import re
 
 class ConversationDAO:
-    ####faudra revenir dessus car il manque potentiellement le param preprompt_id/traduction
-    #### faut rajouter aussi
     @staticmethod
-    def creer_conversation(conversation: Conversation):
+    def creer_conversation(conversation: Conversation) -> Conversation:
         """
-        créer une nouvelle conversation dans la table Conversation
+        Insère dans `conversations` uniquement (titre, prompt_id). Pas d'owner ici.
+        - conversation.nom  -> titre
+        - conversation.personnalisation (nom de prompt | id | None) -> prompt_id
+        """
+        # Titre obligatoire
+        titre = (conversation.nom or "").strip()
+        if not titre:
+            raise ValueError("Le nom (titre) de la conversation est obligatoire.")
 
-        Parameters
-        ----------
-            conversation : int
-                identifiant de la conversation
-        """
+        # Résoudre prompt_id :
+        perso = conversation.personnalisation
+        prompt_id = None
+        if isinstance(perso, str):
+            perso = perso.strip()
+            if perso:  # nom de prompt fourni
+                prompt_id = PromptDAO.get_id_by_name(perso)
+                if prompt_id is None:
+                    raise ValueError(f"Prompt inconnu : '{perso}'")
+        elif isinstance(perso, int):
+            # ID fourni directement
+            if not PromptDAO.exists_id(perso):
+                raise ValueError(f"prompt_id inexistant: {perso}")
+            prompt_id = perso
+        else:
+            # None ou vide -> pas de prompt
+            prompt_id = None
+
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
                     """
-                    INSERT INTO conversations (titre, prompt_id, cree_le)         
-                        VALUES (%(titre)s, %(prompt_id)s, %(cree_le)s)           
-                    RETURNING id;
+                    INSERT INTO conversations (titre, prompt_id)
+                    VALUES (%(titre)s, %(prompt_id)s)
+                    RETURNING id, cree_le;
                     """,
-                    {
-                        "titre": conversation.titre,
-                        "prompt_id": conversation.prompt_id,
-                        "cree_le": conversation.cree_le,
-                    },
+                    {"titre": titre, "prompt_id": prompt_id},  # None -> NULL (OK)
                 )
-                conversation.id = cursor.fetchone()["id"]
-        return conversation
+                row = cursor.fetchone()
+                conversation.id = row["id"]
+                conversation.date_creation = row["cree_le"]
+                # On peut conserver dans l'objet l'id résolu (ou None)
+                conversation.personnalisation = prompt_id
 
-        pass
+        return conversation
 
     @staticmethod
     def trouver_par_id(id_conv: int) -> Conversation:
-        """
-        Trouve une conversation dans la base de donnée à partir de son identifiant.
-
-        Parameters
-        ----------
-            id_conv : int
-                identifiant de la conversation
-
-
-        Returns
-        -------
-            Conversation
-                la conversation correspondant à l'identifiant en entrée
-
-        Raises
-        ------
-        """
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT id_conv, titrpreprompt_id, , cree_le    
-                    FROM conversations WHERE id = %(id_conv)s ;
+                    SELECT id, titre, prompt_id, cree_le
+                    FROM conversations
+                    WHERE id = %(id_conv)s;
                     """,
                     {"id_conv": id_conv},
                 )
                 conv = cursor.fetchone()
-            if conv:
-                return Conversation(
-                    id=conv["id"],
-                    nom=conv["titre"],
-                    personnalisation=conv["prompt_id"],
-                    date_creation=conv["cree_le"],
-                )
-            else:
-                raise Exception(f"Aucune conversation trouvée avec id_conv={id_conv}")
+        if not conv:
+            raise Exception(f"Aucune conversation trouvée avec id={id_conv}")
+        return Conversation(
+            id=conv["id"],
+            nom=conv["titre"],
+            personnalisation=conv["prompt_id"],
+            date_creation=conv["cree_le"],
+        )
 
     @staticmethod
     def renommer_conv(id_conv: int, nouveau_nom: str) -> bool:
@@ -179,7 +178,7 @@ class ConversationDAO:
                 """
         params = {"id_user": id_user}
         if n and n > 0:
-            query += " Limit %(10)s"
+            query += " LIMIT %(n)s"
             params["n"] = n
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
@@ -291,7 +290,6 @@ class ConversationDAO:
         if not isinstance(date, datetime):
             raise Exception(f"la date {date} n'est pas au format datetime")
 
-
         # on récupère tous les identifiants de conversation qui ont des messages qui correspondent
 
         # à la date en entrée.
@@ -336,12 +334,12 @@ class ConversationDAO:
             return liste_res
 
     def rechercher_conv_motC_et_date(id_user: int, mot_cle: str, date: datetime.date):
-        #contrôle du format de la date:
+        # contrôle du format de la date:
         if not isinstance(date, datetime.date):
             raise Exception(f"la date {date} n'est pas au format datetime")
         if not isinstance(mot_cle, str):
-            raise Exception(f"le mot clé n'est pas une chaîne de charactères")
-        #on récupère tous les identifiants de conversation qui ont des messages qui correspondent 
+            raise Exception("le mot clé n'est pas une chaîne de charactères")
+        # on récupère tous les identifiants de conversation qui ont des messages qui correspondent
         # à la date en entrée et qui comprennent le mot_clé.
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
@@ -353,16 +351,15 @@ class ConversationDAO:
                     AND utilisateur_id = %(id_user)s
                     AND contenu ILIKE %(mot_cle)s;
                     """,
-                    {"date":date,
-                    "id_user": id_user,
-                    "mot_cle": f"%{mot_cle}%"
-                    }
+                    {"date": date, "id_user": id_user, "mot_cle": f"%{mot_cle}%"},
                 )
                 dict_id = cursor.fetchall()
             if not dict_id:
-                raise Exception(f"Aucune conversation de l'utilisateur {id_user} pour la date {date}")
+                raise Exception(
+                    f"Aucune conversation de l'utilisateur {id_user} pour la date {date}"
+                )
             ids = [row["conversation_id"] for row in dict_id]
-    
+
             # on récupère les conversations de ids
             with conn.cursor() as cursor:
                 cursor.execute(
@@ -371,16 +368,21 @@ class ConversationDAO:
                     FROM conversations
                     WHERE id = ANY(%(ids)s);
                     """,
-                    {"dict_id":tuple(ids)}
+                    {"dict_id": tuple(ids)},
                 )
                 res = cursor.fetchall()
             liste_res = []
             for conv in res:
-                liste_res.append(Conversation(id= conv["id"], nom= conv["titre"], 
-                personnalisation = conv["prompt_id"], date_creation = conv["cree_le"]))
-            
-            return liste_res
+                liste_res.append(
+                    Conversation(
+                        id=conv["id"],
+                        nom=conv["titre"],
+                        personnalisation=conv["prompt_id"],
+                        date_creation=conv["cree_le"],
+                    )
+                )
 
+            return liste_res
 
     @staticmethod
     def lire_echanges(id_conv: int, limit: int) -> list[Echange]:
@@ -568,7 +570,7 @@ class ConversationDAO:
 
                 if nb_participants <= 1:
                     raise Exception(
-                        f"Impossible de retirer le dernier participant de la conversation {id_conv}"
+                        f"Impossible de retirer le dernier participant de la conversation {conversation_id}"
                     )
 
                 cursor.execute(
@@ -655,13 +657,15 @@ class ConversationDAO:
                     SET prompt_id = %(prompt_id)d
                     WHERE id = %(conversation_id)s
                     """,
-                    {"prompt_id": prompt_id, "conversation_id": conversation_id}
+                    {"prompt_id": prompt_id, "conversation_id": conversation_id},
                 )
                 count = cursor.rowcount
         if count > 0:
             return "personnalité modifié avec succès"
         else:
-            raise Exception(f"Erreur dans la modification de la personnalisation pour conversation_id = {conversation_id}")
+            raise Exception(
+                f"Erreur dans la modification de la personnalisation pour conversation_id = {conversation_id}"
+            )
 
     @staticmethod
     def compter_conversations(id_user: int) -> int:
@@ -752,19 +756,41 @@ class ConversationDAO:
 
         # Liste de mots à ignorer (articles, prépositions courantes, etc.)
         stop_words = {
-            "le", "la", "les", "de", "des", "du", "un", "une", "et", "en", "à", "a", "au",
-            "aux", "pour", "par", "avec", "sur", "dans", "d", "l", "l'", "au", "aux"
+            "le",
+            "la",
+            "les",
+            "de",
+            "des",
+            "du",
+            "un",
+            "une",
+            "et",
+            "en",
+            "à",
+            "a",
+            "au",
+            "aux",
+            "pour",
+            "par",
+            "avec",
+            "sur",
+            "dans",
+            "d",
+            "l",
+            "l'",
+            "au",
+            "aux",
         }
 
         mots = []
         for titre in titres:
-        # Mettre en minuscules et retirer la ponctuation
+            # Mettre en minuscules et retirer la ponctuation
             titre_nettoye = re.sub(r"[^\w\s']", " ", titre.lower())
-        # Séparer en mots
+            # Séparer en mots
             for mot in titre_nettoye.split():
-            # Nettoyer les apostrophes
+                # Nettoyer les apostrophes
                 mot = re.sub(r"^l['’]", "", mot)
-            # Ajouter seulement si ce n'est pas un mot vide
+                # Ajouter seulement si ce n'est pas un mot vide
                 if mot and mot not in stop_words:
                     mots.append(mot)
 
