@@ -55,13 +55,13 @@ class MenuUtilisateurVue(VueAbstraite):
                 case "Voir mes conversations":
                     from view.conversations_vue import ConversationsVue
 
+                    print("here")
+
                     return ConversationsVue()
 
                 case "Créer une nouvelle conversation":
-                    print("here 1")
                     from view.nouvelle_conversation_vue import NouvelleConversationVue
 
-                    print("here 2")
                     return NouvelleConversationVue()
 
                 case "Rechercher dans mes conversations":
