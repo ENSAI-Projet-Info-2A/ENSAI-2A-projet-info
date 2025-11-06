@@ -389,7 +389,7 @@ class ConversationService:
         - id_user est recommandé pour satisfaire la contrainte BDD (utilisateur_id NOT NULL)
         lorsque emetteur='utilisateur'.
         """
-        from business_object.echange import Echange
+        from src.business_object.echange import Echange
 
         # Charger dynamiquement le client LLM (compat chemins)
         try:
