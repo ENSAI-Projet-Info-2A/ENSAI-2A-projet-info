@@ -11,3 +11,6 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
 
 INSERT INTO utilisateurs (pseudo, mot_de_passe)
 VALUES ('admin', encode(digest('admin' || 'admin', 'sha256'), 'hex'));
+
+INSERT INTO prompts (nom, contenu)
+VALUES ('default', 'Tu es un assistant utile.');
