@@ -1,0 +1,64 @@
+import os
+import pytest
+
+from unittest.mock import patch
+
+from utils.reset_database import ResetDatabase
+from utils.securite import hash_password
+
+from dao.conversation_dao import ConversationDAO
+
+from business_object.conversation import Conversation
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_environment():
+    """Initialisation des données de test"""
+    with patch.dict(os.environ, {"SCHEMA": "projet_test_dao"}):
+        ResetDatabase().lancer(test_dao=True)
+        yield
+
+
+def test_creer_conversation_valide():
+    # GIVEN 
+    conv = Conversation(id = 100, nom= "conv_test")
+    print(conv)
+    # WHEN
+    res = ConversationDAO.creer_conversation(conv)
+    # THEN
+    assert isinstance(res, Conversation)
+
+def test_trouver_par_id():
+    # GIVEN
+    id_conv = 3
+    # WHEN 
+    res = ConversationDAO.trouver_par_id(id_conv=id_conv)
+    # THEN 
+    assert isinstance(res, Conversation) 
+
+def test_trouver_par_id_fail():
+    # GIVEN 
+    id_inexistant = 333333333333
+    # WHEN + THEN 
+    with pytest.raises(Exception) as exc_info:
+        ConversationDAO.trouver_par_id(id_conv=id_inexistant)
+    assert "Aucune conversation trouvée avec id=333333333333" in str(exc_info.value)
+
+def test_renommer_conv():
+    # GIVEN
+    id_conv = 4
+    nouveau_nom = "nouveau_nom_test"
+    # WHEN 
+    res = ConversationDAO.renommer_conv(id_conv, nouveau_nom)
+    # THEN 
+    assert res == "titre modifié avec succès" 
+
+def test_renommer_conv_fail():
+    # GIVEN
+    id_conv = "mauvais id"
+    nouveau_nom = "nouveau_nom_test_fail"
+    # WHEN + THEN 
+    with pytest.raises(Exception) as exc_info:
+        ConversationDAO.renommer_conv(id_conv, nouveau_nom)
+    assert "Erreur dans la modification du titre pour id_conv = mauvais id" in str(exc_info.value)
+    
