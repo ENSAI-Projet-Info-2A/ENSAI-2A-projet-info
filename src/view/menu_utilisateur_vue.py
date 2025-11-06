@@ -34,9 +34,8 @@ class MenuUtilisateurVue(VueAbstraite):
                 choices=[
                     "Voir mes conversations",
                     "Créer une nouvelle conversation",
-                    "Rechercher dans mes conversations",
+                    "Rechercher une conversation",
                     "Voir mes statistiques",
-                    "Personnaliser mon assistant",
                     "Infos de session",
                     "Se déconnecter",
                 ],
@@ -55,8 +54,6 @@ class MenuUtilisateurVue(VueAbstraite):
                 case "Voir mes conversations":
                     from view.conversations_vue import ConversationsVue
 
-                    print("here")
-
                     return ConversationsVue()
 
                 case "Créer une nouvelle conversation":
@@ -64,20 +61,15 @@ class MenuUtilisateurVue(VueAbstraite):
 
                     return NouvelleConversationVue()
 
-                case "Rechercher dans mes conversations":
-                    from view.recherche_vue import RechercheVue
+                case "Rechercher une conversation":
+                    from view.recherche_conversation_vue import RechercheConversationVue
 
-                    return RechercheVue()
+                    return RechercheConversationVue()
 
                 case "Voir mes statistiques":
                     from view.stats_vue import StatsVue
 
                     return StatsVue()
-
-                case "Personnaliser mon assistant":
-                    from view.personnalisation_vue import PersonnalisationVue
-
-                    return PersonnalisationVue()
 
         except Exception as e:
             logging.error(f"[MenuUtilisateurVue] Erreur : {e}")
