@@ -97,5 +97,16 @@ def test_supprimer_conv_fail_2():
         ConversationDAO.supprimer_conv(id_conv)
     assert "l'id mauvais_id est invalide et doit être un entier naturel" in str(exc_info.value)
 
-def
+def test_lister_conv():
+    # GIVEN 
+    id_user = 9
+    # WHEN 
+    res = ConversationDAO.lister_conversations(id_user)
+
+    # THEN 
+    assert type(res[0].id) == int
+    assert res[0].id == 1
+# 9 dans conv 1 et 3
+
+
 
