@@ -41,19 +41,19 @@ INSERT INTO conversations (id, titre, prompt_id, cree_le) VALUES
 
 
 
-INSERT INTO conversations_participants (id, conversation_id, utilisateur_id) VALUES
-(1, 2, 10),
-(1, 2, 4),
-(1, 2, 6),
-(2, 1, 9),
-(3, 4, 8),
-(4, 3, 7),
-(4, 3, 2),
-(4, 3, 9)
-(5, 6, 6),
-(6, 5, 5),
-(7, 8, 4),
-(8, 7, 3);
+INSERT INTO conversations_participants (conversation_id, utilisateur_id) VALUES
+(2, 10),
+(2, 4),
+(2, 6),
+(1, 9),
+(4, 8),
+(3, 7),
+(3, 2),
+(3, 9),
+(6, 6),
+(5, 5),
+(8, 4),
+(7, 3);
 
 
 
