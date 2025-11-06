@@ -83,7 +83,7 @@ class ConversationDAO:
         )
 
     @staticmethod
-    def renommer_conv(id_conv: int, nouveau_nom: str) -> bool:
+    def renommer_conv(id_conv: int, nouveau_nom: str):
         """
         Renomme une conversation dans la base de donnée:
 
@@ -102,6 +102,8 @@ class ConversationDAO:
         Raises
         ------
         """
+        if not isinstance(id_conv, int):
+            raise Exception(f"l'id {id_conv} est invalide et doit être un entier naturel")
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
@@ -147,7 +149,7 @@ class ConversationDAO:
                 )
             count = cursor.rowcount
         if count > 0:
-            return f"la conversation d'id={id_conv} a bien été supprimmée"
+            return f"la conversation d'id={id_conv} a bien été supprimée"
         else:
             raise Exception(f"echec de la suppression de la conversation d'identifiant {id_conv}")
 
