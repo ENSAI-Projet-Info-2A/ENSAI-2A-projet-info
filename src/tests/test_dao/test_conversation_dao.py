@@ -36,3 +36,29 @@ def test_trouver_par_id():
     # THEN 
     assert isinstance(res, Conversation) 
 
+def test_trouver_par_id_fail():
+    # GIVEN 
+    id_inexistant = 333333333333
+    # WHEN + THEN 
+    with pytest.raises(Exception) as exc_info:
+        ConversationDAO.trouver_par_id(id_conv=id_inexistant)
+    assert "Aucune conversation trouvée avec id=333333333333" in str(exc_info.value)
+
+def test_renommer_conv():
+    # GIVEN
+    id_conv = 4
+    nouveau_nom = "nouveau_nom_test"
+    # WHEN 
+    res = ConversationDAO.renommer_conv(id_conv, nouveau_nom)
+    # THEN 
+    assert res == "titre modifié avec succès" 
+
+def test_renommer_conv_fail():
+    # GIVEN
+    id_conv = "mauvais id"
+    nouveau_nom = "nouveau_nom_test_fail"
+    # WHEN + THEN 
+    with pytest.raises(Exception) as exc_info:
+        ConversationDAO.renommer_conv(id_conv, nouveau_nom)
+    assert "Erreur dans la modification du titre pour id_conv = mauvais id" in str(exc_info.value)
+    
