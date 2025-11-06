@@ -82,7 +82,7 @@ class ConversationDAO:
         )
 
     @staticmethod
-    def renommer_conv(id_conv: int, nouveau_nom: str) -> bool:
+    def renommer_conv(id_conv: int, nouveau_nom: str):
         """
         Renomme une conversation dans la base de donnée:
 
@@ -101,6 +101,8 @@ class ConversationDAO:
         Raises
         ------
         """
+        if not isinstance(id_conv, int):
+            raise Exception(f"l'id {id_conv} est invalide et doit être un entier naturel")
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
                 cursor.execute(

@@ -53,12 +53,20 @@ def test_renommer_conv():
     # THEN 
     assert res == "titre modifié avec succès" 
 
-def test_renommer_conv_fail():
+def test_renommer_conv_fail_1():
     # GIVEN
-    id_conv = "mauvais id"
+    id_conv = 333333333333
     nouveau_nom = "nouveau_nom_test_fail"
     # WHEN + THEN 
     with pytest.raises(Exception) as exc_info:
         ConversationDAO.renommer_conv(id_conv, nouveau_nom)
-    assert "Erreur dans la modification du titre pour id_conv = mauvais id" in str(exc_info.value)
-    
+    assert "Erreur dans la modification du titre pour id_conv = 333333333333" in str(exc_info.value)
+
+def test_renommer_conv_fail_2():
+    # GIVEN
+    id_conv = 'mauvais_id'
+    nouveau_nom = "nouveau_nom_test_fail"
+    # WHEN + THEN 
+    with pytest.raises(Exception) as exc_info:
+        ConversationDAO.renommer_conv(id_conv, nouveau_nom)
+    assert "l'id mauvais_id est invalide et doit être un entier naturel" in str(exc_info.value)
