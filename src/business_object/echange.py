@@ -1,5 +1,6 @@
 from datetime import datetime
 
+
 class Echange:
     """
     Classe représentant un échange (message) dans une conversation
@@ -16,9 +17,9 @@ class Echange:
         date et heure de l'envoi du message
     """
 
-    def __init__(self, message: str, agent: str = "utilisateur", agent_name: str = "",
-                 id: int = None, date_msg: datetime = None):
-        """Constructeur"""
+    def __init__(
+        self, message: str, agent: str = "utilisateur", id: int = None, date_msg: datetime = None
+    ):
         self.id = id
         self.agent = agent
         self.message = message
