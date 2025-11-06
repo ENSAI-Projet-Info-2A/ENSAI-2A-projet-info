@@ -1,7 +1,6 @@
+import datetime
 import re
 from collections import Counter
-from datetime import datetime
-from datetime import datetime as Date
 
 from business_object.conversation import Conversation
 from business_object.echange import Echange
@@ -11,50 +10,52 @@ from dao.prompt_dao import PromptDAO
 
 class ConversationDAO:
     @staticmethod
-    def creer_conversation(conversation: Conversation) -> Conversation:
-        """
-        Insère dans `conversations` uniquement (titre, prompt_id). Pas d'owner ici.
-        - conversation.nom  -> titre
-        - conversation.personnalisation (nom de prompt | id | None) -> prompt_id
-        """
-        # Titre obligatoire
+    def creer_conversation(
+        conversation: Conversation, proprietaire_id: int | None = None
+    ) -> Conversation:
         titre = (conversation.nom or "").strip()
         if not titre:
             raise ValueError("Le nom (titre) de la conversation est obligatoire.")
 
-        # Résoudre prompt_id :
+        # Resolve prompt_id (comme tu fais déjà) :
         perso = conversation.personnalisation
         prompt_id = None
         if isinstance(perso, str):
             perso = perso.strip()
-            if perso:  # nom de prompt fourni
-                prompt_id = PromptDAO.get_id_by_name(perso)
-                if prompt_id is None:
+            if perso:
+                pid = PromptDAO.get_id_by_name(perso)
+                if pid is None:
                     raise ValueError(f"Prompt inconnu : '{perso}'")
+                prompt_id = pid
         elif isinstance(perso, int):
-            # ID fourni directement
             if not PromptDAO.exists_id(perso):
                 raise ValueError(f"prompt_id inexistant: {perso}")
             prompt_id = perso
-        else:
-            # None ou vide -> pas de prompt
-            prompt_id = None
 
         with DBConnection().connection as conn:
-            with conn.cursor() as cursor:
-                cursor.execute(
+            with conn.cursor() as cur:
+                cur.execute(
                     """
                     INSERT INTO conversations (titre, prompt_id)
                     VALUES (%(titre)s, %(prompt_id)s)
                     RETURNING id, cree_le;
                     """,
-                    {"titre": titre, "prompt_id": prompt_id},  # None -> NULL (OK)
+                    {"titre": titre, "prompt_id": prompt_id},
                 )
-                row = cursor.fetchone()
+                row = cur.fetchone()
                 conversation.id = row["id"]
                 conversation.date_creation = row["cree_le"]
-                # On peut conserver dans l'objet l'id résolu (ou None)
                 conversation.personnalisation = prompt_id
+
+                if proprietaire_id is not None:
+                    cur.execute(
+                        """
+                        INSERT INTO conversations_participants (conversation_id, utilisateur_id)
+                        VALUES (%(cid)s, %(uid)s)
+                        ON CONFLICT DO NOTHING;
+                        """,
+                        {"cid": conversation.id, "uid": proprietaire_id},
+                    )
 
         return conversation
 
@@ -181,7 +182,7 @@ class ConversationDAO:
         ]
 
     @staticmethod
-    def rechercher_mot_clef(self, id_user: int, mot_clef: str) -> list[Conversation]:
+    def rechercher_mot_clef(id_user: int, mot_clef: str) -> list[Conversation]:
         """
         Recherche une conversation selon un mot-clé.
 
@@ -200,53 +201,38 @@ class ConversationDAO:
         Raises
         ------
         """
-        liste_CONV = ConversationDAO.lister_conversation(id_user)
-        liste_conv = [conv.id for conv in liste_CONV]
-        # on récupère d'abord tous les identifiants des conversations qui vérifient comprennent au moins un
-        # message avec le mot_clef, pour un utilisateur donné.
+        if not isinstance(mot_clef, str) or not mot_clef.strip():
+            return []
+        pattern = f"%{mot_clef.strip()}%"
         with DBConnection().connection as conn:
-            with conn.cursor() as cursor:
-                cursor.execute(
+            with conn.cursor() as cur:
+                cur.execute(
                     """
-                    SELECT conversation_id
-                    FROM messages 
-                    WHERE conversation_id = ANY(%(conv_id)s)
-                    AND contenu ILIKE%(mot_clef)s;
+                    SELECT DISTINCT c.id, c.titre, c.prompt_id, c.cree_le
+                    FROM conversations c
+                    JOIN conversations_participants cp
+                    ON cp.conversation_id = c.id
+                    JOIN messages m
+                    ON m.conversation_id = c.id
+                    WHERE cp.utilisateur_id = %(uid)s
+                    AND m.contenu ILIKE %(pattern)s
+                    ORDER BY c.cree_le DESC;
                     """,
-                    {"conv_id": liste_conv, "mot_clef": mot_clef},
+                    {"uid": id_user, "pattern": pattern},
                 )
-                liste = cursor.fetchall()
-            liste = set(liste)
-            if not liste:
-                raise Exception(
-                    f"aucune conversation trouvée parmi les conversations de l'utilisateur {id_user} our le mot clé '{mot_clef}'"
-                )
-            # une fois qu'on a récupéré la liste des conversations_id, on récupère les conversations
-            # depuis la table conversations (oui je sais on aurait pu fair un join mais flemme)
-            with conn.cursor() as cursor:
-                cursor.execute(
-                    """
-                    SELECT*
-                    FROM conversations
-                    WHERE id = ANY(%(conv_id))
-                    """,
-                    {"conv_id": liste},
-                )
-                res = cursor.fetchall()
-            liste_finale = []
-            for conv in res:
-                liste_finale.append(
-                    Conversation(
-                        id=conv["id"],
-                        nom=conv["titre"],
-                        personnalisation=conv["prompt_id"],
-                        date_creation=conv["cree_le"],
-                    )
-                )
-            return liste_finale
+                rows = cur.fetchall() or []
+        return [
+            Conversation(
+                id=r["id"],
+                nom=r["titre"],
+                personnalisation=r["prompt_id"],
+                date_creation=r["cree_le"],
+            )
+            for r in rows
+        ]
 
     @staticmethod
-    def rechercher_date(id_user: int, date: Date) -> list[Conversation]:
+    def rechercher_date(id_user: int, date: datetime.date) -> list[Conversation]:
         """
 
         Recherche une conversation à partir d'une date (date d'un message)
@@ -267,103 +253,82 @@ class ConversationDAO:
         Raises
         ------
         """
-        # contrôle du format de la date:
-        if not isinstance(date, datetime):
-            raise Exception(f"la date {date} n'est pas au format datetime")
+        # Normalisation du paramètre "date" en début/fin de journée
+        if isinstance(date, datetime.date) and not isinstance(date, datetime.datetime):
+            d0 = datetime.datetime(date.year, date.month, date.day)
+        elif isinstance(date, datetime.datetime):
+            d0 = datetime.datetime(date.year, date.month, date.day)
+        else:
+            raise Exception(f"la date {date!r} n'est pas au format datetime/date")
 
-        # on récupère tous les identifiants de conversation qui ont des messages qui correspondent
+        d1 = d0 + datetime.timedelta(days=1)
 
-        # à la date en entrée.
+        sql = """
+            SELECT DISTINCT c.id, c.titre, c.prompt_id, c.cree_le
+            FROM conversations c
+            JOIN conversations_participants cp
+            ON cp.conversation_id = c.id
+            JOIN messages m
+            ON m.conversation_id = c.id
+            WHERE cp.utilisateur_id = %(uid)s
+            AND m.cree_le >= %(start)s
+            AND m.cree_le <  %(end)s
+            ORDER BY c.cree_le DESC;
+        """
+
         with DBConnection().connection as conn:
-            with conn.cursor() as cursor:
-                cursor.execute(
-                    """
-                    SELECT conversation_id
-                    FROM messages
-                    WHERE cree_le = %(date)s
-                    AND utilisateur_id = %(id_user)s;
-                    """,
-                    {"date": date, "id_user": id_user},
-                )
-                dict_id = cursor.fetchall()
-            if not dict_id:
-                raise Exception(
-                    f"Aucune conversation de l'utilisateur {id_user} pour la date {date}"
-                )
-            # on récupère
-            with conn.cursor() as cursor:
-                cursor.execute(
-                    """
-                    SELECT *
-                    FROM conversations
-                    WHERE id = ANY(%(dict_id)s);
-                    """,
-                    {"dict_id": dict_id},
-                )
-                res = cursor.fetchall()
-            liste_res = []
-            for conv in res:
-                liste_res.append(
-                    Conversation(
-                        id=conv["id"],
-                        nom=conv["titre"],
-                        personnalisation=conv["prompt_id"],
-                        date_creation=conv["cree_le"],
-                    )
-                )
+            with conn.cursor() as cur:
+                cur.execute(sql, {"uid": id_user, "start": d0, "end": d1})
+                rows = cur.fetchall() or []
 
-            return liste_res
+        return [
+            Conversation(
+                id=r["id"],
+                nom=r["titre"],
+                personnalisation=r["prompt_id"],
+                date_creation=r["cree_le"],
+            )
+            for r in rows
+        ]
 
     def rechercher_conv_motC_et_date(id_user: int, mot_cle: str, date: datetime.date):
-        # contrôle du format de la date:
+        """
+        Retourne les conversations avec au moins un message contenant `mot_cle`
+        ET daté le jour `date` (peu importe l'heure), émis par l'utilisateur.
+        ATTENTION: attend un `date` (pas un `datetime`).
+        """
         if not isinstance(date, datetime.date):
-            raise Exception(f"la date {date} n'est pas au format datetime")
-        if not isinstance(mot_cle, str):
-            raise Exception("le mot clé n'est pas une chaîne de charactères")
-        # on récupère tous les identifiants de conversation qui ont des messages qui correspondent
-        # à la date en entrée et qui comprennent le mot_clé.
+            raise Exception(f"la date {date} n'est pas au format date")
+        if not isinstance(mot_cle, str) or not mot_cle.strip():
+            return []
+        pattern = f"%{mot_cle.strip()}%"
         with DBConnection().connection as conn:
-            with conn.cursor() as cursor:
-                cursor.execute(
+            with conn.cursor() as cur:
+                cur.execute(
                     """
-                    SELECT conversation_id
-                    FROM messages
-                    WHERE DATE(cree_le) = %(date)s
-                    AND utilisateur_id = %(id_user)s
-                    AND contenu ILIKE %(mot_cle)s;
+                    SELECT DISTINCT c.id, c.titre, c.prompt_id, c.cree_le
+                    FROM conversations c
+                    JOIN conversations_participants cp
+                    ON cp.conversation_id = c.id
+                    JOIN messages m
+                    ON m.conversation_id = c.id
+                    WHERE cp.utilisateur_id = %(uid)s
+                    AND DATE(m.cree_le) = %(d)s
+                    AND m.contenu ILIKE %(pattern)s
+                    ORDER BY c.cree_le DESC;
                     """,
-                    {"date": date, "id_user": id_user, "mot_cle": f"%{mot_cle}%"},
+                    {"uid": id_user, "d": date, "pattern": pattern},
                 )
-                dict_id = cursor.fetchall()
-            if not dict_id:
-                raise Exception(
-                    f"Aucune conversation de l'utilisateur {id_user} pour la date {date}"
-                )
-            ids = [row["conversation_id"] for row in dict_id]
-
-            # on récupère les conversations de ids
-            with conn.cursor() as cursor:
-                cursor.execute(
-                    """
-                    SELECT *
-                    FROM conversations
-                    WHERE id = ANY(%(ids)s);
-                    """,
-                    {"dict_id": tuple(ids)},
-                )
-                res = cursor.fetchall()
-            liste_res = []
-            for conv in res:
-                liste_res.append(
-                    Conversation(
-                        id=conv["id"],
-                        nom=conv["titre"],
-                        personnalisation=conv["prompt_id"],
-                        date_creation=conv["cree_le"],
-                    )
-                )
-
-            return liste_res
+                rows = cur.fetchall() or []
+        return [
+            Conversation(
+                id=r["id"],
+                nom=r["titre"],
+                personnalisation=r["prompt_id"],
+                date_creation=r["cree_le"],
+            )
+            for r in rows
+        ]
 
     @staticmethod
     def lire_echanges(id_conv: int, limit: int) -> list[Echange]:
@@ -409,7 +374,9 @@ class ConversationDAO:
                     )
                 return liste_conv
 
-    def rechercher_echange(conversation_id: int, mot_clef: str, date: Date) -> list[Echange]:
+    def rechercher_echange(
+        conversation_id: int, mot_clef: str, date: datetime.date
+    ) -> list[Echange]:
         """
         Recherche un échange au sein d'une conversation, à partir d'un mot-clé et d'une date.
 
@@ -434,13 +401,13 @@ class ConversationDAO:
             with conn.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT * 
-                    FROM messages 
+                    SELECT *
+                    FROM messages
                     WHERE conversation_id = %(conversation_id)s
                     AND contenu ILIKE %(mot_clef)s
                     AND DATE(cree_le) = DATE(%(date)s);
                     """,
-                    {"id_conv": conversation_id, "mot_clef": f"%{mot_clef}%", "date": date},
+                    {"conversation_id": conversation_id, "mot_clef": f"%{mot_clef}%", "date": date},
                 )
                 res = cursor.fetchall()
 
