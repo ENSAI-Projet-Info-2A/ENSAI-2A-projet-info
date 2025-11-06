@@ -3,10 +3,10 @@ import re
 from collections import Counter
 from typing import List
 
-from business_object.conversation import Conversation
-from business_object.echange import Echange
-from dao.db_connection import DBConnection
-from dao.prompt_dao import PromptDAO
+from src.business_object.conversation import Conversation
+from src.business_object.echange import Echange
+from src.dao.db_connection import DBConnection
+from src.dao.prompt_dao import PromptDAO
 
 
 class ConversationDAO:

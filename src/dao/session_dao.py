@@ -1,6 +1,6 @@
 from psycopg2.extras import RealDictCursor
 
-from dao.db_connection import DBConnection
+from src.dao.db_connection import DBConnection
 
 
 class SessionDAO:

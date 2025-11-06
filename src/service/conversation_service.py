@@ -2,10 +2,10 @@ import logging
 from datetime import datetime as Date
 from typing import List
 
-from business_object.conversation import Conversation
-from business_object.echange import Echange
-from dao.conversation_dao import ConversationDAO
-from dao.prompt_dao import PromptDAO
+from src.business_object.conversation import Conversation
+from src.business_object.echange import Echange
+from src.dao.conversation_dao import ConversationDAO
+from src.dao.prompt_dao import PromptDAO
 
 logger = logging.getLogger(__name__)
 
@@ -229,7 +229,7 @@ class ConversationService:
         if not mot_cle and not date_recherche:
             raise ErreurValidation("Un mot-clé ou une date doivent être fournis.")
         try:
-            res = ConversationDAO.rechercher_message(id_conversation, mot_cle, date_recherche)
+            res = ConversationDAO.rechercher_echange(id_conversation, mot_cle, date_recherche)
             if res:
                 logger.info(
                     f"Messages trouvés dans la conversation {id_conversation} (mot-clé: {mot_cle})"
@@ -298,17 +298,21 @@ class ConversationService:
             raise
 
     def mettre_a_jour_personnalisation(self, id_conversation: int, personnalisation: str) -> bool:
-        """Met à jour le profil de personnalisation de la conversation."""
+        """Met à jour le profil (prompt) de la conversation."""
         if not id_conversation:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
-        if not personnalisation:
+        if personnalisation is None:
             raise ErreurValidation("Le champ personnalisation est requis.")
         try:
-            succes = ConversationDAO.mettre_a_jour_personnalisation(
-                id_conversation, personnalisation
-            )
+            prompt_id = ConversationService._resolve_prompt_id(personnalisation)
+            print(prompt_id)
+            succes = ConversationDAO.mettre_a_j_preprompt_id(id_conversation, prompt_id)
             if succes:
-                logger.info("Personnalisation mise à jour pour la conversation %s", id_conversation)
+                logger.info(
+                    "Personnalisation mise à jour (prompt_id=%s) pour la conversation %s",
+                    prompt_id,
+                    id_conversation,
+                )
             return succes
         except Exception as e:
             logger.error("Erreur lors de la mise à jour de la personnalisation : %s", e)
@@ -336,14 +340,26 @@ class ConversationService:
             )
             raise
 
-    def demander_assistant(self, message: str, options=None, id_conversation: int | None = None):
+    DEFAULT_SYSTEM_PROMPT = "Tu es un assistant utile."
+
+    @staticmethod
+    def demander_assistant(message: str, options=None, id_conversation: int | None = None):
         """
         Envoie un message à l'assistant et reçoit une réponse du LLM.
         - Si une conversation est donnée, ajoute le message à son historique.
         - Récupère la réponse du modèle et la persiste (si possible).
         """
         from business_object.echange import Echange
-        from client.llm_client import LLM_API
+
+        try:
+            # Essaie d'importer le client où qu'il soit
+            try:
+                from client.llm_client import LLM_API
+            except ImportError:
+                from src.client.llm_client import LLM_API
+        except Exception as imp_err:
+            logging.error("Impossible de charger LLM_API: %s", imp_err)
+            raise
 
         if not message or not message.strip():
             raise ErreurValidation("Le message est requis.")
@@ -380,9 +396,7 @@ class ConversationService:
         client = LLM_API()
         reponse = client.generate(
             history=[
-                # Conversion vers Echange pour respecter l’API du client
-                Echange(agent=h["role"], message=h["content"], agent_name=None)
-                for h in history
+                Echange(agent=h["role"], message=h["content"], agent_name=None) for h in history
             ],
             temperature=temperature,
             top_p=top_p,
@@ -390,15 +404,15 @@ class ConversationService:
             stop=stop,
         )
 
-        # Création de l’objet Echange pour la réponse
+        # Réponse côté applicatif
         echange_assistant = Echange(
             id_conversation=id_conversation,
             expediteur="assistant",
-            message=reponse.message,
+            message=getattr(reponse, "message", str(reponse)),
             date_echange=Date.today(),
         )
 
-        # Persistance du message utilisateur + réponse (si possible)
+        # Persistance (si possible)
         if id_conversation:
             try:
                 e_user = Echange(

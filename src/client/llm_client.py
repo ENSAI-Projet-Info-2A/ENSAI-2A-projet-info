@@ -5,8 +5,7 @@ from typing import List, Optional
 
 import requests
 
-from business_object.echange import Echange
-
+from src.business_object.echange import Echange
 
 class LLM_API:
     """
