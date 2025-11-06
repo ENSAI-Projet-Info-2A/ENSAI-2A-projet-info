@@ -32,7 +32,17 @@ INSERT INTO conversations (id, titre, prompt_id, cree_le) VALUES
 (7, 'pourquoi la terre est plate ?', 1, '2025-09-11 23:19:00+00'),
 (8, 'Je suis fan de tokyo hotel et ma femme m''a quitté', 1, '2025-10-30 12:31:55+00');
 
-
+INSERT INTO messages(id, conversation_id, utilisateur_id, emetteur, contenu, cree_le) VALUES
+(1, 2, 10,'utilisateur' ou 'ia',"je suis très heureux dans la vie", '2025-07-21 08:44:18+00'),
+(2, 2, NULL,'ia',"je suis puissant et toi ?", '2025-07-22 08:44:18+00'),
+(3, 2, 4, 'utilisateur', "moi je suis très triste dans la vie", '2025-07-23 08:44:18+00'),
+(4, 2, 6,'utilisateur',"je soulève 100kg au DC",'2025-07-24 08:44:18+00'),
+(5, 1, 9,'utilisateur',"Il y a quelqu'un ?",'2025-01-13 10:23:45+00'),
+(6, 1, NULL,'ia',"Oui",'2025-01-14 10:23:45+00'),
+(7, 4, 8,'utilisateur',"heyyy", '2025-04-28 17:05:12+00'),
+(8, 3, 7, 'utilisateur', "je suis là", '2025-03-16 09:12:30+00'),
+(9, 3, 2, 'utilisateur', "ca fait beaucoup là non ?", '2025-03-17 09:12:30+00'),
+(10, 3, NULL, 'ia', 'que voulez-vous ?', '2025-03-18 09:12:30+00');
 
 INSERT INTO conversations_participants (id, conversation_id, utilisateur_id) VALUES
 (1, 2, 10),
