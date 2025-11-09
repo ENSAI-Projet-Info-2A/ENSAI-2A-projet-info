@@ -2,9 +2,9 @@ import logging
 
 from InquirerPy import inquirer
 
-from service.conversation_service import ConversationService, ErreurValidation
-from view.session import Session
-from view.vue_abstraite import VueAbstraite
+from src.service.conversation_service import ConversationService, ErreurValidation
+from src.view.session import Session
+from src.view.vue_abstraite import VueAbstraite
 
 
 class NouvelleConversationVue(VueAbstraite):
@@ -17,7 +17,7 @@ class NouvelleConversationVue(VueAbstraite):
         # 1) Sécurité : utilisateur connecté
         utilisateur = Session().utilisateur
         if utilisateur is None:
-            from view.accueil.accueil_vue import AccueilVue
+            from src.view.accueil.accueil_vue import AccueilVue
 
             return AccueilVue("Veuillez vous connecter pour créer une conversation.")
 
@@ -45,9 +45,7 @@ class NouvelleConversationVue(VueAbstraite):
             # Normaliser : vide -> None
             if not personnalisation or not personnalisation.strip():
                 personnalisation = None
-            print(personnalisation)
 
-            print("coucou")
             # 3) Appel service
             # ConversationService.creer_conv(...) doit lever ErreurValidation en cas d'inputs invalides
             msg = ConversationService.creer_conv(
@@ -56,10 +54,8 @@ class NouvelleConversationVue(VueAbstraite):
                 id_proprietaire=utilisateur.id,
             )
 
-            print(msg)
-
             # 4) Succès → retour au menu utilisateur avec message
-            from view.menu_utilisateur_vue import MenuUtilisateurVue
+            from src.view.menu_utilisateur_vue import MenuUtilisateurVue
 
             return MenuUtilisateurVue(msg)
 

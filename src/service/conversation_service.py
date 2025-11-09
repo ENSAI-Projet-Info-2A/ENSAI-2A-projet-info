@@ -394,7 +394,7 @@ class ConversationService:
         # Charger dynamiquement le client LLM (compat chemins)
         try:
             try:
-                from client.llm_client import LLM_API
+                from src.client.llm_client import LLM_API
             except ImportError:
                 from src.client.llm_client import LLM_API
         except Exception as imp_err:
@@ -404,7 +404,7 @@ class ConversationService:
         if not message or not message.strip():
             raise ErreurValidation("Le message est requis.")
 
-        logger.info("Assistant appelé avec le message : %s", message[:80])
+        logger.info("Assistant appelé avec le message : %s", message[:200])
 
         # Hyperparamètres avec valeurs par défaut
         temperature = float(options.get("temperature", 0.7)) if options else 0.7

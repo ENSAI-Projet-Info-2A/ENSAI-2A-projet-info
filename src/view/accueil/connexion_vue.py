@@ -1,8 +1,8 @@
 from InquirerPy import inquirer
 
-from service.utilisateur_service import UtilisateurService
-from view.session import Session
-from view.vue_abstraite import VueAbstraite
+from src.service.utilisateur_service import UtilisateurService
+from src.view.session import Session
+from src.view.vue_abstraite import VueAbstraite
 
 
 class ConnexionVue(VueAbstraite):
@@ -26,6 +26,6 @@ class ConnexionVue(VueAbstraite):
             return MenuUtilisateurVue(message)
 
         message = "Erreur de connexion (pseudo ou mot de passe invalide)"
-        from view.accueil.accueil_vue import AccueilVue
+        from src.view.accueil.accueil_vue import AccueilVue
 
         return AccueilVue(message)

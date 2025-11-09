@@ -1,8 +1,8 @@
 from InquirerPy import inquirer
 from InquirerPy.validator import PasswordValidator
 
-from service.utilisateur_service import UtilisateurService
-from view.vue_abstraite import VueAbstraite
+from src.service.utilisateur_service import UtilisateurService
+from src.view.vue_abstraite import VueAbstraite
 
 
 class InscriptionVue(VueAbstraite):
@@ -14,7 +14,7 @@ class InscriptionVue(VueAbstraite):
 
         # Vérifie si le pseudo est déjà utilisé
         if UtilisateurService().pseudo_deja_utilise(pseudo):
-            from view.accueil.accueil_vue import AccueilVue
+            from src.view.accueil.accueil_vue import AccueilVue
 
             return AccueilVue(f"Le pseudo {pseudo} est déjà utilisé.")
 
@@ -41,6 +41,6 @@ class InscriptionVue(VueAbstraite):
         else:
             message = "Erreur lors de la création du compte (pseudo ou mot de passe invalide)."
 
-        from view.accueil.accueil_vue import AccueilVue
+        from src.view.accueil.accueil_vue import AccueilVue
 
         return AccueilVue(message)

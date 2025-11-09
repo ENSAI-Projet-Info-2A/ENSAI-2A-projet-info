@@ -4,8 +4,8 @@ import logging
 from InquirerPy import inquirer
 
 from src.service.conversation_service import ConversationService, ErreurValidation
-from src.view.vue_abstraite import VueAbstraite
 from src.view.session import Session
+from src.view.vue_abstraite import VueAbstraite
 
 
 class ReprendreConversationVue(VueAbstraite):
@@ -55,8 +55,9 @@ class ReprendreConversationVue(VueAbstraite):
         texte = inquirer.text(message="Votre message :", default="").execute().strip()
         if not texte:
             return ReprendreConversationVue(self.conv, "Message vide, rien envoyé.")
+
         try:
-            user = Session().utilisateur
+            user = Session().utilisateur  # ← utilisateur courant
             rep = ConversationService.demander_assistant(
                 message=texte,
                 options=None,
@@ -173,7 +174,7 @@ class ReprendreConversationVue(VueAbstraite):
 
         try:
             ConversationService.supprimer_conversation(self.conv.id)
-            from view.conversations_vue import ConversationsVue
+            from src.view.conversations_vue import ConversationsVue
 
             return ConversationsVue("Conversation supprimée.")
         except Exception as e:

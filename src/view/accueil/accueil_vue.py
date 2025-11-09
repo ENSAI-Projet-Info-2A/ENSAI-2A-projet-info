@@ -1,8 +1,8 @@
 from InquirerPy import inquirer
 
-from utils.reset_database import ResetDatabase
-from view.session import Session
-from view.vue_abstraite import VueAbstraite
+from src.utils.reset_database import ResetDatabase
+from src.view.session import Session
+from src.view.vue_abstraite import VueAbstraite
 
 
 class AccueilVue(VueAbstraite):
@@ -37,7 +37,7 @@ class AccueilVue(VueAbstraite):
             case "Se connecter":
                 print("Here : Con 1")
                 try:
-                    from view.accueil.connexion_vue import ConnexionVue
+                    from src.view.accueil.connexion_vue import ConnexionVue
 
                     print("Here : Con 2 (import OK)")
                     return ConnexionVue("Connexion à l'application")
@@ -46,11 +46,11 @@ class AccueilVue(VueAbstraite):
 
                     print("Here : Con IMPORT FAILED")
                     traceback.print_exc()
-                    from view.accueil.accueil_vue import AccueilVue
-                return AccueilVue(f"Échec import ConnexionVue : {e}")
+                    from src.view.accueil.accueil_vue import AccueilVue
+                return AccueilVue(f"Échec import ConnexionVue : {Exception}")
 
             case "Créer un compte":
-                from view.accueil.inscription_vue import InscriptionVue
+                from src.view.accueil.inscription_vue import InscriptionVue
 
                 return InscriptionVue("Création de compte joueur")
 
