@@ -683,7 +683,7 @@ class ConversationDAO:
         return nombre_messages
 
     @staticmethod
-    def sujets_plus_frequents(id_user: int, k: int) -> list[Sujet]:
+    def sujets_plus_frequents(id_user: int, k: int) -> list[tuple[str, int]]:
         """
         Renvoie une liste des sujets les plus fréquents entretenus dans les conversations d'un utilisateur.
 

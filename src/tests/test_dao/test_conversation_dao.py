@@ -46,8 +46,10 @@ def test_trouver_par_id_fail():
 
 def test_renommer_conv():
     # GIVEN
-    id_conv = 4
-    nouveau_nom = "nouveau_nom_test"
+    conv = Conversation(id = 300, nom= "ancien_nom")
+    ConversationDAO.creer_conversation(conv)
+    id_conv = conv.id
+    nouveau_nom = 'nouveau_nom_test'
     # WHEN 
     res = ConversationDAO.renommer_conv(id_conv, nouveau_nom)
     # THEN 
