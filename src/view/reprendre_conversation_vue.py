@@ -3,8 +3,9 @@ import logging
 
 from InquirerPy import inquirer
 
-from service.conversation_service import ConversationService, ErreurValidation
-from view.vue_abstraite import VueAbstraite
+from src.service.conversation_service import ConversationService, ErreurValidation
+from src.view.session import Session
+from src.view.vue_abstraite import VueAbstraite
 
 
 class ReprendreConversationVue(VueAbstraite):
@@ -51,15 +52,18 @@ class ReprendreConversationVue(VueAbstraite):
         print("")
 
     def _envoyer_message(self):
-        """Demande un input utilisateur et envoie le message via le Service, puis affiche la réponse."""
         texte = inquirer.text(message="Votre message :", default="").execute().strip()
         if not texte:
             return ReprendreConversationVue(self.conv, "Message vide, rien envoyé.")
+
         try:
+            user = Session().utilisateur  # ← utilisateur courant
             rep = ConversationService.demander_assistant(
-                message=texte, options=None, id_conversation=self.conv.id
+                message=texte,
+                options=None,
+                id_conversation=self.conv.id,
+                id_user=(user.id if user else None),
             )
-            print(rep)
         except ErreurValidation as e:
             return ReprendreConversationVue(self.conv, f"Erreur de validation : {e}")
         except Exception as e:
@@ -72,7 +76,6 @@ class ReprendreConversationVue(VueAbstraite):
         print(reponse_txt)
         print("--------------------------\n")
 
-        # Rester dans la vue
         inquirer.text(message="Appuyez sur Entrée pour continuer...", default="").execute()
         return ReprendreConversationVue(self.conv)
 
@@ -171,7 +174,7 @@ class ReprendreConversationVue(VueAbstraite):
 
         try:
             ConversationService.supprimer_conversation(self.conv.id)
-            from view.conversations_vue import ConversationsVue
+            from src.view.conversations_vue import ConversationsVue
 
             return ConversationsVue("Conversation supprimée.")
         except Exception as e:

@@ -2,9 +2,9 @@ import logging
 
 from InquirerPy import inquirer
 
-from service.conversation_service import ConversationService, ErreurValidation
-from view.session import Session
-from view.vue_abstraite import VueAbstraite
+from src.service.conversation_service import ConversationService, ErreurValidation
+from src.view.session import Session
+from src.view.vue_abstraite import VueAbstraite
 
 
 class ConversationsVue(VueAbstraite):
@@ -17,7 +17,7 @@ class ConversationsVue(VueAbstraite):
         # 1) Sécurité : utilisateur connecté
         utilisateur = Session().utilisateur
         if utilisateur is None:
-            from view.accueil.accueil_vue import AccueilVue
+            from src.view.accueil.accueil_vue import AccueilVue
 
             return AccueilVue("Veuillez vous connecter pour accéder à vos conversations.")
 
@@ -37,7 +37,7 @@ class ConversationsVue(VueAbstraite):
             )
         except Exception as e:
             logging.error(f"[ConversationsVue] Erreur chargement conversations : {e}")
-            from view.menu_utilisateur_vue import MenuUtilisateurVue
+            from src.view.menu_utilisateur_vue import MenuUtilisateurVue
 
             return MenuUtilisateurVue("Impossible de charger vos conversations pour le moment.")
 
@@ -51,10 +51,10 @@ class ConversationsVue(VueAbstraite):
                 ],
             ).execute()
             if choix == "Créer une nouvelle conversation":
-                from view.nouvelle_conversation_vue import NouvelleConversationVue
+                from src.view.nouvelle_conversation_vue import NouvelleConversationVue
 
                 return NouvelleConversationVue()
-            from view.menu_utilisateur_vue import MenuUtilisateurVue
+            from src.view.menu_utilisateur_vue import MenuUtilisateurVue
 
             return MenuUtilisateurVue()
 
@@ -76,7 +76,7 @@ class ConversationsVue(VueAbstraite):
             ).execute()
 
             if selection == "↩︎ Retour au menu":
-                from view.menu_utilisateur_vue import MenuUtilisateurVue
+                from src.view.menu_utilisateur_vue import MenuUtilisateurVue
 
                 return MenuUtilisateurVue()
 
@@ -97,7 +97,7 @@ class ConversationsVue(VueAbstraite):
             match action:
                 case "Reprendre la discussion":
                     # On bascule vers la vue détaillée qui gère l'affichage + envoi de messages, etc.
-                    from view.reprendre_conversation_vue import ReprendreConversationVue
+                    from src.view.reprendre_conversation_vue import ReprendreConversationVue
 
                     return ReprendreConversationVue(conv)
 

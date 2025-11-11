@@ -376,17 +376,25 @@ class ConversationService:
     DEFAULT_SYSTEM_PROMPT = "Tu es un assistant utile."
 
     @staticmethod
-    def demander_assistant(message: str, options=None, id_conversation: int | None = None):
+    def demander_assistant(
+        message: str,
+        options=None,
+        id_conversation: int | None = None,
+        id_user: int | None = None,
+    ):
         """
         Envoie un message à l'assistant et reçoit une réponse du LLM.
-        Injecte un message 'system' en tête du history (non stocké en BDD).
+        - Injecte un message 'system' en tête du history (non stocké en BDD).
+        - Si id_conversation est fourni, charge l'historique et persiste les échanges.
+        - id_user est recommandé pour satisfaire la contrainte BDD (utilisateur_id NOT NULL)
+        lorsque emetteur='utilisateur'.
         """
-        from business_object.echange import Echange
+        from src.business_object.echange import Echange
 
-        # Charge le client LLM
+        # Charger dynamiquement le client LLM (compat chemins)
         try:
             try:
-                from client.llm_client import LLM_API
+                from src.client.llm_client import LLM_API
             except ImportError:
                 from src.client.llm_client import LLM_API
         except Exception as imp_err:
@@ -396,17 +404,23 @@ class ConversationService:
         if not message or not message.strip():
             raise ErreurValidation("Le message est requis.")
 
-        logger.info("Assistant appelé avec le message : %s", message[:80])
+        logger.info("Assistant appelé avec le message : %s", message[:200])
 
+        # Hyperparamètres avec valeurs par défaut
         temperature = float(options.get("temperature", 0.7)) if options else 0.7
         top_p = float(options.get("top_p", 1.0)) if options else 1.0
         max_tokens = int(options.get("max_tokens", 512)) if options else 512
         stop = options.get("stop") if options and "stop" in options else None
 
-        # 1) Prompt système (non persisté)
-        system_prompt = ConversationService._resolve_system_prompt_for_conv(id_conversation)
+        # 1) Prompt système (non persisté en BDD)
+        try:
+            system_prompt = ConversationService._resolve_system_prompt_for_conv(id_conversation)
+        except Exception:
+            system_prompt = getattr(
+                ConversationService, "DEFAULT_SYSTEM_PROMPT", "Tu es un assistant utile."
+            )
 
-        # 2) Historique existant -> rôles LLM
+        # 2) Historique existant -> rôles LLM (user/assistant)
         history = [{"role": "system", "content": system_prompt}]
         if id_conversation:
             try:
@@ -417,19 +431,18 @@ class ConversationService:
                         or getattr(e, "agent", "")
                         or getattr(e, "emetteur", "")
                     ).lower()
-                    # BDD: 'ia' / 'utilisateur'  -> LLM: 'assistant' / 'user'
                     role = "assistant" if emet in ("ia", "assistant") else "user"
-                    contenu = getattr(e, "message", getattr(e, "contenu", ""))
+                    contenu = getattr(e, "message", getattr(e, "contenu", "")) or ""
                     history.append({"role": role, "content": contenu})
             except Exception as e:
                 logger.warning(
                     "Impossible de récupérer l'historique (conv=%s) : %s", id_conversation, e
                 )
 
-        # 3) Ajoute le message utilisateur courant
+        # 3) Ajoute le message utilisateur courant à l'historique d'appel LLM
         history.append({"role": "user", "content": message})
 
-        # 4) Appel LLM (ton client attend des Echange)
+        # 4) Appel LLM (le client attend une liste d'Echange(agent, message))
         client = LLM_API()
         reponse = client.generate(
             history=[
@@ -441,37 +454,39 @@ class ConversationService:
             stop=stop,
         )
 
-        # 5) Réponse applicative
-        echange_assistant = Echange(
-            id_conversation=id_conversation,
-            expediteur="assistant",  # côté app (pour la vue); en BDD on utilisera 'ia'
+        # 5) Réponse pour la VUE (respecte le constructeur Echange)
+        echange_assistant_vue = Echange(
+            agent="assistant",
             message=getattr(reponse, "message", str(reponse)),
-            date_echange=Date.today(),
+            agent_name="Assistant",
+            date_msg=Date.today(),
         )
 
-        # 6) Persistance en BDD (si conversation connue)
+        # 6) Persistance BDD (si id_conversation connu et méthode DAO présente)
         if id_conversation and hasattr(ConversationDAO, "ajouter_echange"):
             try:
-                # En BDD: emetteur attendu = 'utilisateur' / 'ia'
-                e_user_db = Echange(
-                    id_conversation=id_conversation,
-                    emetteur="utilisateur",
-                    contenu=message,
-                    utilisateur_id=None,  # mets l'id user si on le veux/peux
-                )
-                e_assistant_db = Echange(
-                    id_conversation=id_conversation,
-                    emetteur="ia",
-                    contenu=echange_assistant.message,
-                    utilisateur_id=None,
-                )
+                # Message utilisateur à persister
+                e_user_db = Echange(agent="user", message=message)
+                # Attributs attendus par la DAO (emetteur/ contenu / utilisateur_id)
+                setattr(e_user_db, "emetteur", "utilisateur")
+                setattr(e_user_db, "contenu", message)
+                setattr(e_user_db, "utilisateur_id", id_user)  # requis si la BDD l'impose
+
+                # Message assistant à persister
+                e_assistant_db = Echange(agent="assistant", message=echange_assistant_vue.message)
+                setattr(e_assistant_db, "emetteur", "ia")
+                setattr(e_assistant_db, "contenu", echange_assistant_vue.message)
+                setattr(e_assistant_db, "utilisateur_id", None)
+
                 ConversationDAO.ajouter_echange(id_conversation, e_user_db)
                 ConversationDAO.ajouter_echange(id_conversation, e_assistant_db)
             except Exception as e:
-                logger.warning("Échec de la persistance des échanges : %s", e)
+                logger.warning(
+                    "Échec de la persistance des échanges (conv=%s) : %s", id_conversation, e
+                )
         else:
             logger.info(
                 "Historique non persisté (pas d'id_conversation ou DAO sans ajouter_echange)."
             )
 
-        return echange_assistant
+        return echange_assistant_vue

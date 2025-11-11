@@ -2,8 +2,8 @@ import logging
 
 from InquirerPy import inquirer
 
-from view.session import Session
-from view.vue_abstraite import VueAbstraite
+from src.view.session import Session
+from src.view.vue_abstraite import VueAbstraite
 
 
 class MenuUtilisateurVue(VueAbstraite):
@@ -17,7 +17,7 @@ class MenuUtilisateurVue(VueAbstraite):
         # Vérifie que l'utilisateur est bien connecté
         utilisateur = Session().utilisateur
         if utilisateur is None:
-            from view.accueil.accueil_vue import AccueilVue
+            from src.view.accueil.accueil_vue import AccueilVue
 
             return AccueilVue("Veuillez vous connecter avant d'accéder au menu utilisateur.")
 
@@ -44,7 +44,7 @@ class MenuUtilisateurVue(VueAbstraite):
             match choix:
                 case "Se déconnecter":
                     Session().deconnexion()
-                    from view.accueil.accueil_vue import AccueilVue
+                    from src.view.accueil.accueil_vue import AccueilVue
 
                     return AccueilVue("Déconnexion effectuée avec succès.")
 
@@ -52,22 +52,22 @@ class MenuUtilisateurVue(VueAbstraite):
                     return MenuUtilisateurVue(Session().afficher())
 
                 case "Voir mes conversations":
-                    from view.conversations_vue import ConversationsVue
+                    from src.view.conversations_vue import ConversationsVue
 
                     return ConversationsVue()
 
                 case "Créer une nouvelle conversation":
-                    from view.nouvelle_conversation_vue import NouvelleConversationVue
+                    from src.view.nouvelle_conversation_vue import NouvelleConversationVue
 
                     return NouvelleConversationVue()
 
                 case "Rechercher une conversation":
-                    from view.recherche_conversation_vue import RechercheConversationVue
+                    from src.view.recherche_conversation_vue import RechercheConversationVue
 
                     return RechercheConversationVue()
 
                 case "Voir mes statistiques":
-                    from view.stats_vue import StatsVue
+                    from src.view.stats_vue import StatsVue
 
                     return StatsVue()
 

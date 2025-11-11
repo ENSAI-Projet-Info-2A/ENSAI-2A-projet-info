@@ -337,7 +337,7 @@ class ConversationDAO:
     @staticmethod
     def lire_echanges(id_conv: int, offset: int = 0, limit: int = 20) -> List[Echange]:
         """
-        Retourne les messages d'une conversation, triés du plus récent au plus ancien,
+        Retourne les messages d'une conversation, triés du plus ancien au plus récent,
         avec pagination SQL (offset/limit).
         """
         if limit <= 0:
@@ -349,7 +349,7 @@ class ConversationDAO:
             SELECT id, emetteur, contenu, cree_le
             FROM messages
             WHERE conversation_id = %(id_conv)s
-            ORDER BY cree_le DESC
+            ORDER BY cree_le ASC, id ASC
             LIMIT %(limit)s OFFSET %(offset)s;
         """
 
@@ -362,12 +362,12 @@ class ConversationDAO:
         for r in rows:
             e = Echange(
                 id=r["id"],
-                expediteur=r["emetteur"],  # 'utilisateur' ou 'ia'
+                agent=r["emetteur"],
                 message=r["contenu"],
-                date_echange=r["cree_le"],
+                date_msg=r["cree_le"],
             )
 
-            # (Compat : si ton BO Echange attend d'autres alias, on peut doubler)
+            # Compatibilité éventuelle avec d'autres attributs
             try:
                 setattr(e, "agent", r["emetteur"])
                 setattr(e, "date_msg", r["cree_le"])

@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from dao.session_dao import SessionDAO
-from utils.singleton import Singleton
+from src.dao.session_dao import SessionDAO
+from src.utils.singleton import Singleton
 
 
 class Session(metaclass=Singleton):
