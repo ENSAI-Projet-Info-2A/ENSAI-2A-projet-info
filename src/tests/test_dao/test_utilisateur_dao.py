@@ -1,14 +1,11 @@
 import os
-import pytest
-
 from unittest.mock import patch
 
-from src.utils.reset_database import ResetDatabase
-from src.utils.securite import hash_password
-
-from src.dao.utilisateur_dao import UtilisateurDao
+import pytest
 
 from src.business_object.utilisateur import Utilisateur
+from src.dao.utilisateur_dao import UtilisateurDao
+from src.utils.reset_database import ResetDatabase
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -27,7 +24,7 @@ def test_trouver_par_id_existant():
     utilisateur = UtilisateurDao().trouver_par_id(id)
     # THEN
     assert utilisateur is not None
-    #assert isinstance(utilisateur, Utilisateur)
+    # assert isinstance(utilisateur, Utilisateur)
     assert utilisateur.pseudo == "user_alpha"
 
 
@@ -49,7 +46,7 @@ def test_trouver_par_pseudo_existant():
     utilisateur = UtilisateurDao().trouver_par_pseudo(pseudo)
     # THEN
     assert utilisateur is not None
-    #assert isinstance(utilisateur, Utilisateur)
+    # assert isinstance(utilisateur, Utilisateur)
     assert utilisateur.pseudo == pseudo
     assert utilisateur.id == 2
 
@@ -71,7 +68,7 @@ def test_creer_utilisateur_ok():
     # WHEN
     creation_ok = UtilisateurDao().creer_utilisateur(utilisateur)
     # THEN
-    #assert creation_ok
+    # assert creation_ok
     assert utilisateur is not None
 
 
@@ -126,7 +123,8 @@ def test_heures_utilisation_sans_sessions():
     # WHEN
     heures = UtilisateurDao().heures_utilisation(id_utilisateur)
     # THEN
-    assert heures == 0.
+    assert heures == 0.0
+
 
 if __name__ == "__main__":
     pytest.main([__file__])
