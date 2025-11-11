@@ -158,14 +158,22 @@ class ConversationDAO:
     @staticmethod
     def lister_conversations(id_user: int, n=None) -> list[Conversation]:
         query = """
-            SELECT c.*, MAX(m.cree_le) AS dernier_message
-            FROM conversations c
-            JOIN conversations_participants uc ON c.id = uc.conversation_id
-            LEFT JOIN messages m ON c.id = m.conversation_id
-            WHERE uc.utilisateur_id = %(id_user)s
-            GROUP BY c.id
-            ORDER BY dernier_message DESC NULLS LAST
-        """
+            SELECT *
+            FROM projet_test_dao.conversations
+            WHERE id IN (
+                SELECT m.conversation_id
+                FROM projet_test_dao.messages AS m
+                JOIN projet_test_dao.conversations_participants AS cp
+                ON m.conversation_id = cp.conversation_id
+                WHERE cp.utilisateur_id = %(id_user)s
+                GROUP BY m.conversation_id
+            )
+            ORDER BY (
+                SELECT MAX(m2.cree_le)
+                FROM projet_test_dao.messages AS m2
+                WHERE m2.conversation_id = conversations.id
+            ) DESC;
+            """
         params = {"id_user": id_user}
         if n and n > 0:
             query += " LIMIT %(n)s"
@@ -683,7 +691,7 @@ class ConversationDAO:
         return nombre_messages
 
     @staticmethod
-    def sujets_plus_frequents(id_user: int, k: int) -> list[tuple[str, int]]:
+    def sujets_plus_frequents(id_user: int, k: int) ->list[tuple[str, int]]:
         """
         Renvoie une liste des sujets les plus fréquents entretenus dans les conversations d'un utilisateur.
 

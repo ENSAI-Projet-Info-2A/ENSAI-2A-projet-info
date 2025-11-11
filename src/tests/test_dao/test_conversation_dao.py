@@ -47,7 +47,7 @@ def test_trouver_par_id_fail():
 def test_renommer_conv():
     # GIVEN
     conv = Conversation(id = 300, nom= "ancien_nom")
-    ConversationDAO.creer_conversation(conv)
+    conv = ConversationDAO.creer_conversation(conv)
     id_conv = conv.id
     nouveau_nom = 'nouveau_nom_test'
     # WHEN 
@@ -107,7 +107,8 @@ def test_lister_conv():
 
     # THEN 
     assert type(res[0].id) == int
-    assert res[0].id == 1
+    assert res[0].id == 3
+    assert res[1].id == 1
 # 9 dans conv 1 et 3
 
 
