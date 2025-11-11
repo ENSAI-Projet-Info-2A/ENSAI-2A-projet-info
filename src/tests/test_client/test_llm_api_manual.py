@@ -1,5 +1,5 @@
-from business_object.echange import Echange
-from client.llm_client import LLM_API
+from src.business_object.echange import Echange
+from src.client.llm_client import LLM_API
 
 
 def main():

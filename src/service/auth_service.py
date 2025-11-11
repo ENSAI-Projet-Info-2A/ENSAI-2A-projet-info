@@ -1,5 +1,4 @@
 from src.dao.utilisateur_dao import UtilisateurDao
-from src.business_object.utilisateur import Utilisateur
 from src.utils.jtw_utils import creer_token
 from src.utils.jtw_utils import verifier_token as verif_token
 
