@@ -175,7 +175,6 @@ class ConversationDAO:
             with conn.cursor() as cursor:
                 cursor.execute(query, params)
                 rows = cursor.fetchall() or []
-
         return [
             Conversation(
                 id=row["id"],
@@ -684,7 +683,7 @@ class ConversationDAO:
         return nombre_messages
 
     @staticmethod
-    def sujets_plus_frequents(id_user: int, k: int) -> list[str]:
+    def sujets_plus_frequents(id_user: int, k: int) -> list[Sujet]:
         """
         Renvoie une liste des sujets les plus fréquents entretenus dans les conversations d'un utilisateur.
 
