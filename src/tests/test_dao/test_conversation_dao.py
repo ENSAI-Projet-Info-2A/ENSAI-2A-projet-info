@@ -112,7 +112,7 @@ def test_lister_conv():
     res = ConversationDAO.lister_conversations(id_user)
 
     # THEN
-    assert type(res[0].id) == int
+    assert isinstance(res[0].id, int)
     assert res[0].id == 3
     assert res[1].id == 1
 

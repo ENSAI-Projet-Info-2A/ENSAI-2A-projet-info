@@ -66,7 +66,9 @@ def test_creer_utilisateur_ok():
     # GIVEN
     utilisateur = Utilisateur(pseudo="nouveau_user_test", password_hash="password123")
     # WHEN
-    creation_ok = UtilisateurDao().creer_utilisateur(utilisateur)
+    creation_ok = UtilisateurDao().creer_utilisateur(
+        utilisateur
+    )  # <- Pourquoi on ne s'en sert pas ?
     # THEN
     # assert creation_ok
     assert utilisateur is not None
