@@ -159,18 +159,18 @@ class ConversationDAO:
     def lister_conversations(id_user: int, n=None) -> list[Conversation]:
         query = """
             SELECT *
-            FROM projet_test_dao.conversations
+            FROM conversations
             WHERE id IN (
                 SELECT m.conversation_id
-                FROM projet_test_dao.messages AS m
-                JOIN projet_test_dao.conversations_participants AS cp
+                FROM messages AS m
+                JOIN conversations_participants AS cp
                 ON m.conversation_id = cp.conversation_id
                 WHERE cp.utilisateur_id = %(id_user)s
                 GROUP BY m.conversation_id
             )
             ORDER BY (
                 SELECT MAX(m2.cree_le)
-                FROM projet_test_dao.messages AS m2
+                FROM messages AS m2
                 WHERE m2.conversation_id = conversations.id
             ) DESC;
             """
