@@ -166,3 +166,4 @@ logs/*
 .env
 # mon environnement python 
 .venv
+ssh/
