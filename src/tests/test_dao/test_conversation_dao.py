@@ -6,6 +6,7 @@ import pytest
 from src.business_object.conversation import Conversation
 from src.dao.conversation_dao import ConversationDAO
 from src.utils.reset_database import ResetDatabase
+from datetime import datetime
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -116,5 +117,14 @@ def test_lister_conv():
     assert res[0].id == 3
     assert res[1].id == 1
 
+def test_rechercher_mot_cle():
+    # GIVEN 
+    date_str = "2025-01-12"
+    date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    id_user = 9
+    # WHEN 
+    res = ConversationDAO.rechercher_date(id_user, date)
+    #THEN 
+    assert isinstance(res, list)
+    assert res[0].id == 1 
 
-# 9 dans conv 1 et 3
