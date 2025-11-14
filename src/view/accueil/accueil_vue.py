@@ -1,6 +1,8 @@
 from InquirerPy import inquirer
 
 from src.utils.reset_database import ResetDatabase
+from src.view.accueil.connexion_vue import ConnexionVue
+from src.view.accueil.inscription_vue import InscriptionVue
 from src.view.session import Session
 from src.view.vue_abstraite import VueAbstraite
 
@@ -8,16 +10,14 @@ from src.view.vue_abstraite import VueAbstraite
 class AccueilVue(VueAbstraite):
     """Vue d'accueil de l'application"""
 
+    def __init__(self, message: str = ""):
+        self.message = message
+
     def choisir_menu(self):
-        """Choix du menu suivant
-
-        Return
-        ------
-        view
-            Retourne la vue choisie par l'utilisateur dans le terminal
-        """
-
+        """Retourne la vue choisie par l'utilisateur."""
         print("\n" + "-" * 50 + "\nAccueil\n" + "-" * 50 + "\n")
+        if self.message:
+            print(self.message + "\n")
 
         choix = inquirer.select(
             message="Faites votre choix : ",
@@ -32,27 +32,19 @@ class AccueilVue(VueAbstraite):
 
         match choix:
             case "Quitter":
-                pass
+                return None
 
             case "Se connecter":
-                print("Here : Con 1")
                 try:
-                    from src.view.accueil.connexion_vue import ConnexionVue
-
-                    print("Here : Con 2 (import OK)")
                     return ConnexionVue("Connexion à l'application")
-                except Exception:
+                except Exception as e:
                     import traceback
 
-                    print("Here : Con IMPORT FAILED")
                     traceback.print_exc()
-                    from src.view.accueil.accueil_vue import AccueilVue
-                return AccueilVue(f"Échec import ConnexionVue : {Exception}")
+                    return AccueilVue(f"Échec d'ouverture de la page de connexion : {e}")
 
             case "Créer un compte":
-                from src.view.accueil.inscription_vue import InscriptionVue
-
-                return InscriptionVue("Création de compte joueur")
+                return InscriptionVue("Création de compte")
 
             case "Infos de session":
                 return AccueilVue(Session().afficher())
@@ -60,6 +52,6 @@ class AccueilVue(VueAbstraite):
             case "Ré-initialiser la base de données":
                 succes = ResetDatabase().lancer()
                 message = (
-                    f"Ré-initilisation de la base de données - {'SUCCES' if succes else 'ECHEC'}"
+                    f"Ré-initialisation de la base de données - {'SUCCÈS' if succes else 'ÉCHEC'}"
                 )
                 return AccueilVue(message)
