@@ -230,19 +230,25 @@ class ConversationService:
             logger.error("Erreur lors de la recherche des conversations : %s", e)
             raise
 
-    def lire_fil(id_conversation: int, decalage: int, limite: int):
+    @staticmethod
+    def lire_fil(id_conversation: int, decalage: int = 0, limite: int | None = 20):
         if id_conversation is None:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
 
         offset = max(0, int(decalage or 0))
-        limit = max(1, int(limite or 20))
+
+        if limite is None:
+            limit = None
+        else:
+            limit = max(1, int(limite))
 
         try:
-            # pagination/tri faits en SQL
             return ConversationDAO.lire_echanges(id_conversation, offset=offset, limit=limit) or []
         except Exception as e:
             logger.error(
-                "Erreur lors de la lecture du fil de la conversation %s : %s", id_conversation, e
+                "Erreur lors de la lecture du fil de la conversation %s : %s",
+                id_conversation,
+                e,
             )
             raise
 
@@ -417,8 +423,7 @@ class ConversationService:
         history = [{"role": "system", "content": system_prompt}]
         if id_conversation:
             try:
-                anciens = ConversationDAO.lire_echanges(id_conversation, offset=0, limit=1000) or []
-                print(anciens)
+                anciens = ConversationDAO.lire_echanges(id_conversation, offset=0, limit=None) or []
                 for e in anciens:
                     emet = (
                         getattr(e, "expediteur", "")

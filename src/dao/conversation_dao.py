@@ -340,27 +340,45 @@ class ConversationDAO:
         ]
 
     @staticmethod
-    def lire_echanges(id_conv: int, offset: int = 0, limit: int = 20) -> List[Echange]:
+    def lire_echanges(id_conv: int, offset: int = 0, limit: int | None = 20) -> List[Echange]:
         """
-        Retourne les messages d'une conversation, triés du plus ancien au plus récent,
-        avec pagination SQL (offset/limit).
+        Retourne les messages d'une conversation.
+
+        - Si limit est None : tous les messages, du plus ancien au plus récent.
+        - Si limit est un entier : pagination à partir des messages les plus récents.
+        offset = 0 => les 'limit' derniers messages, affichés du plus ancien au plus récent.
         """
-        if limit <= 0:
-            limit = 20
-        if offset < 0:
+
+        # Normalisation de offset
+        if offset is None or offset < 0:
             offset = 0
 
-        sql = """
-            SELECT id, emetteur, contenu, cree_le
-            FROM messages
-            WHERE conversation_id = %(id_conv)s
-            ORDER BY cree_le ASC, id ASC
-            LIMIT %(limit)s OFFSET %(offset)s;
-        """
+        if limit is None:
+            # TOUS les messages, du plus ancien au plus récent
+            sql = """
+                SELECT id, emetteur, contenu, cree_le
+                FROM messages
+                WHERE conversation_id = %(id_conv)s
+                ORDER BY cree_le ASC, id ASC;
+            """
+            params = {"id_conv": id_conv}
+        else:
+            # Pagination sur LES DERNIERS messages
+            if limit <= 0:
+                limit = 20
+
+            sql = """
+                SELECT id, emetteur, contenu, cree_le
+                FROM messages
+                WHERE conversation_id = %(id_conv)s
+                ORDER BY cree_le DESC, id DESC
+                LIMIT %(limit)s OFFSET %(offset)s;
+            """
+            params = {"id_conv": id_conv, "limit": limit, "offset": offset}
 
         with DBConnection().connection as conn:
             with conn.cursor() as cur:
-                cur.execute(sql, {"id_conv": id_conv, "limit": limit, "offset": offset})
+                cur.execute(sql, params)
                 rows = cur.fetchall() or []
 
         echanges: List[Echange] = []
@@ -372,7 +390,6 @@ class ConversationDAO:
                 date_msg=r["cree_le"],
             )
 
-            # Compatibilité éventuelle avec d'autres attributs
             try:
                 setattr(e, "agent", r["emetteur"])
                 setattr(e, "date_msg", r["cree_le"])
@@ -380,6 +397,11 @@ class ConversationDAO:
                 pass
 
             echanges.append(e)
+
+        # Si on est en mode pagination sur les "derniers",
+        # on remet dans l'ordre chronologique (vieux -> récent)
+        if limit is not None:
+            echanges.reverse()
 
         return echanges
 

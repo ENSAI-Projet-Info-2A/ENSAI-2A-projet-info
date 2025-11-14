@@ -51,6 +51,35 @@ class ReprendreConversationVue(VueAbstraite):
             print(f"- {auteur} | {date_msg} : {contenu}")
         print("")
 
+    def _afficher_tous_les_messages(self):
+        try:
+            echanges = (
+                ConversationService.lire_fil(id_conversation=self.conv.id, decalage=0, limite=None)
+                or []
+            )
+        except Exception as e:
+            logging.error(f"[ReprendreConversationVue] Erreur lire_fil conv={self.conv.id} : {e}")
+            print("\n(Impossible d'afficher les messages pour l’instant)\n")
+            return
+
+        print("\n" + "-" * 60)
+        print(f"Conversation « {self.conv.nom} » — tous les messages")
+        print("-" * 60 + "\n")
+
+        if not echanges:
+            print("(Aucun message pour l’instant)\n")
+            return
+
+        for e in echanges:
+            auteur = getattr(e, "agent", getattr(e, "expediteur", "")) or ""
+            contenu = getattr(e, "message", getattr(e, "contenu", "")) or ""
+            date_msg = getattr(e, "date_msg", getattr(e, "date_echange", "")) or ""
+            print(f"- {auteur} | {date_msg} : {contenu}")
+        print("")
+
+        inquirer.text(message="Appuyez sur Entrée pour revenir au menu...", default="").execute()
+        return ReprendreConversationVue(self.conv)
+
     def _envoyer_message(self):
         texte = inquirer.text(message="Votre message :", default="").execute().strip()
         if not texte:
@@ -226,6 +255,7 @@ class ReprendreConversationVue(VueAbstraite):
             message="Que voulez-vous faire ?",
             choices=[
                 "Envoyer un message",
+                "Voir tous les messages",
                 "Changer la personnalisation",
                 "Ajouter un participant",
                 "Retirer un participant",
@@ -239,6 +269,9 @@ class ReprendreConversationVue(VueAbstraite):
         match choix:
             case "Envoyer un message":
                 return self._envoyer_message()
+            case "Voir tous les messages":
+                self._afficher_tous_les_messages()
+                return ReprendreConversationVue(self.conv)
             case "Changer la personnalisation":
                 return self._changer_personnalisation()
             case "Ajouter un participant":
