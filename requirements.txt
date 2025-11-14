@@ -1,19 +1,15 @@
-coverage
-inquirerPy
+# --- Dépendances applicatives ---
 fastapi
-psycopg2-binary
-pylint
-PyYAML
-regex
-requests
-tabulate
 uvicorn
-bcrypt==5.0.0
-iniconfig==2.3.0
-packaging==25.0
-pluggy==1.6.0
-psycopg2==2.9.11
-Pygments==2.19.2
-PyJWT==2.10.1
-pytest==8.4.2
-python-dotenv==1.2.1
+psycopg2          # ou psycopg2-binary
+InquirerPy
+requests
+python-dotenv
+PyYAML
+PyJWT
+pydantic
+
+# --- Tests & qualité ---
+pytest
+coverage
+pylint
