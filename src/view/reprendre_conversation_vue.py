@@ -1,8 +1,8 @@
-# view/reprendre_conversation_vue.py
 import logging
 
 from InquirerPy import inquirer
 
+from src.dao.prompt_dao import PromptDAO
 from src.service.conversation_service import ConversationService, ErreurValidation
 from src.view.session import Session
 from src.view.vue_abstraite import VueAbstraite
@@ -80,24 +80,51 @@ class ReprendreConversationVue(VueAbstraite):
         return ReprendreConversationVue(self.conv)
 
     def _changer_personnalisation(self):
-        """Appelle la mise à jour de la personnalisation via le Service (utilise la méthode d'instance)."""
-        new_perso = (
-            inquirer.text(
-                message="Nouvelle personnalisation (nom de prompt ou ID) :",
-                default="",
-            )
-            .execute()
-            .strip()
+        """Change la personnalisation de la conversation via un menu interactif."""
+
+        # 1) Récupérer la liste des prompts
+        try:
+            prompts = PromptDAO.lister_prompts()
+        except Exception as e:
+            logging.error(f"[ReprendreConversationVue] Erreur récupération prompts : {e}")
+            print("\n(Impossible de récupérer la liste des prompts.)\n")
+            return ReprendreConversationVue(self.conv, "Personnalisation inchangée.")
+
+        if not prompts:
+            print("\n(Aucun prompt n'est défini dans la base.)\n")
+            return ReprendreConversationVue(self.conv, "Personnalisation inchangée.")
+
+        # 2) Construire les choix pour InquirerPy
+        choices = [
+            {
+                "name": f"[{p['id']}] {p['nom']}",
+                "value": p["id"],  # on renvoie l'ID (int)
+            }
+            for p in prompts
+        ]
+
+        # Option pour ne rien changer / annuler
+        choices.insert(
+            0, {"name": "<- Annuler (laisser la personnalisation actuelle)", "value": None}
         )
-        if not new_perso:
+
+        # 3) Menu interactif
+        selection = inquirer.select(
+            message="Choisir une nouvelle personnalisation :",
+            choices=choices,
+        ).execute()
+
+        if selection is None:
+            # L'utilisateur a choisi "Annuler"
             return ReprendreConversationVue(self.conv, "Personnalisation inchangée.")
 
         try:
-            # La méthode est définie avec `self` dans ConversationService → instancier.
             svc = ConversationService()
-            svc.mettre_a_jour_personnalisation(self.conv.id, new_perso)
+            # selection est un int (prompt_id) → compatible avec _resolve_prompt_id
+            svc.mettre_a_jour_personnalisation(self.conv.id, selection)
             return ReprendreConversationVue(
-                self.conv, f"Personnalisation mise à jour : {new_perso}"
+                self.conv,
+                f"Personnalisation mise à jour (prompt_id={selection}).",
             )
         except ErreurValidation as e:
             return ReprendreConversationVue(self.conv, f"Erreur : {e}")
