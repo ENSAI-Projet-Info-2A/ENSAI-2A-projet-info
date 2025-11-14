@@ -622,7 +622,7 @@ class ConversationDAO:
                 cursor.execute(
                     """
                     UPDATE conversations
-                    SET prompt_id = %(prompt_id)d
+                    SET prompt_id = %(prompt_id)s
                     WHERE id = %(conversation_id)s
                     """,
                     {"prompt_id": prompt_id, "conversation_id": conversation_id},

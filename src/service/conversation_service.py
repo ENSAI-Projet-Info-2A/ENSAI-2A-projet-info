@@ -59,18 +59,11 @@ class ConversationService:
             if not prompt_id:
                 return ConversationService.DEFAULT_SYSTEM_PROMPT
 
-            # Essaie des API possibles de PromptDAO selon ton code réel
-            if hasattr(PromptDAO, "get_prompt_text_by_id"):
-                txt = PromptDAO.get_prompt_text_by_id(prompt_id)
-                return txt or ConversationService.DEFAULT_SYSTEM_PROMPT
+            from src.dao.prompt_dao import PromptDAO
 
-            if hasattr(PromptDAO, "get_by_id"):
-                p = PromptDAO.get_by_id(prompt_id)
-                for attr in ("contenu", "content", "texte", "text", "prompt"):
-                    if hasattr(p, attr) and getattr(p, attr):
-                        return getattr(p, attr)
+            txt = PromptDAO.get_prompt_text_by_id(prompt_id)
+            return txt or ConversationService.DEFAULT_SYSTEM_PROMPT
 
-            return ConversationService.DEFAULT_SYSTEM_PROMPT
         except Exception:
             return ConversationService.DEFAULT_SYSTEM_PROMPT
 
@@ -409,7 +402,7 @@ class ConversationService:
         # Hyperparamètres avec valeurs par défaut
         temperature = float(options.get("temperature", 0.7)) if options else 0.7
         top_p = float(options.get("top_p", 1.0)) if options else 1.0
-        max_tokens = int(options.get("max_tokens", 1024)) if options else 512
+        max_tokens = int(options.get("max_tokens", 1024)) if options else 1024
         stop = options.get("stop") if options and "stop" in options else None
 
         # 1) Prompt système (non persisté en BDD)
@@ -425,6 +418,7 @@ class ConversationService:
         if id_conversation:
             try:
                 anciens = ConversationDAO.lire_echanges(id_conversation, offset=0, limit=1000) or []
+                print(anciens)
                 for e in anciens:
                     emet = (
                         getattr(e, "expediteur", "")
