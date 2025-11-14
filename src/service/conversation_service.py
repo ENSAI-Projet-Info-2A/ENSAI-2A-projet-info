@@ -214,7 +214,7 @@ class ConversationService:
 
         try:
             if mot_cle is not None and date_recherche is not None:
-                res = ConversationDAO.rechercher_conv_motC_et_date(
+                res = ConversationDAO.rechercher_conv_mot_et_date(
                     id_user=id_utilisateur, mot_cle=mot_cle, date=date_recherche
                 )
                 logger.info("Recherche combinée par mot-clé et date effectuée.")
@@ -409,7 +409,7 @@ class ConversationService:
         # Hyperparamètres avec valeurs par défaut
         temperature = float(options.get("temperature", 0.7)) if options else 0.7
         top_p = float(options.get("top_p", 1.0)) if options else 1.0
-        max_tokens = int(options.get("max_tokens", 512)) if options else 512
+        max_tokens = int(options.get("max_tokens", 1024)) if options else 512
         stop = options.get("stop") if options and "stop" in options else None
 
         # 1) Prompt système (non persisté en BDD)
