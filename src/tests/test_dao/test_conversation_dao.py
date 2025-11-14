@@ -109,6 +109,7 @@ def test_lister_conv():
     # GIVEN
     id_user = 9
     # WHEN
+
     res = ConversationDAO.lister_conversations(id_user)
 
     # THEN
@@ -118,3 +119,71 @@ def test_lister_conv():
 
 
 # 9 dans conv 1 et 3
+def test_retirer_participant_ok():
+    # WHEN
+    res = TaClasse.retirer_participant(conversation_id=5, id_user=9)
+
+    # THEN
+    assert res is True
+
+def test_ajouter_echange_ia():
+    #GIVEN
+    id_conv=32
+    e = Echange(id="18", agent="ia", message="Hello", date_msg='2025-05-09 14:56:33+00')
+
+    # WHEN
+    res = ConversationDAO.ajouter_echange(id_conv, e)
+
+    # THEN
+    assert res is True
+    assert isinstance(e.id, int)
+    assert e.id == 42
+
+def test_agent_invalide():
+    # GIVEN
+    e = Echange(id="18", agent="robot", message="Hello", date_msg='2025-05-09 14:56:33+00')
+
+    # WHEN / THEN
+    with pytest.raises(Exception):
+        ConversationDAO.ajouter_echange(1, e)
+
+
+def test_compter_message_user():
+    #GIVEN la bdd pour les tests
+    # WHEN
+    result = ConversationDAO.compter_message_user(9)
+
+    # THEN
+    assert isinstance(result, int)
+    assert result == 1  # 1 messages "utilisateur" pour id_user=9
+
+def test_compter_message_user_aucun():
+
+    # WHEN
+    result = ConversationDAO.compter_message_user(999)  # id_user inexistant
+
+    # THEN
+    assert isinstance(result, int)
+    assert result == 0
+
+def test_sujets_plus_frequents_ok():
+    """Renvoie les k mots les plus fréquents d'un utilisateur"""
+    # WHEN
+    res = ConversationDAO.sujets_plus_frequents(id_user=9, k=3)
+
+    # THEN
+    assert isinstance(res, list)
+    assert len(res) <= 3
+    # ajouter à la bdd test des choses peremettants ca. mots = [mot for mot, _ in res]
+    #assert "" in mots
+
+def test_sujets_plus_frequents_aucune_conversation(mock_db): #okjepense
+    """Lève une exception si l'utilisateur n'a aucune conversation"""
+    # GIVEN
+    id_user = 9999
+    # WHEN / THEN
+    with pytest.raises(Exception) as exc_info:
+        ConversationDAO.sujets_plus_frequents(id_user, k=5)
+    assert "aucune conversation" in str(exc_info.value).lower()
+ #besoin d'un test limite ? titre vide ? etc ? 
+
