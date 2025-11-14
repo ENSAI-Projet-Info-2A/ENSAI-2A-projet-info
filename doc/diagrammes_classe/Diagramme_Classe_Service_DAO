@@ -6,7 +6,9 @@ classDiagram
 direction LR
     class Utilisateur_Service {
 	    +creer_compte(pseudo: string, mdp: string) : Utilisateur
+			+trouver_par_id(id: int):utilisateur
 	    +trouver_par_pseudo(pseudo: string) : Utilisateur
+			+lister_tous(): list~Utilisateur~
 	    +supprimer(user_id: int) : bool
     }
 
@@ -17,15 +19,14 @@ direction LR
     }
 
     class Conversation_Service {
-	    +creer(titre: string, personnalisation: string) : Conversation
-	    +acceder(id_conv: int) : Conversation
+	    +creer_conv(titre: string, personnalisation: string, id_proprietaire: int) : Conversation
+	    +acceder_conv(id_conv: int) : Conversation
 	    +renommer_conv(id_conv: int, nouveau_nom: string) : bool
 	    +supprimer_conv(id_conv: int) : bool
 	    +lister_conv(id_user: int) : List~Conversation~
-	    +rechercher(id_user: int, motcle: string, date: date) : List~Conversation~
+	    +rechercher_conv(id_user: int, motcle: string, date: date) : List~Conversation~
 	    +lire_fil(id_conv: int, offset: int, limit: int) : List~Echange~
 	    +rechercher_message(id_conv: int, motcle: string, date: date) : List~Echange~
-	    +envoyer_message(id_conv: int, contenu: string) : Echange      %% ajoute un échange user
 	    +demander_assistant(id_conv: int, temperature: double, top_p: double, max_tokens: int, stop: List) : Echange  %% crée échange assistant
 	    +ajouter_utilisateur(id_conv: int, id_user: int, role: string) : bool
 	    +retirer_utilisateur(id_conv: int, id_user: int) : bool
@@ -40,10 +41,12 @@ direction LR
 
     class Utilisateur_DAO {
 	    +creer_utilisateur(pseudo: string, password_hash: string) : Utilisateur
-	    +get_par_id(id: int) : Utilisateur
+	    +trouver_par_id(id: int) : Utilisateur
 	    +trouver_par_pseudo(pseudo: string) : Utilisateur
+			+lister_tous(): list[Utilisateur]
 	    +supprimer(id: int) : bool
-	    +get_hash_par_pseudo(pseudo: string) : string  %% pour Auth_Service
+	    +heures_utilisation(user_id: int):float
+			+heures_utilisation_incl_courante(user_id: int): float
     }
 
     class Conversation_DAO {
@@ -54,6 +57,7 @@ direction LR
 	    +lister_conversations(id_user: int) : List~Conversation~
 	    +rechercher_mot_clef(id_user: int, motcle: string) : List~Conversation~
 	    +rechercher_date(id_user: int, date: date) : List~Conversation~
+			+rechercher_conv_motC_et_date(id_user: int, mot_cle: str, date: datetime.date):List~Conversation~
 	    +lire_echanges(id_conv: int, offset: int, limit: int) : List~Echange~
 	    +rechercher_echange(id_conv: int, motcle: string, date: date) : List~Echange~
 	    +ajouter_participant(id_conv: int, id_user: int, role: string) : bool
@@ -63,7 +67,7 @@ direction LR
 	    +compter_conversations(id_user: int) : int
 	    +compter_messages_user(id_user: int) : int
 	    +sujets_plus_frequents(id_user: int, topK: int) : list~string~
-	    +heures_utilisation(id_user: int) : double
+	    +mettre_a_j_preprompt_id(conversation_id: int, prompt_id: int): bool
     }
 
     class LLM_API {

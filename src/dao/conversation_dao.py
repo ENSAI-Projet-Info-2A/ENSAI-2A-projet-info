@@ -217,11 +217,14 @@ class ConversationDAO:
                     SELECT DISTINCT c.id, c.titre, c.prompt_id, c.cree_le
                     FROM conversations c
                     JOIN conversations_participants cp
-                    ON cp.conversation_id = c.id
-                    JOIN messages m
-                    ON m.conversation_id = c.id
+                        ON cp.conversation_id = c.id
+                    LEFT JOIN messages m
+                        ON m.conversation_id = c.id
                     WHERE cp.utilisateur_id = %(uid)s
-                    AND m.contenu ILIKE %(pattern)s
+                      AND (
+                            c.titre ILIKE %(pattern)s
+                         OR m.contenu ILIKE %(pattern)s
+                      )
                     ORDER BY c.cree_le DESC;
                     """,
                     {"uid": id_user, "pattern": pattern},
@@ -297,7 +300,7 @@ class ConversationDAO:
             for r in rows
         ]
 
-    def rechercher_conv_motC_et_date(id_user: int, mot_cle: str, date: datetime.date):
+    def rechercher_conv_mot_et_date(id_user: int, mot_cle: str, date: datetime.date):
         """
         Retourne les conversations avec au moins un message contenant `mot_cle`
         ET daté le jour `date` (peu importe l'heure), émis par l'utilisateur.
@@ -619,7 +622,7 @@ class ConversationDAO:
                 cursor.execute(
                     """
                     UPDATE conversations
-                    SET prompt_id = %(prompt_id)d
+                    SET prompt_id = %(prompt_id)s
                     WHERE id = %(conversation_id)s
                     """,
                     {"prompt_id": prompt_id, "conversation_id": conversation_id},

@@ -18,8 +18,7 @@ CREATE TABLE IF NOT EXISTS prompts (
   id        SERIAL PRIMARY KEY,
   nom       TEXT UNIQUE NOT NULL,   -- ex: "fr_tutor_strict_v2"
   contenu   TEXT NOT NULL,
-  version   INT NOT NULL DEFAULT 1,
-  cree_le   TIMESTAMPTZ NOT NULL DEFAULT now()
+  version   INT NOT NULL DEFAULT 1
 );
 
 -----------------------------------------------------

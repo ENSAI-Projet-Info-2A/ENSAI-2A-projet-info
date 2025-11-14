@@ -6,6 +6,7 @@ import pytest
 from src.business_object.conversation import Conversation
 from src.dao.conversation_dao import ConversationDAO
 from src.utils.reset_database import ResetDatabase
+from datetime import datetime
 
 
 @pytest.fixture(scope="session", autouse=True)
