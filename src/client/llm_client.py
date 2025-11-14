@@ -53,7 +53,6 @@ class LLM_API:
             "top_p": max(0.0, min(1.0, float(top_p))),
             "max_tokens": int(max_tokens),
         }
-        print(parameters)
         if stop:
             parameters["stop"] = list(stop)
 
