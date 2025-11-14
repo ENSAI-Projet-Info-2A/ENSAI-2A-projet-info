@@ -4,6 +4,7 @@ erDiagram
     CONVERSATIONS ||--o{ MESSAGES : "contient"
     CONVERSATIONS ||--o{ CONVERSATION_PARTICIPANTS : "associe"
     SENDERS ||--o{ CONVERSATION_PARTICIPANTS : "participe"
+    PROMPTS ||--o{ CONVERSATIONS : "initialise"
 
     USERS {
         int id PK
@@ -35,6 +36,13 @@ erDiagram
         int id PK
         int conversation_id FK
         int sender_id FK
+        text content
+        datetime created_at
+    }
+
+    PROMPTS{
+        int id PK
+        string nom 
         text content
         datetime created_at
     }
