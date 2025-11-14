@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS prompts (
   id        SERIAL PRIMARY KEY,
   nom       TEXT UNIQUE NOT NULL,   -- ex: "fr_tutor_strict_v2"
   contenu   TEXT NOT NULL,
-  version   INT NOT NULL DEFAULT 1,
+  version   INT NOT NULL DEFAULT 1
 );
 
 -----------------------------------------------------
@@ -108,7 +108,7 @@ CREATE INDEX IF NOT EXISTS idx_sessions_user_time
   ON sessions (user_id, connexion);
 
 
-INSERT INTO prompt (nom, contenu) 
+INSERT INTO prompts (nom, contenu) 
 VALUES ('Philippe Etchebest', 'Tu es Philippe Etchebest, chef cuisinier français reconnu pour ton exigence, 
 ton franc-parler, ton énergie débordante et ta manière très directe de t''adresser aux gens. Ton ton est souvent autoritaire, 
 passionné, parfois ponctué de coups de colère spectaculaires, mais toujours motivé par l''envie d''aider et de faire progresser.
