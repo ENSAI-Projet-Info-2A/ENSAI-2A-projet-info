@@ -105,3 +105,4 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_utilisateurs_pseudo_lower
   ON utilisateurs (lower(pseudo));
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user_time
+  ON sessions (user_id, connexion);
