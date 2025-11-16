@@ -150,41 +150,41 @@ def test_agent_invalide():
 
 
 def test_compter_message_user():
-    #GIVEN la bdd pour les tests
-    # WHEN
-    result = ConversationDAO.compter_message_user(9)
+    #GIVEN la bdd pour les tests
+     # WHEN
+    result = ConversationDAO.compter_message_user(9)
 
-    # THEN
-    assert isinstance(result, int)
-    assert result == 1  # 1 messages "utilisateur" pour id_user=9
+     # THEN
+    assert isinstance(result, int)
+    assert result == 1 # 1 messages "utilisateur" pour id_user=9
 
 def test_compter_message_user_aucun():
 
-    # WHEN
-    result = ConversationDAO.compter_message_user(999)  # id_user inexistant
+    # WHEN
+    result = ConversationDAO.compter_message_user(999) # id_user inexistant
 
-    # THEN
-    assert isinstance(result, int)
-    assert result == 0
+    # THEN
+    assert isinstance(result, int)
+    assert result == 0
 
 def test_sujets_plus_frequents_ok():
-    """Renvoie les k mots les plus fréquents d'un utilisateur"""
-    # WHEN
-    res = ConversationDAO.sujets_plus_frequents(id_user=9, k=3)
+    """Renvoie les k mots les plus fréquents d'un utilisateur"""
+    # WHEN
+    res = ConversationDAO.sujets_plus_frequents(id_user=9, k=3)
 
-    # THEN
-    assert isinstance(res, list)
-    assert len(res) <= 3
-    # ajouter à la bdd test des choses peremettants ca. mots = [mot for mot, _ in res]
-    #assert "" in mots
+    # THEN
+    assert isinstance(res, list)
+    assert len(res) <= 3
+    # ajouter à la bdd test des choses peremettants ca. mots = [mot for mot, _ in res]
+    #assert "" in mots
 
 def test_sujets_plus_frequents_aucune_conversation(mock_db): #okjepense
-    """Lève une exception si l'utilisateur n'a aucune conversation"""
-    # GIVEN
-    id_user = 9999
-    # WHEN / THEN
-    with pytest.raises(Exception) as exc_info:
-        ConversationDAO.sujets_plus_frequents(id_user, k=5)
-    assert "aucune conversation" in str(exc_info.value).lower()
- #besoin d'un test limite ? titre vide ? etc ? 
+    """Lève une exception si l'utilisateur n'a aucune conversation"""
+    # GIVEN
+    id_user = 9999
+    # WHEN / THEN
+    with pytest.raises(Exception) as exc_info:
+        ConversationDAO.sujets_plus_frequents(id_user, k=5)
+    assert "aucune conversation" in str(exc_info.value).lower()
+ #besoin d'un test limite ? titre vide ? etc ? 
 

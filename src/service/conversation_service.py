@@ -23,8 +23,45 @@ class ErreurNonTrouvee(Exception):
 
 
 class ConversationService:
+    """
+    Service métier pour la gestion des conversations et des échanges avec un assistant.
+
+    Fournit des méthodes pour :
+    - Créer, accéder, renommer, supprimer et lister des conversations.
+    - Ajouter ou retirer des participants.
+    - Rechercher des conversations ou des messages.
+    - Lire le fil de messages d’une conversation.
+    - Mettre à jour la personnalisation d’une conversation (prompt associé).
+    - Exporter une conversation (actuellement JSON).
+    - Interagir avec un assistant virtuel (LLM) et stocker les échanges.
+
+    Attributs de classe
+    -------------------
+    DEFAULT_SYSTEM_PROMPT : str
+        Texte par défaut à utiliser comme prompt système si aucune personnalisation n’est définie.
+    """
     @staticmethod
     def _resolve_prompt_id(personnalisation):
+        """
+        Résout un identifiant de prompt à partir de différentes entrées possibles.
+
+        Parameters
+        ----------
+        personnalisation : int | str | None
+            - None, "", "  " => pas de prompt
+            - int => id du prompt, vérifié dans la base
+            - str => nom du prompt, résolu en id via la DAO
+
+        Returns
+        -------
+        int | None
+            L’identifiant du prompt ou None si aucune personnalisation.
+
+        Raises
+        ------
+        ErreurValidation
+            Si le prompt n’existe pas.
+        """
         # Accepte None, "", "  "  => pas de prompt
         if personnalisation is None or (
             isinstance(personnalisation, str) and not personnalisation.strip()
@@ -46,9 +83,17 @@ class ConversationService:
     @staticmethod
     def _resolve_system_prompt_for_conv(id_conversation: int | None) -> str:
         """
-        Texte 'system' à placer en tête du history pour le LLM.
-        - Si la conversation a une personnalisation (prompt_id), on tente d'en récupérer le contenu.
-        - Sinon, on renvoie un prompt par défaut.
+        Retourne le texte du prompt système à utiliser pour un LLM.
+
+        Parameters
+        ----------
+        id_conversation : int | None
+            Identifiant de la conversation. Si None, on renvoie le prompt par défaut.
+
+        Returns
+        -------
+        str
+            Texte du prompt système (personnalisé ou par défaut).
         """
         if not id_conversation:
             return ConversationService.DEFAULT_SYSTEM_PROMPT
@@ -69,6 +114,28 @@ class ConversationService:
 
     @staticmethod
     def creer_conv(titre: str, personnalisation, id_proprietaire: int | None = None) -> str:
+        """
+        Crée une nouvelle conversation et éventuellement rattache un utilisateur comme propriétaire.
+
+        Parameters
+        ----------
+        titre : str
+            Nom de la conversation (max 255 caractères)
+        personnalisation : str | int | None
+            Prompt associé à la conversation
+        id_proprietaire : int | None
+            Identifiant de l’utilisateur propriétaire (facultatif)
+
+        Returns
+        -------
+        str
+            Message de confirmation de création.
+
+        Raises
+        ------
+        ErreurValidation
+            Si le titre est absent ou trop long.
+        """
         if not titre or not str(titre).strip():
             raise ErreurValidation("Le titre est nécessaire.")
         if len(titre) > 255:
@@ -108,7 +175,26 @@ class ConversationService:
             raise
 
     def acceder_conversation(id_conversation: int):
-        """Permet d'accéder à une conversation existante."""
+        """
+        Récupère une conversation existante.
+
+        Parameters
+        ----------
+        id_conversation : int
+            Identifiant de la conversation à récupérer
+
+        Returns
+        -------
+        Conversation
+            Objet Conversation correspondant
+
+        Raises
+        ------
+        ErreurValidation
+            Si l’id est manquant.
+        ErreurNonTrouvee
+            Si la conversation n’existe pas.
+        """
         if id_conversation is None:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
         try:
@@ -132,7 +218,26 @@ class ConversationService:
             raise Exception("erreur interne lors de la recherche de la conversation.") from e
 
     def renommer_conversation(id_conversation: int, nouveau_titre: str):
-        """Renomme une conversation existante."""
+        """
+        Renomme une conversation existante.
+
+        Parameters
+        ----------
+        id_conversation : int
+            Identifiant de la conversation
+        nouveau_titre : str
+            Nouveau nom de la conversation
+
+        Returns
+        -------
+        bool
+            True si renommage effectué, False sinon
+
+        Raises
+        ------
+        ErreurValidation
+            Si les paramètres sont invalides
+        """
         if not id_conversation:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
         if not nouveau_titre or not nouveau_titre.strip():
@@ -150,7 +255,24 @@ class ConversationService:
             raise
 
     def supprimer_conversation(id_conversation: int) -> bool:
-        """Supprime une conversation existante."""
+        """
+        Supprime une conversation existante.
+
+        Parameters
+        ----------
+        id_conversation : int
+            Identifiant de la conversation
+
+        Returns
+        -------
+        bool
+            True si suppression effectuée, False sinon
+
+        Raises
+        ------
+        ErreurValidation
+            Si l’id est manquant
+        """
         if not id_conversation:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
         try:
@@ -169,7 +291,26 @@ class ConversationService:
             raise
 
     def lister_conversations(id_utilisateur: int, limite=None) -> List["Conversation"]:
-        """Liste les conversations d'un utilisateur. Renvoie [] s'il n'y en a pas."""
+        """
+        Liste les conversations d’un utilisateur.
+
+        Parameters
+        ----------
+        id_utilisateur : int
+            Identifiant de l’utilisateur
+        limite : int | None
+            Nombre maximum de conversations à retourner (facultatif)
+
+        Returns
+        -------
+        List[Conversation]
+            Liste des conversations, vide si aucune
+
+        Raises
+        ------
+        ErreurValidation
+            Si id_utilisateur manquant ou limite invalide
+        """
         if id_utilisateur is None:
             raise ErreurValidation("L'identifiant de l'utilisateur est requis.")
         if limite is not None and limite < 1:
@@ -196,6 +337,28 @@ class ConversationService:
     def rechercher_conversations(
         id_utilisateur: int, mot_cle=None, date_recherche=None
     ) -> List["Conversation"]:
+        """
+        Recherche des conversations selon un mot-clé et/ou une date.
+
+        Parameters
+        ----------
+        id_utilisateur : int
+            Identifiant de l’utilisateur
+        mot_cle : str | None
+            Mot-clé à rechercher
+        date_recherche : datetime.date | None
+            Date pour filtrer les conversations
+
+        Returns
+        -------
+        List[Conversation]
+            Liste des conversations correspondant aux critères
+
+        Raises
+        ------
+        ErreurValidation
+            Si id_utilisateur manquant
+        """
         if id_utilisateur is None:
             raise ErreurValidation("L'identifiant de l'utilisateur est requis.")
 
@@ -232,6 +395,28 @@ class ConversationService:
 
     @staticmethod
     def lire_fil(id_conversation: int, decalage: int = 0, limite: int | None = 20):
+        """
+        Lit le fil de messages d’une conversation.
+
+        Parameters
+        ----------
+        id_conversation : int
+            Identifiant de la conversation
+        decalage : int
+            Décalage pour pagination (offset)
+        limite : int | None
+            Nombre maximum de messages à lire
+
+        Returns
+        -------
+        List[Echange]
+            Liste des messages de la conversation
+
+        Raises
+        ------
+        ErreurValidation
+            Si id_conversation manquant
+        """
         if id_conversation is None:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
 
@@ -255,7 +440,25 @@ class ConversationService:
     def rechercher_message(
         id_conversation: int, mot_cle: str, date_recherche: Date
     ) -> List["Echange"]:
-        """Recherche un message dans une conversation."""
+        """
+        Recherche des messages dans une conversation par mot-clé et/ou date.
+
+        Parameters
+        ----------
+        id_conversation : int
+        mot_cle : str
+        date_recherche : datetime.date
+
+        Returns
+        -------
+        List[Echange]
+            Messages correspondants aux critères
+
+        Raises
+        ------
+        ErreurValidation
+            Si paramètres manquants
+        """
         if id_conversation is None:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
         if not mot_cle and not date_recherche:
@@ -280,7 +483,25 @@ class ConversationService:
             raise
 
     def ajouter_utilisateur(id_conversation: int, id_utilisateur: int, role: str) -> bool:
-        """Ajoute un utilisateur à une conversation."""
+        """
+        Ajoute un utilisateur à une conversation avec un rôle donné.
+
+        Parameters
+        ----------
+        id_conversation : int
+        id_utilisateur : int
+        role : str
+
+        Returns
+        -------
+        bool
+            True si ajout réussi, False sinon
+
+        Raises
+        ------
+        ErreurValidation
+            Si paramètres manquants
+        """
         if not id_conversation or not id_utilisateur or not role:
             raise ErreurValidation(
                 "Les champs id_conversation, id_utilisateur et rôle sont requis."
@@ -306,7 +527,24 @@ class ConversationService:
             raise
 
     def retirer_utilisateur(id_conversation: int, id_utilisateur: int) -> bool:
-        """Retire un utilisateur d'une conversation."""
+        """
+        Retire un utilisateur d’une conversation.
+
+        Parameters
+        ----------
+        id_conversation : int
+        id_utilisateur : int
+
+        Returns
+        -------
+        bool
+            True si retrait effectué, False sinon
+
+        Raises
+        ------
+        ErreurValidation
+            Si paramètres manquants
+        """
         if not id_conversation or not id_utilisateur:
             raise ErreurValidation("Les champs id_conversation et id_utilisateur sont requis.")
         try:
@@ -330,7 +568,25 @@ class ConversationService:
             raise
 
     def mettre_a_jour_personnalisation(self, id_conversation: int, personnalisation: str) -> bool:
-        """Met à jour le profil (prompt) de la conversation."""
+        """
+        Met à jour le prompt associé à une conversation.
+
+        Parameters
+        ----------
+        id_conversation : int
+        personnalisation : str | int
+            Prompt à appliquer à la conversation
+
+        Returns
+        -------
+        bool
+            True si mise à jour réussie
+
+        Raises
+        ------
+        ErreurValidation
+            Si paramètres manquants ou prompt inconnu
+        """
         if not id_conversation:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
         if personnalisation is None:
@@ -351,7 +607,25 @@ class ConversationService:
             raise
 
     def exporter_conversation(self, id_conversation: int, format_: str) -> bool:
-        """Exporte la conversation dans un fichier (actuellement au format JSON uniquement)."""
+        """
+        Exporte une conversation dans un fichier (actuellement JSON uniquement).
+
+        Parameters
+        ----------
+        id_conversation : int
+        format_ : str
+            Format d’export (actuellement uniquement "json")
+
+        Returns
+        -------
+        bool
+            True si export réussi
+
+        Raises
+        ------
+        ErreurValidation
+            Si format non supporté ou paramètres invalides
+        """
         if not id_conversation:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
         if format_ not in ("json",):
@@ -382,11 +656,34 @@ class ConversationService:
         id_user: int | None = None,
     ):
         """
-        Envoie un message à l'assistant et reçoit une réponse du LLM.
+        Envoie un message à l’assistant (LLM) et reçoit une réponse.
         - Injecte un message 'system' en tête du history (non stocké en BDD).
         - Si id_conversation est fourni, charge l'historique et persiste les échanges.
         - id_user est recommandé pour satisfaire la contrainte BDD (utilisateur_id NOT NULL)
         lorsque emetteur='utilisateur'.
+
+        Parameters
+        ----------
+        message : str
+            Message utilisateur
+        options : dict | None
+            Options LLM : temperature, top_p, max_tokens, stop
+        id_conversation : int | None
+            Identifiant de conversation pour historiser les échanges
+        id_user : int | None
+            Identifiant utilisateur (requis si persisté dans la BDD)
+
+        Returns
+        -------
+        Echange
+            Objet représentant la réponse de l’assistant
+
+        Raises
+        ------
+        ErreurValidation
+            Si message vide
+        Exception
+            Si échec d’appel LLM ou persistance
         """
         from src.business_object.echange import Echange
 

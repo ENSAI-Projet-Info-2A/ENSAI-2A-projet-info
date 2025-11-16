@@ -14,6 +14,26 @@ class ConversationDAO:
     def creer_conversation(
         conversation: Conversation, proprietaire_id: int | None = None
     ) -> Conversation:
+        """
+        Crée une nouvelle conversation en base de données.
+
+        Parameters
+        ----------
+        conversation : Conversation
+            L'objet Conversation contenant au minimum un nom.
+        proprietaire_id : int | None, optional
+            L'identifiant du créateur à ajouter aux participants, by default None.
+
+        Returns
+        -------
+        Conversation
+            La conversation mise à jour avec son `id`, sa date de création et son `prompt_id`.
+
+        Raises
+        ------
+        ValueError
+            Si le titre est vide ou si la personnalisation (prompt) est invalide.
+        """
         titre = (conversation.nom or "").strip()
         if not titre:
             raise ValueError("Le nom (titre) de la conversation est obligatoire.")
@@ -62,6 +82,24 @@ class ConversationDAO:
 
     @staticmethod
     def trouver_par_id(id_conv: int) -> Conversation:
+        """
+        Récupère une conversation dans la base à partir de son identifiant.
+
+        Parameters
+        ----------
+        id_conv : int
+            Identifiant de la conversation.
+
+        Returns
+        -------
+        Conversation
+            L'objet Conversation correspondant.
+
+        Raises
+        ------
+        Exception
+            Si aucune conversation ne correspond à cet ID.
+        """
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
@@ -85,22 +123,24 @@ class ConversationDAO:
     @staticmethod
     def renommer_conv(id_conv: int, nouveau_nom: str):
         """
-        Renomme une conversation dans la base de donnée:
+        Renomme une conversation dans la base de données.
 
         Parameters
         ----------
-            id_conv : int
-                identifiant de la conversation
-            nouveau_nom : str
-                le nouveau nom souhaité
+        id_conv : int
+            Identifiant de la conversation à renommer.
+        nouveau_nom : str
+            Nouveau nom de la conversation.
 
         Returns
         -------
-            bool
-                indique si le nom a été changé avec succès
+        str
+            Message confirmant le succès.
 
         Raises
         ------
+        Exception
+            Si l'id est invalide ou si la modification échoue.
         """
         if not isinstance(id_conv, int):
             raise Exception(f"l'id {id_conv} est invalide et doit être un entier naturel")
@@ -123,20 +163,22 @@ class ConversationDAO:
     @staticmethod
     def supprimer_conv(id_conv: int) -> str:
         """
-        Supprimme une conversation dans la base de donnée.
+        Supprime une conversation de la base.
 
         Parameters
         ----------
-            id_conv : int
-                identifiant de la conversation
+        id_conv : int
+            Identifiant de la conversation à supprimer.
 
         Returns
         -------
-            str
-                Indique si la conversation a été supprimée avec succès.
+        str
+            Message confirmant la suppression.
 
         Raises
         ------
+        Exception
+            Si l'id est invalide ou si aucune conversation n'a été supprimée.
         """
         if not isinstance(id_conv, int):
             raise Exception(f"l'id {id_conv} est invalide et doit être un entier naturel")
@@ -157,6 +199,22 @@ class ConversationDAO:
 
     @staticmethod
     def lister_conversations(id_user: int, n=None) -> list[Conversation]:
+        """
+        Liste les conversations auxquelles un utilisateur participe,
+        triées par date du dernier message.
+
+        Parameters
+        ----------
+        id_user : int
+            Identifiant de l'utilisateur.
+        n : int | None, optional
+            Nombre maximum de conversations à retourner.
+
+        Returns
+        -------
+        list[Conversation]
+            Liste des conversations trouvées.
+        """
         query = """
 
             SELECT c.*, MAX(m.cree_le) AS dernier_message
@@ -190,22 +248,25 @@ class ConversationDAO:
     @staticmethod
     def rechercher_mot_clef(id_user: int, mot_clef: str) -> list[Conversation]:
         """
-        Recherche une conversation selon un mot-clé.
+        Recherche les conversations d'un utilisateur contenant un mot-clé dans
+        leur titre ou dans un message.
 
         Parameters
         ----------
-            id_user : int
-                l'identifiant d'un utilisateur
-            mot_clef : str
-                le mot-clé avec lequel on fait la recherche.
+        id_user : int
+            Identifiant de l'utilisateur.
+        mot_clef : str
+            Mot-clé recherché.
 
         Returns
         -------
-            List[Conversation]
-                Une liste d'objet Conversation qui incluent le mot-clé.
+        list[Conversation]
+            Conversations contenant le mot-clé.
 
         Raises
         ------
+        None
+            Une liste vide est retournée si aucun résultat.
         """
         if not isinstance(mot_clef, str) or not mot_clef.strip():
             return []
@@ -243,24 +304,24 @@ class ConversationDAO:
     @staticmethod
     def rechercher_date(id_user: int, date: datetime.date) -> list[Conversation]:
         """
-
-        Recherche une conversation à partir d'une date (date d'un message)
-
+        Recherche les conversations contenant au moins un message envoyé à une date donnée.
 
         Parameters
         ----------
-            id_user : int
-                l'identifiant d'un utilisateur
-            date : Date
-                un objet Date
+        id_user : int
+            Identifiant de l'utilisateur.
+        date : datetime.date
+            La date recherchée.
 
         Returns
         -------
-            List[Conversation]
-                Une liste de Conversations qui correspondent à la date.
+        list[Conversation]
+            Conversations contenant un message ce jour-là.
 
         Raises
         ------
+        Exception
+            Si le format de la date est invalide.
         """
         # Normalisation du paramètre "date" en début/fin de journée
         if isinstance(date, datetime.date) and not isinstance(date, datetime.datetime):
@@ -302,9 +363,27 @@ class ConversationDAO:
 
     def rechercher_conv_mot_et_date(id_user: int, mot_cle: str, date: datetime.date):
         """
-        Retourne les conversations avec au moins un message contenant `mot_cle`
-        ET daté le jour `date` (peu importe l'heure), émis par l'utilisateur.
-        ATTENTION: attend un `date` (pas un `datetime`).
+        Recherche les conversations contenant un message spécifique par mot-clé
+        et correspondant à une date précise.
+
+        Parameters
+        ----------
+        id_user : int
+            Identifiant de l'utilisateur.
+        mot_cle : str
+            Mot-clé recherché dans les messages.
+        date : datetime.date
+            Date exacte (jour) des messages recherchés.
+
+        Returns
+        -------
+        list[Conversation]
+            Conversations répondant aux deux critères.
+
+        Raises
+        ------
+        Exception
+            Si la date n'est pas un objet datetime.date.
         """
         if not isinstance(date, datetime.date):
             raise Exception(f"la date {date} n'est pas au format date")
@@ -342,13 +421,26 @@ class ConversationDAO:
     @staticmethod
     def lire_echanges(id_conv: int, offset: int = 0, limit: int | None = 20) -> List[Echange]:
         """
-        Retourne les messages d'une conversation.
+        Récupère les échanges d'une conversation, avec ou sans pagination.
 
-        - Si limit est None : tous les messages, du plus ancien au plus récent.
-        - Si limit est un entier : pagination à partir des messages les plus récents.
-        offset = 0 => les 'limit' derniers messages, affichés du plus ancien au plus récent.
+        Parameters
+        ----------
+        id_conv : int
+            Identifiant de la conversation.
+        offset : int, optional
+            Nombre de messages à ignorer depuis les plus récents (mode pagination).
+        limit : int | None, optional
+            Nombre maximum de messages à retourner, ou None pour tout récupérer.
+
+        Returns
+        -------
+        List[Echange]
+            Liste d'objets Echange triés chronologiquement.
+
+        Raises
+        ------
+        None
         """
-
         # Normalisation de offset
         if offset is None or offset < 0:
             offset = 0
@@ -409,24 +501,26 @@ class ConversationDAO:
         conversation_id: int, mot_clef: str, date: datetime.date
     ) -> list[Echange]:
         """
-        Recherche un échange au sein d'une conversation, à partir d'un mot-clé et d'une date.
+        Recherche des échanges dans une conversation, filtrés par mot-clé et date.
 
         Parameters
         ----------
-            id_conv : int
-                l'identifiant d'une conversation
-            mot_clef : str
-                Le mot-clef de la recherche
-            date : Date
-                la date supposée de l'échange
+        conversation_id : int
+            Identifiant de la conversation.
+        mot_clef : str
+            Mot-clé recherché dans le contenu du message.
+        date : datetime.date
+            Date exacte des messages.
 
         Returns
         -------
-            list[Echange]
-                Une liste d'objets Echanges qui répondent à la recherche
+        list[Echange]
+            Liste des échanges trouvés.
 
         Raises
         ------
+        Exception
+            Si aucun échange ne correspond aux critères.
         """
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
@@ -462,23 +556,26 @@ class ConversationDAO:
 
     def ajouter_participant(conversation_id: int, id_user: int, role: str) -> bool:
         """
-        Ajoute un autre utilisateur à une conversation en cours.
+        Ajoute un participant à une conversation.
 
         Parameters
         ----------
-            id_conv : int
-                identifiant de la conversation
-            id_user : int
-                identifiant du joueur à rajouter
-            role : str
-                ?
+        conversation_id : int
+            Identifiant de la conversation.
+        id_user : int
+            Identifiant de l’utilisateur à ajouter.
+        role : str
+            Rôle du participant (actuellement non utilisé).
 
         Returns
         -------
-            bool
-                indique si le joueur a été ajouté ou non
+        bool
+            True si l’ajout a réussi.
+
         Raises
         ------
+        Exception
+            Si l'utilisateur est déjà présent ou si l'insertion échoue.
         """
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
@@ -517,22 +614,25 @@ class ConversationDAO:
 
     def retirer_participant(conversation_id: int, id_user: int) -> bool:
         """
-        Retire un utilisateur d'une conversation. (comment borner le droit :
-        éviter qu'un mec invité tej le proprio de la conv?)
+        Retire un participant d’une conversation.
 
         Parameters
         ----------
-            id_conv : int
-                identifiant de la conversation dont on veut retirer un des participants.
-            id_user : int
-                identifiant du joueur à retirer de la conversation
+        conversation_id : int
+            Identifiant de la conversation.
+        id_user : int
+            Identifiant de l’utilisateur à retirer.
 
         Returns
         -------
-            Bool
-                indique si le joueur a été effectivement retiré
+        bool
+            True si le retrait a réussi.
+
         Raises
         ------
+        Exception
+            Si la conversation n’a qu’un seul participant
+            ou si l’utilisateur n’est pas présent.
         """
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
@@ -572,24 +672,24 @@ class ConversationDAO:
     @staticmethod
     def ajouter_echange(id_conv: int, echange: Echange) -> bool:
         """
-        Ajoute un échange à une conversation dans la base de donnée.
+        Ajoute un message dans une conversation.
 
         Parameters
         ----------
-            id_conv : int
-                Description du paramètre 1.
-            param2 : Type2
-                Description du paramètre 2.
+        id_conv : int
+            Identifiant de la conversation.
+        echange : Echange
+            Objet contenant un message, son émetteur et éventuellement l'utilisateur associé.
 
         Returns
         -------
-            ReturnType
-                Description de ce que la méthode retourne.
+        bool
+            True si l’ajout s’est bien passé.
 
         Raises
         ------
-            ExceptionType
-                Description des exceptions levées (optionnel).
+        Exception
+            Si l'émetteur est invalide ou si un utilisateur_id est manquant.
         """
         emetteur = getattr(echange, "emetteur", None) or getattr(echange, "expediteur", None)
         contenu = getattr(echange, "contenu", None) or getattr(echange, "message", None)
@@ -623,21 +723,24 @@ class ConversationDAO:
     @staticmethod
     def mettre_a_j_preprompt_id(conversation_id: int, prompt_id: int) -> bool:
         """
-        Permet de changer le profil du LLM via un système de préprompt
+        Met à jour la personnalisation (prompt) d'une conversation.
 
         Parameters
         ----------
-            id_conv : int
-                l'identifiant de la conversation pour laquelle on veut changer le profil du LLM
-                preprompt_id : str
-                Nom du profil du LLM à appliquer
+        conversation_id : int
+            Identifiant de la conversation.
+        prompt_id : int
+            Identifiant du nouveau préprompt (profil IA).
 
         Returns
-        -------__
-            Bool
-                indique si le profil du LLM a été changé avec succès
+        -------
+        str
+            Message de confirmation.
+
         Raises
         ------
+        Exception
+            Si la mise à jour n'a pas modifié de ligne.
         """
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
@@ -660,20 +763,17 @@ class ConversationDAO:
     @staticmethod
     def compter_conversations(id_user: int) -> int:
         """
-        Compte le nombre total de conversation d'un utilisateur (compter aussi conv auxquelles il est invité ?).
+        Compte toutes les conversations auxquelles un utilisateur participe.
 
         Parameters
         ----------
-            id_user : int
-                l'identifiant de l'utilisateur dans la base de donnée
+        id_user : int
+            Identifiant de l'utilisateur.
 
         Returns
         -------
-            int
-                Le nombre total de conversations de l'utilisateur.
-
-        Raises
-        ------
+        int
+            Nombre total de conversations.
         """
         liste_CONV = ConversationDAO.lister_conversations(id_user=id_user)
         return len(liste_CONV)
@@ -685,16 +785,17 @@ class ConversationDAO:
 
         Parameters
         ----------
-            id_user : int
-                l'identifiant de l'utilisateur dans la base de donnée
+        id_user : int
+            Identifiant de l'utilisateur.
 
         Returns
         -------
-            int
-                Le nombre total de messages envoyé.
+        int
+            Nombre total de messages envoyés par l'utilisateur.
 
         Raises
         ------
+        None
         """
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
@@ -712,22 +813,24 @@ class ConversationDAO:
     @staticmethod
     def sujets_plus_frequents(id_user: int, k: int) -> list[tuple[str, int]]:
         """
-        Renvoie une liste des sujets les plus fréquents entretenus dans les conversations d'un utilisateur.
+        Détermine les sujets les plus fréquents dans les titres des conversations d’un utilisateur.
 
         Parameters
         ----------
-            id_user : int
-                l'identifiant de l'utilisateur dans la base de donnée
-            k : int
-                nombres k de sujets les plus fréquents considérés
+        id_user : int
+            Identifiant de l'utilisateur.
+        k : int
+            Nombre de sujets les plus fréquents à retourner.
 
         Returns
         -------
-            List[str]
-                Une liste des principaux sujets déterminés par le LLM
+        list[tuple[str, int]]
+            Liste des paires (mot, fréquence).
 
         Raises
         ------
+        Exception
+            Si l'utilisateur n'a aucune conversation.
         """
         query = """
             SELECT c.titre

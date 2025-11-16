@@ -10,15 +10,46 @@ from src.utils.singleton import Singleton
 
 
 class UtilisateurDao(metaclass=Singleton):
-    """Accès base de données pour les utilisateurs (table: utilisateurs)"""
+    """
+    Data Access Object (DAO) pour la gestion des utilisateurs.
 
+    Cette classe encapsule toutes les opérations CRUD et les requêtes
+    spécifiques relatives à la table ``utilisateurs`` de la base de données.
+    Elle utilise un pattern Singleton afin que l'accès aux utilisateurs
+    se fasse via une instance unique partagée dans l'application.
+
+    Table concernée
+    ----------------
+    Table : ``utilisateurs``  
+    Colonnes :
+    - ``id`` (int) : identifiant unique
+    - ``pseudo`` (str) : nom d'utilisateur, unique
+    - ``mot_de_passe`` (str) : hash du mot de passe
+
+    Notes
+    -----
+    - Le hash du mot de passe est **déjà calculé au niveau métier** (Business Object `Utilisateur`).
+    - Le décorateur ``@log`` permet de tracer automatiquement l’appel des méthodes
+      pour faciliter le debugging.
+    """
     @log
     def creer_utilisateur(self, utilisateur: Utilisateur) -> bool:
         """
-        Insère l'utilisateur.
-        On attend:
-            - utilisateur.pseudo déjà normalisé en service
-            - utilisateur.password_hash déjà calculé (BO/service)
+        Crée un nouvel utilisateur en base de données.
+
+        Le pseudo et le mot de passe doivent déjà être correctement préparés au niveau
+        du service (pseudo normalisé, mot de passe hashé).
+
+        Parameters
+        ----------
+        utilisateur : Utilisateur
+            L’objet métier à insérer.
+
+        Returns
+        -------
+        bool
+            True si l'insertion a réussi et que l'id a été récupéré,
+            False sinon.
         """
         res = None
         try:
@@ -49,6 +80,19 @@ class UtilisateurDao(metaclass=Singleton):
 
     @log
     def trouver_par_id(self, id: int) -> Optional[Utilisateur]:
+        """
+        Recherche un utilisateur par son identifiant.
+
+        Parameters
+        ----------
+        id : int
+            Identifiant recherché.
+
+        Returns
+        -------
+        Utilisateur | None
+            L'utilisateur correspondant, ou None s'il n'existe pas.
+        """
         try:
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
@@ -76,6 +120,19 @@ class UtilisateurDao(metaclass=Singleton):
 
     @log
     def trouver_par_pseudo(self, pseudo: str) -> Optional[Utilisateur]:
+        """
+        Recherche un utilisateur à partir de son pseudo.
+
+        Parameters
+        ----------
+        pseudo : str
+            Le pseudo exact à rechercher (déjà normalisé en amont).
+
+        Returns
+        -------
+        Utilisateur | None
+            L'utilisateur correspondant, ou None s'il n'existe pas.
+        """
         try:
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
@@ -103,6 +160,14 @@ class UtilisateurDao(metaclass=Singleton):
 
     @log
     def lister_tous(self) -> list[Utilisateur]:
+        """
+        Retourne la liste complète des utilisateurs enregistrés.
+
+        Returns
+        -------
+        list[Utilisateur]
+            Liste d'objets utilisateurs.
+        """
         try:
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
@@ -119,6 +184,20 @@ class UtilisateurDao(metaclass=Singleton):
 
     @log
     def supprimer(self, utilisateur: Utilisateur) -> bool:
+        """
+        Supprime un utilisateur de la base.
+
+        Parameters
+        ----------
+        utilisateur : Utilisateur
+            L'utilisateur à supprimer (l'id doit être défini).
+
+        Returns
+        -------
+        bool
+            True si la suppression a touché au moins une ligne,
+            False sinon.
+        """
         try:
             with DBConnection().connection as connection:
                 with connection.cursor() as cursor:
@@ -135,7 +214,21 @@ class UtilisateurDao(metaclass=Singleton):
 
     @log
     def heures_utilisation(self, user_id: int) -> float:
-        """Somme des sessions terminées (en heures)."""
+        """
+        Calcule le temps total d’utilisation (sessions fermées uniquement).
+
+        Seules les sessions dont ``deconnexion`` n'est pas NULL sont prises en compte.
+
+        Parameters
+        ----------
+        user_id : int
+            Identifiant de l'utilisateur.
+
+        Returns
+        -------
+        float
+            Nombre total d'heures d'utilisation.
+        """
         try:
             with DBConnection().connection as conn:
                 with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -158,7 +251,22 @@ class UtilisateurDao(metaclass=Singleton):
 
     @log
     def heures_utilisation_incl_courante(self, user_id: int) -> float:
-        """Somme des sessions en tenant compte de la session en cours (NOW())."""
+        """
+        Calcule le temps total d'utilisation en comptabilisant également
+        la session actuellement ouverte (si elle existe).
+
+        La durée d'une session ouverte est : ``NOW() - connexion``.
+
+        Parameters
+        ----------
+        user_id : int
+            Identifiant de l'utilisateur.
+
+        Returns
+        -------
+        float
+            Nombre total d'heures d'utilisation toutes sessions confondues.
+        """
         try:
             with DBConnection().connection as conn:
                 with conn.cursor(cursor_factory=RealDictCursor) as cur:
