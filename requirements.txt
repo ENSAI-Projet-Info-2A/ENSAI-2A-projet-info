@@ -1,12 +1,12 @@
 # --- Dépendances applicatives ---
 fastapi
 uvicorn
-psycopg2          # ou psycopg2-binary
+psycopg2-binary          # ou psycopg2
 InquirerPy
 requests
 python-dotenv
 PyYAML
-PyJWT
+PyJWT==2.8.0
 pydantic
 
 # --- Tests & qualité ---
