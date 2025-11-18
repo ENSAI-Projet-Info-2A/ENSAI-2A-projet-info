@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 
 -----------------------------------------------------
--- Messages
+-- Sessions
 -----------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS sessions (
