@@ -45,7 +45,11 @@ class ReprendreConversationVue(VueAbstraite):
 
         # echange.agent / echange.message / echange.date_msg (ou expediteur / contenu / date_echange)
         for e in echanges:
-            auteur = getattr(e, "agent", getattr(e, "expediteur", "")) or ""
+            auteur = (
+                getattr(e, "agent_name", None)
+                or getattr(e, "agent", getattr(e, "expediteur", ""))
+                or ""
+            )
             contenu = getattr(e, "message", getattr(e, "contenu", "")) or ""
             date_msg = getattr(e, "date_msg", getattr(e, "date_echange", "")) or ""
             print(f"- {auteur} | {date_msg} : {contenu}")

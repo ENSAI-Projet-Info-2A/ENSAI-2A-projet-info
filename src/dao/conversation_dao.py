@@ -445,53 +445,80 @@ class ConversationDAO:
         if offset is None or offset < 0:
             offset = 0
 
+        # --- Construction de la requête SQL avec JOIN sur utilisateurs ---
         if limit is None:
-            # TOUS les messages, du plus ancien au plus récent
+            # Tous les messages
             sql = """
-                SELECT id, emetteur, contenu, cree_le
-                FROM messages
-                WHERE conversation_id = %(id_conv)s
-                ORDER BY cree_le ASC, id ASC;
+                SELECT
+                    m.id,
+                    m.emetteur,
+                    m.contenu,
+                    m.cree_le,
+                    m.utilisateur_id,
+                    u.pseudo AS utilisateur_pseudo
+                FROM messages m
+                LEFT JOIN utilisateurs u ON u.id = m.utilisateur_id
+                WHERE m.conversation_id = %(id_conv)s
+                ORDER BY m.cree_le ASC, m.id ASC;
             """
             params = {"id_conv": id_conv}
         else:
-            # Pagination sur LES DERNIERS messages
             if limit <= 0:
                 limit = 20
 
             sql = """
-                SELECT id, emetteur, contenu, cree_le
-                FROM messages
-                WHERE conversation_id = %(id_conv)s
-                ORDER BY cree_le DESC, id DESC
+                SELECT
+                    m.id,
+                    m.emetteur,
+                    m.contenu,
+                    m.cree_le,
+                    m.utilisateur_id,
+                    u.pseudo AS utilisateur_pseudo
+                FROM messages m
+                LEFT JOIN utilisateurs u ON u.id = m.utilisateur_id
+                WHERE m.conversation_id = %(id_conv)s
+                ORDER BY m.cree_le DESC, m.id DESC
                 LIMIT %(limit)s OFFSET %(offset)s;
             """
             params = {"id_conv": id_conv, "limit": limit, "offset": offset}
 
+        # --- Exécution SQL ---
         with DBConnection().connection as conn:
             with conn.cursor() as cur:
                 cur.execute(sql, params)
                 rows = cur.fetchall() or []
 
+        # --- Construction des objets Echange ---
         echanges: List[Echange] = []
         for r in rows:
+            emetteur = r["emetteur"]  # 'utilisateur' ou 'ia'
+            pseudo = r.get("utilisateur_pseudo")  # nom utilisateur ou None
+            print("-----------")
+            print(pseudo)
+            print("-----------")
+
+            # Nom pour affichage
+            if emetteur == "ia":
+                agent_name = "Assistant"
+            else:
+                agent_name = pseudo or "Utilisateur"
+
+            # Création de l'objet Echange enrichi
             e = Echange(
                 id=r["id"],
-                agent=r["emetteur"],
+                agent=emetteur,  # conserve la valeur brute pour le LLM
                 message=r["contenu"],
                 date_msg=r["cree_le"],
+                agent_name=agent_name,  # <-- nom affiché
             )
 
-            try:
-                setattr(e, "agent", r["emetteur"])
-                setattr(e, "date_msg", r["cree_le"])
-            except Exception:
-                pass
+            # Champs supplémentaires pour compatibilité
+            setattr(e, "emetteur", emetteur)
+            setattr(e, "utilisateur_id", r["utilisateur_id"])
 
             echanges.append(e)
 
-        # Si on est en mode pagination sur les "derniers",
-        # on remet dans l'ordre chronologique (vieux -> récent)
+        # Si on a utilisé LIMIT/OFFSET → remettre dans l'ordre chronologique
         if limit is not None:
             echanges.reverse()
 
