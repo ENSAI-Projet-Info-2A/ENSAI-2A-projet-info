@@ -1,31 +1,55 @@
+import logging
+
 from InquirerPy import inquirer
 
+from src.dao.utilisateur_dao import UtilisateurDao
+from src.service.auth_service import Auth_Service
 from src.service.utilisateur_service import UtilisateurService
 from src.view.session import Session
 from src.view.vue_abstraite import VueAbstraite
 
 
 class ConnexionVue(VueAbstraite):
-    """Vue de Connexion (saisie de pseudo et mot de passe)"""
+    """Vue de Connexion (saisie de pseudo et mot de passe)."""
+
+    def __init__(self, message: str = ""):
+        self.message = message
 
     def choisir_menu(self):
-        # Demande à l'utilisateur de saisir pseudo et mot de passe
+        if self.message:
+            print(self.message + "\n")
 
+        # 1) Saisie des identifiants
         pseudo = inquirer.text(message="Entrez votre pseudo : ").execute()
         mdp = inquirer.secret(message="Entrez votre mot de passe :").execute()
 
-        # Appel du service pour trouver l'utilisateur
-        utilisateur = UtilisateurService().se_connecter(pseudo, mdp)
+        auth_service = Auth_Service(UtilisateurDao())
 
-        # Si l'utilisateur a été trouvé à partir de ses identifiants de connexion
-        if utilisateur:
-            message = f"Vous êtes connecté sous le pseudo {utilisateur.pseudo}"
-            Session().connexion(utilisateur)
-            from view.menu_utilisateur_vue import MenuUtilisateurVue
+        try:
+            # 2) Authentification + token JWT
+            token = auth_service.se_connecter(pseudo, mdp)
+        except ValueError as e:
+            logging.warning(f"[ConnexionVue] Erreur d'authentification : {e}")
+            from src.view.accueil.accueil_vue import AccueilVue
 
-            return MenuUtilisateurVue(message)
+            return AccueilVue("Erreur de connexion (pseudo ou mot de passe invalide)")
 
-        message = "Erreur de connexion (pseudo ou mot de passe invalide)"
-        from src.view.accueil.accueil_vue import AccueilVue
+        # 3) Récupérer l'objet Utilisateur pour la session CLI
+        utilisateur = UtilisateurService().trouver_par_pseudo(pseudo)
 
-        return AccueilVue(message)
+        if not utilisateur:
+            logging.error(
+                "[ConnexionVue] Utilisateur authentifié mais non trouvé par UtilisateurService"
+            )
+            from src.view.accueil.accueil_vue import AccueilVue
+
+            return AccueilVue("Erreur interne : utilisateur authentifié mais non trouvé.")
+
+        # 4) On ouvre la session locale + BDD
+        Session().connexion(utilisateur, token=token)
+
+        message = f"Vous êtes connecté sous le pseudo {utilisateur.pseudo}"
+
+        from src.view.menu_utilisateur_vue import MenuUtilisateurVue
+
+        return MenuUtilisateurVue(message)

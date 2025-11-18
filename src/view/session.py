@@ -11,8 +11,9 @@ class Session(metaclass=Singleton):
         self.utilisateur = None
         self.debut_connexion = None
         self.session_db_id = None
+        self.token = None
 
-    def connexion(self, utilisateur):
+    def connexion(self, utilisateur, token: str | None = None):
         """Enregistre la session et crée la ligne en base."""
         self.utilisateur = utilisateur
         self.debut_connexion = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
@@ -21,6 +22,7 @@ class Session(metaclass=Singleton):
         except Exception:
             # On ne casse pas l'UX si la BDD plante : on loguera côté main
             self.session_db_id = None
+        self.token = token
 
     def deconnexion(self):
         """Ferme la session locale + met à jour la BDD si possible."""
@@ -31,6 +33,7 @@ class Session(metaclass=Singleton):
             self.utilisateur = None
             self.debut_connexion = None
             self.session_db_id = None
+            self.token = None
 
     def afficher(self) -> str:
         res = "Actuellement en session :\n"

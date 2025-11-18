@@ -2,6 +2,8 @@ import logging
 
 from InquirerPy import inquirer
 
+from src.dao.utilisateur_dao import UtilisateurDao
+from src.service.auth_service import Auth_Service
 from src.view.session import Session
 from src.view.vue_abstraite import VueAbstraite
 
@@ -43,7 +45,12 @@ class MenuUtilisateurVue(VueAbstraite):
 
             match choix:
                 case "Se déconnecter":
-                    Session().deconnexion()
+                    s = Session()
+                    token = s.token
+                    if token:
+                        auth_service = Auth_Service(UtilisateurDao())
+                        auth_service.se_deconnecter(token)
+                    s.deconnexion()
                     from src.view.accueil.accueil_vue import AccueilVue
 
                     return AccueilVue("Déconnexion effectuée avec succès.")
