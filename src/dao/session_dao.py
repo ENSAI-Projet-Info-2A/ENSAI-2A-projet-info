@@ -14,20 +14,21 @@ class SessionDAO:
 
     Table concernée
     ----------------
-    Table : ``sessions``  
+    Table : ``sessions``
     Colonnes utilisées :
     - ``id`` (int) : identifiant unique de la session
     - ``user_id`` (int) : identifiant de l'utilisateur concerné
     - ``connexion`` (timestamp) : date et heure de début de session
     - ``deconnexion`` (timestamp, nullable) : date de fin de session
     """
+
     def ouvrir(self, user_id: int, device: str | None = "cli") -> int:
         """
         Ouvre une nouvelle session pour un utilisateur.
 
         Insère une nouvelle ligne dans la table ``sessions`` avec :
         - ``connexion = NOW()``
-        - ``deconnexion = NULL``  
+        - ``deconnexion = NULL``
         La session est donc considérée comme ouverte.
 
         Parameters
@@ -62,7 +63,7 @@ class SessionDAO:
 
         Met à jour la session la plus récente ayant :
         - ``user_id = user_id``
-        - ``deconnexion IS NULL``  
+        - ``deconnexion IS NULL``
         en posant ``deconnexion = NOW()``.
 
         S'il n'existe aucune session ouverte pour cet utilisateur, rien n'est modifié.
@@ -83,11 +84,15 @@ class SessionDAO:
                 cur.execute(
                     """
                     UPDATE sessions
-                       SET deconnexion = NOW()
-                     WHERE user_id = %(uid)s
-                       AND deconnexion IS NULL
-                     ORDER BY connexion DESC
-                     LIMIT 1;
+                    SET deconnexion = NOW()
+                    WHERE id = (
+                        SELECT id
+                        FROM sessions
+                        WHERE user_id = %(uid)s
+                        AND deconnexion IS NULL
+                        ORDER BY connexion DESC
+                        LIMIT 1
+                    );
                     """,
                     {"uid": user_id},
                 )
