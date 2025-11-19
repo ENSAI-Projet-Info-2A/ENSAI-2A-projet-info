@@ -24,7 +24,7 @@ class ReprendreConversationVue(VueAbstraite):
         self.conv = conversation
         self.message = message
 
-    def _afficher_messages(self, nb=20):
+    def _afficher_messages(self, nb=None):
         try:
             echanges = (
                 ConversationService.lire_fil(id_conversation=self.conv.id, decalage=0, limite=nb)
@@ -75,7 +75,11 @@ class ReprendreConversationVue(VueAbstraite):
             return
 
         for e in echanges:
-            auteur = getattr(e, "agent", getattr(e, "expediteur", "")) or ""
+            auteur = (
+                getattr(e, "agent_name", None)
+                or getattr(e, "agent", getattr(e, "expediteur", ""))
+                or ""
+            )
             contenu = getattr(e, "message", getattr(e, "contenu", "")) or ""
             date_msg = getattr(e, "date_msg", getattr(e, "date_echange", "")) or ""
             print(f"- {auteur} | {date_msg} : {contenu}")

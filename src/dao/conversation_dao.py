@@ -526,10 +526,6 @@ class ConversationDAO:
         for r in rows:
             emetteur = r["emetteur"]  # 'utilisateur' ou 'ia'
             pseudo = r.get("utilisateur_pseudo")  # nom utilisateur ou None
-            print("-----------")
-            print(pseudo)
-            print("-----------")
-
             # Nom pour affichage
             if emetteur == "ia":
                 agent_name = "Assistant"
