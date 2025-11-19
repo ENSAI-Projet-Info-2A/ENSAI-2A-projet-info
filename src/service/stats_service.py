@@ -48,8 +48,8 @@ class Statistiques_Service:
         titres = [c.nom for c in convs if c.nom]
         stats.ajouter_sujets(titres)
 
-        # 4) Heures d'utilisation :
-        heures = float(self.user_dao.heures_utilisation(id_user))
+        # 4) Heures d'utilisation (en incluant la session en cours)
+        heures = float(self.user_dao.heures_utilisation_incl_courante(id_user))
         stats.ajouter_temps(heures)
 
         return stats

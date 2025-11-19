@@ -848,23 +848,24 @@ class ConversationDAO:
         -------
         int
             Nombre total de messages envoyés par l'utilisateur.
-
-        Raises
-        ------
-        None
         """
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
                     """
-                SELECT COUNT(*)
-                FROM message m
-                WHERE m.utilisateur_id = %(id_user)d AND m.emetteur = 'utilisateur'
-                """,
+                    SELECT COUNT(*) AS nb
+                    FROM messages m
+                    WHERE m.utilisateur_id = %(id_user)s
+                      AND m.emetteur = 'utilisateur';
+                    """,
                     {"id_user": id_user},
                 )
-                nombre_messages = cursor.fetchall()
-        return nombre_messages
+                row = cursor.fetchone()  # row est un dict avec RealDictCursor, ex: {"nb": 12}
+
+        if not row or row["nb"] is None:
+            return 0
+
+        return int(row["nb"])
 
     @staticmethod
     def sujets_plus_frequents(id_user: int, k: int) -> list[tuple[str, int]]:
