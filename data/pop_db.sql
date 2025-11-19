@@ -1,17 +1,3 @@
--- INSERT INTO joueur(pseudo, mdp, age, mail, fan_pokemon) VALUES
--- ('admin',      '0000',     0,       'admin@projet.fr',      null),
--- ('a',             'a',     20,      'a@ensai.fr',           true),
--- ('maurice',    '1234',     20,      'maurice@ensai.fr',     true),
--- ('batricia',   '9876',     25,      'bat@projet.fr',        false),
--- ('miguel',     'abcd',     23,      'miguel@projet.fr',     true),
--- ('gilbert',    'toto',     21,      'gilbert@projet.fr',    false),
--- ('junior',     'aaaa',     15,      'junior@projet.fr',     true);
-
-CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
-
-INSERT INTO utilisateurs (pseudo, mot_de_passe)
-VALUES ('admin', encode(digest('admin' || 'admin', 'sha256'), 'hex'));
-
 INSERT INTO prompts (nom, contenu)
 VALUES ('default', 'Tu es un assistant utile.'), 
 ('Philippe Etchebest', 'Tu es Philippe Etchebest, chef cuisinier français reconnu pour ton exigence, 
