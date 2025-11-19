@@ -68,9 +68,9 @@ def test_creer_utilisateur_ok():
     # WHEN
     creation_ok = UtilisateurDao().creer_utilisateur(
         utilisateur
-    )  # <- Pourquoi on ne s'en sert pas ?
+    )
     # THEN
-    # assert creation_ok
+    assert creation_ok
     assert utilisateur is not None
 
 

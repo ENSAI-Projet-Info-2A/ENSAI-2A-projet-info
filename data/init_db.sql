@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS messages (
 
   -- Clés étrangères
   FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
-  FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE SET NULL,
+  FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE CASCADE, -- ou logique : SET NULL
 
   -- L’émetteur doit être valide
   CONSTRAINT emetteur_check CHECK (emetteur IN ('utilisateur','ia')),

@@ -32,11 +32,11 @@ def test_creer_compte_ok():
         assert user.password_hash == "HASHED"
         mock_hash.assert_called_once_with(mdp, pseudo)
         mock_dao.trouver_par_pseudo.assert_called_once_with(pseudo)
-        mock_dao.creer.assert_called_once()
+        mock_dao.creer_utilisateur.assert_called_once()
 
 
 def test_creer_compte_echec_dao():
-    """Création échouée (DAO.creer renvoie False)"""
+    """Création échouée (DAO.creer_utilisateur renvoie False)"""
     pseudo, mdp = "bob", "0000"
     with (
         patch("src.service.utilisateur_service.UtilisateurDao") as MockDao,
@@ -44,14 +44,14 @@ def test_creer_compte_echec_dao():
     ):
         mock_dao = MockDao.return_value
         mock_dao.trouver_par_pseudo.return_value = None
-        mock_dao.creer.return_value = False
+        mock_dao.creer_utilisateur.return_value = False 
 
         user = UtilisateurService().creer_compte(pseudo, mdp)
 
         assert user is None
         mock_hash.assert_called_once_with(mdp, pseudo)
         mock_dao.trouver_par_pseudo.assert_called_once_with(pseudo)
-        mock_dao.creer.assert_called_once()
+        mock_dao.creer_utilisateur.assert_called_once()
 
 
 def test_creer_compte_pseudo_deja_utilise():

@@ -20,6 +20,11 @@ INSERT INTO utilisateurs (id, pseudo, mot_de_passe) VALUES
 (9, 'india7',      encode(digest('Ind1aPass'   || 'india7',     'sha256'), 'hex')),
 (10, 'juliet42',    encode(digest('JuLieT_42'   || 'juliet42',   'sha256'), 'hex'));
 
+-- Remet la séquence d'auto-incrément sur le bon id max
+SELECT setval(
+  pg_get_serial_sequence('utilisateurs', 'id'),
+  COALESCE((SELECT MAX(id) FROM utilisateurs), 0)
+);
 
 -- prompts
 INSERT INTO prompts(nom, contenu, version) VALUES
@@ -50,6 +55,12 @@ INSERT INTO messages(id, conversation_id, utilisateur_id, emetteur, contenu, cre
 (8, 3, 7, 'utilisateur', 'je suis là', '2025-03-16 09:12:30+00'),
 (9, 3, 2, 'utilisateur', 'ca fait beaucoup là non ?', '2025-03-17 09:12:30+00'),
 (10, 3, NULL, 'ia', 'que voulez-vous ?', '2025-03-18 09:12:30+00');
+
+-- Remet la séquence d'auto-incrément de messages sur le bon id max
+SELECT setval(
+  pg_get_serial_sequence('messages', 'id'),
+  COALESCE((SELECT MAX(id) FROM messages), 0)
+);
 
 INSERT INTO conversations_participants (conversation_id, utilisateur_id) VALUES
 (2, 10),

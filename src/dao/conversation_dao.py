@@ -132,7 +132,7 @@ class ConversationDAO:
             with conn.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT id, titre, prompt_id, cree_le
+                    SELECT id, titre, prompt_id, cree_le, proprietaire_id
                     FROM conversations
                     WHERE id = %(id_conv)s;
                     """,
@@ -747,7 +747,11 @@ class ConversationDAO:
         Exception
             Si l'émetteur est invalide ou si un utilisateur_id est manquant.
         """
-        emetteur = getattr(echange, "emetteur", None) or getattr(echange, "expediteur", None)
+        emetteur = (
+            getattr(echange, "emetteur", None)
+            or getattr(echange, "expediteur", None)
+            or getattr(echange, "agent", None)  # <- on ajoute ça pour prendre en compte une modif
+        )
         contenu = getattr(echange, "contenu", None) or getattr(echange, "message", None)
         utilisateur_id = getattr(echange, "utilisateur_id", None)
 

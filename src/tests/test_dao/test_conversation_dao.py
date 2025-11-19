@@ -4,9 +4,9 @@ from unittest.mock import patch
 import pytest
 
 from src.business_object.conversation import Conversation
+from src.business_object.echange import Echange
 from src.dao.conversation_dao import ConversationDAO
 from src.utils.reset_database import ResetDatabase
-from datetime import datetime
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -122,15 +122,24 @@ def test_lister_conv():
 # 9 dans conv 1 et 3
 def test_retirer_participant_ok():
     # WHEN
-    res = TaClasse.retirer_participant(conversation_id=5, id_user=9)
+    res = ConversationDAO.retirer_participant(conversation_id=3, id_user=9)
 
     # THEN
     assert res is True
 
+
 def test_ajouter_echange_ia():
-    #GIVEN
-    id_conv=32
-    e = Echange(id="18", agent="ia", message="Hello", date_msg='2025-05-09 14:56:33+00')
+    # GIVEN : créer une conversation réelle
+    conv = Conversation(nom="conv_test_echange")
+    conv = ConversationDAO.creer_conversation(conv)
+    id_conv = conv.id
+
+    e = Echange(
+        id=None,                # on laisse la BDD gérer
+        agent="ia",
+        message="Hello",
+        date_msg="2025-05-09 14:56:33+00",
+    )
 
     # WHEN
     res = ConversationDAO.ajouter_echange(id_conv, e)
@@ -138,11 +147,12 @@ def test_ajouter_echange_ia():
     # THEN
     assert res is True
     assert isinstance(e.id, int)
-    assert e.id == 42
+    assert e.id > 0
+
 
 def test_agent_invalide():
     # GIVEN
-    e = Echange(id="18", agent="robot", message="Hello", date_msg='2025-05-09 14:56:33+00')
+    e = Echange(id="18", agent="robot", message="Hello", date_msg="2025-05-09 14:56:33+00")
 
     # WHEN / THEN
     with pytest.raises(Exception):
@@ -150,22 +160,23 @@ def test_agent_invalide():
 
 
 def test_compter_message_user():
-    #GIVEN la bdd pour les tests
-     # WHEN
+    # GIVEN la bdd pour les tests
+    # WHEN
     result = ConversationDAO.compter_message_user(9)
 
-     # THEN
+    # THEN
     assert isinstance(result, int)
-    assert result == 1 # 1 messages "utilisateur" pour id_user=9
+    assert result == 1  # 1 messages "utilisateur" pour id_user=9
+
 
 def test_compter_message_user_aucun():
-
     # WHEN
-    result = ConversationDAO.compter_message_user(999) # id_user inexistant
+    result = ConversationDAO.compter_message_user(999)  # id_user inexistant
 
     # THEN
     assert isinstance(result, int)
     assert result == 0
+
 
 def test_sujets_plus_frequents_ok():
     """Renvoie les k mots les plus fréquents d'un utilisateur"""
@@ -176,9 +187,10 @@ def test_sujets_plus_frequents_ok():
     assert isinstance(res, list)
     assert len(res) <= 3
     # ajouter à la bdd test des choses peremettants ca. mots = [mot for mot, _ in res]
-    #assert "" in mots
+    # assert "" in mots
 
-def test_sujets_plus_frequents_aucune_conversation(mock_db): #okjepense
+
+def test_sujets_plus_frequents_aucune_conversation():
     """Lève une exception si l'utilisateur n'a aucune conversation"""
     # GIVEN
     id_user = 9999
@@ -186,5 +198,6 @@ def test_sujets_plus_frequents_aucune_conversation(mock_db): #okjepense
     with pytest.raises(Exception) as exc_info:
         ConversationDAO.sujets_plus_frequents(id_user, k=5)
     assert "aucune conversation" in str(exc_info.value).lower()
- #besoin d'un test limite ? titre vide ? etc ? 
 
+
+# besoin d'un test limite ? titre vide ? etc ?
