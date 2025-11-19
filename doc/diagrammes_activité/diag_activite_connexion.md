@@ -1,6 +1,7 @@
 ---
 title: Diagramme d’activité de connexion
 ---
+```mermaid
 flowchart TD
     %% Début
     start([●]) --> Accueil([Accueil])
@@ -29,3 +30,4 @@ flowchart TD
     CreaOk --> fin((◎))
     ConnOk --> fin
     finX --> fin
+```
