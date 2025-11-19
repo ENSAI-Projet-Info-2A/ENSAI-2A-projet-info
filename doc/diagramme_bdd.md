@@ -1,3 +1,5 @@
+```mermaid
+
 erDiagram
     USERS ||--o{ SENDERS : "peut être"
     SENDERS ||--o{ MESSAGES : "envoie"
