@@ -179,7 +179,12 @@ class ReprendreConversationVue(VueAbstraite):
 
         try:
             # Le Service expose ajouter_utilisateur (qui délègue à la DAO)
-            ConversationService.ajouter_utilisateur(self.conv.id, id_user, role="participant")
+            ConversationService.ajouter_utilisateur(
+                id_conversation=self.conv.id,
+                id_utilisateur=id_user,
+                role="participant",
+                id_demandeur=Session().utilisateur.id,
+            )
             return ReprendreConversationVue(self.conv, f"Utilisateur {id_user} ajouté.")
         except Exception as e:
             logging.error(f"[ReprendreConversationVue] Erreur ajout participant : {e}")
@@ -196,7 +201,11 @@ class ReprendreConversationVue(VueAbstraite):
             return ReprendreConversationVue(self.conv, "ID invalide.")
 
         try:
-            ConversationService.retirer_utilisateur(self.conv.id, id_user)
+            ConversationService.retirer_utilisateur(
+                id_conversation=self.conv.id,
+                id_utilisateur=id_user,
+                id_demandeur=Session().utilisateur.id,
+            )
             return ReprendreConversationVue(self.conv, f"Utilisateur {id_user} retiré.")
         except Exception as e:
             logging.error(f"[ReprendreConversationVue] Erreur retrait participant : {e}")
@@ -230,7 +239,10 @@ class ReprendreConversationVue(VueAbstraite):
             default=False,
         ).execute()
         if not confirm:
-            return ReprendreConversationVue(self.conv)
+            return ReprendreConversationVue(
+                self.conv,
+                id_demandeur=Session().utilisateur.id,
+            )
 
         try:
             ConversationService.supprimer_conversation(self.conv.id)

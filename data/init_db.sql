@@ -28,12 +28,15 @@ CREATE TABLE IF NOT EXISTS prompts (
 CREATE TABLE IF NOT EXISTS conversations (
   id          SERIAL PRIMARY KEY,
   titre       TEXT NOT NULL,
+  proprietaire_id INT NULL,
   prompt_id   INT NULL,  -- optionnel : la conversation peut être sans pré-prompt
   cree_le     TIMESTAMPTZ NOT NULL DEFAULT now(),
   
   CONSTRAINT titre_non_vide CHECK (length(trim(titre)) > 0),
   CONSTRAINT fk_conversations_prompt
-    FOREIGN KEY (prompt_id) REFERENCES prompts(id) ON DELETE SET NULL
+    FOREIGN KEY (prompt_id) REFERENCES prompts(id) ON DELETE SET NULL,
+  CONSTRAINT fk_conversations_proprietaire
+     FOREIGN KEY (proprietaire_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
 );
 
 -----------------------------------------------------

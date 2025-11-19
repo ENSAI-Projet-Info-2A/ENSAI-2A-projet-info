@@ -40,6 +40,7 @@ class ConversationService:
     DEFAULT_SYSTEM_PROMPT : str
         Texte par défaut à utiliser comme prompt système si aucune personnalisation n’est définie.
     """
+
     @staticmethod
     def _resolve_prompt_id(personnalisation):
         """
@@ -148,9 +149,8 @@ class ConversationService:
         conv = Conversation(nom=str(titre).strip(), personnalisation=personnalisation)
 
         try:
-            conv = ConversationDAO.creer_conversation(conv)
+            conv = ConversationDAO.creer_conversation(conv, proprietaire_id=id_proprietaire)
 
-            # Rattacher l'utilisateur comme participant si fourni
             if id_proprietaire is not None:
                 try:
                     ConversationDAO.ajouter_participant(
@@ -254,7 +254,7 @@ class ConversationService:
             logger.error("Erreur lors du renommage de la conversation %s : %s", id_conversation, e)
             raise
 
-    def supprimer_conversation(id_conversation: int) -> bool:
+    def supprimer_conversation(id_conversation: int, id_demandeur: int) -> bool:
         """
         Supprime une conversation existante.
 
@@ -275,6 +275,10 @@ class ConversationService:
         """
         if not id_conversation:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
+        if not ConversationDAO.est_proprietaire(id_conversation, id_demandeur):
+            raise ErreurValidation(
+                "Seul le propriétaire de la conversation peut gérer les participants."
+            )
         try:
             succes = ConversationDAO.supprimer_conv(id_conv=id_conversation)
             if succes:
@@ -482,7 +486,12 @@ class ConversationService:
             )
             raise
 
-    def ajouter_utilisateur(id_conversation: int, id_utilisateur: int, role: str) -> bool:
+    def ajouter_utilisateur(
+        id_conversation: int,
+        id_utilisateur: int,
+        role: str,
+        id_demandeur: int,
+    ) -> bool:
         """
         Ajoute un utilisateur à une conversation avec un rôle donné.
 
@@ -490,6 +499,7 @@ class ConversationService:
         ----------
         id_conversation : int
         id_utilisateur : int
+        id_demandeur : int
         role : str
 
         Returns
@@ -506,6 +516,12 @@ class ConversationService:
             raise ErreurValidation(
                 "Les champs id_conversation, id_utilisateur et rôle sont requis."
             )
+
+        if not ConversationDAO.est_proprietaire(id_conversation, id_demandeur):
+            raise ErreurValidation(
+                "Seul le propriétaire de la conversation peut gérer les participants."
+            )
+
         try:
             res = ConversationDAO.ajouter_participant(id_conversation, id_utilisateur, role)
             if res:
@@ -526,7 +542,11 @@ class ConversationService:
             )
             raise
 
-    def retirer_utilisateur(id_conversation: int, id_utilisateur: int) -> bool:
+    def retirer_utilisateur(
+        id_conversation: int,
+        id_utilisateur: int,
+        id_demandeur: int,
+    ) -> bool:
         """
         Retire un utilisateur d’une conversation.
 
@@ -547,6 +567,12 @@ class ConversationService:
         """
         if not id_conversation or not id_utilisateur:
             raise ErreurValidation("Les champs id_conversation et id_utilisateur sont requis.")
+
+        if not ConversationDAO.est_proprietaire(id_conversation, id_demandeur):
+            raise ErreurValidation(
+                "Seul le propriétaire de la conversation peut gérer les participants."
+            )
+
         try:
             res = ConversationDAO.retirer_participant(id_conversation, id_utilisateur)
             if res:

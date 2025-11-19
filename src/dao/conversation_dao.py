@@ -34,13 +34,15 @@ class ConversationDAO:
         ValueError
             Si le titre est vide ou si la personnalisation (prompt) est invalide.
         """
+        # Vérification / nettoyage du titre
         titre = (conversation.nom or "").strip()
         if not titre:
             raise ValueError("Le nom (titre) de la conversation est obligatoire.")
 
-        # Resolve prompt_id :
+        # Résolution du prompt_id à partir de `conversation.personnalisation`
         perso = conversation.personnalisation
-        prompt_id = None
+        prompt_id: int | None = None
+
         if isinstance(perso, str):
             perso = perso.strip()
             if perso:
@@ -52,22 +54,33 @@ class ConversationDAO:
             if not PromptDAO.exists_id(perso):
                 raise ValueError(f"prompt_id inexistant: {perso}")
             prompt_id = perso
+        else:
+            # perso est None ou un type non géré -> pas de prompt
+            prompt_id = None
 
+        # Insertion en base
         with DBConnection().connection as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    INSERT INTO conversations (titre, prompt_id)
-                    VALUES (%(titre)s, %(prompt_id)s)
-                    RETURNING id, cree_le;
+                    INSERT INTO conversations (titre, prompt_id, proprietaire_id)
+                    VALUES (%(titre)s, %(prompt_id)s, %(proprietaire_id)s)
+                    RETURNING id, cree_le, proprietaire_id;
                     """,
-                    {"titre": titre, "prompt_id": prompt_id},
+                    {
+                        "titre": titre,
+                        "prompt_id": prompt_id,
+                        "proprietaire_id": proprietaire_id,
+                    },
                 )
                 row = cur.fetchone()
                 conversation.id = row["id"]
                 conversation.date_creation = row["cree_le"]
                 conversation.personnalisation = prompt_id
+                # Nécessite que Conversation ait un attribut `proprietaire_id`
+                conversation.proprietaire_id = row["proprietaire_id"]
 
+                # (optionnel) On ajoute aussi le propriétaire comme participant
                 if proprietaire_id is not None:
                     cur.execute(
                         """
@@ -79,6 +92,21 @@ class ConversationDAO:
                     )
 
         return conversation
+
+    @staticmethod
+    def est_proprietaire(conversation_id: int, utilisateur_id: int) -> bool:
+        with DBConnection().connection as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT 1
+                    FROM conversations
+                    WHERE id = %(cid)s
+                      AND proprietaire_id = %(uid)s;
+                    """,
+                    {"cid": conversation_id, "uid": utilisateur_id},
+                )
+                return cur.fetchone() is not None
 
     @staticmethod
     def trouver_par_id(id_conv: int) -> Conversation:
@@ -118,6 +146,7 @@ class ConversationDAO:
             nom=conv["titre"],
             personnalisation=conv["prompt_id"],
             date_creation=conv["cree_le"],
+            proprietaire_id=conv["proprietaire_id"],
         )
 
     @staticmethod
@@ -241,6 +270,7 @@ class ConversationDAO:
                 nom=row["titre"],
                 personnalisation=row["prompt_id"],
                 date_creation=row["cree_le"],
+                proprietaire_id=row["proprietaire_id"],
             )
             for row in rows
         ]
@@ -275,7 +305,7 @@ class ConversationDAO:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT DISTINCT c.id, c.titre, c.prompt_id, c.cree_le
+                    SELECT DISTINCT c.id, c.titre, c.prompt_id, c.proprietaire_id, c.cree_le
                     FROM conversations c
                     JOIN conversations_participants cp
                         ON cp.conversation_id = c.id
@@ -297,6 +327,7 @@ class ConversationDAO:
                 nom=r["titre"],
                 personnalisation=r["prompt_id"],
                 date_creation=r["cree_le"],
+                proprietaire_id=r["proprietaire_id"],
             )
             for r in rows
         ]
@@ -334,7 +365,7 @@ class ConversationDAO:
         d1 = d0 + datetime.timedelta(days=1)
 
         sql = """
-            SELECT DISTINCT c.id, c.titre, c.prompt_id, c.cree_le
+            SELECT DISTINCT c.id, c.titre, c.prompt_id, c.proprietaire_id, c.cree_le
             FROM conversations c
             JOIN conversations_participants cp
             ON cp.conversation_id = c.id
@@ -357,6 +388,7 @@ class ConversationDAO:
                 nom=r["titre"],
                 personnalisation=r["prompt_id"],
                 date_creation=r["cree_le"],
+                proprietaire_id=r["proprietaire_id"],
             )
             for r in rows
         ]
@@ -394,7 +426,7 @@ class ConversationDAO:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT DISTINCT c.id, c.titre, c.prompt_id, c.cree_le
+                    SELECT DISTINCT c.id, c.titre, c.prompt_id, c.proprietaire_id, c.cree_le
                     FROM conversations c
                     JOIN conversations_participants cp
                     ON cp.conversation_id = c.id
@@ -414,6 +446,7 @@ class ConversationDAO:
                 nom=r["titre"],
                 personnalisation=r["prompt_id"],
                 date_creation=r["cree_le"],
+                proprietaire_id=r["proprietaire_id"],
             )
             for r in rows
         ]

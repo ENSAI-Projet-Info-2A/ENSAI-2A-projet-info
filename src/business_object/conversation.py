@@ -22,7 +22,12 @@ class Conversation:
     """
 
     def __init__(
-        self, nom: str, personnalisation: str = None, id: int = None, date_creation: datetime = None
+        self,
+        nom: str,
+        personnalisation: str | int | None = None,
+        id: int | None = None,
+        date_creation: datetime | None = None,
+        proprietaire_id: int | None = None,
     ):
         """
         Constructeur de la classe Conversation.
@@ -38,11 +43,14 @@ class Conversation:
             Paramètres de personnalisation du comportement de l’IA.
         id : int, optional
             Identifiant unique (si conversation déjà existante en base).
+        proprietaire_id : int | None, optional
+            Identifiant du propriétaire de la conversation.
         date_creation : datetime, optional
             Date de création ; par défaut la date et l'heure actuelles.
         """
         self.id = id
         self.nom = nom
+        self.proprietaire_id = proprietaire_id
         self.date_creation = date_creation if date_creation else datetime.now()
         self.personnalisation = personnalisation
         self.echanges = []
