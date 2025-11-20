@@ -4,6 +4,7 @@ erDiagram
     UTILISATEURS ||--o{ CONVERSATIONS : "propriétaire"
     UTILISATEURS ||--o{ CONVERSATIONS_PARTICIPANTS : "participe"
     UTILISATEURS ||--o{ MESSAGES : "envoie"
+    UTILISATEURS ||--o{ SESSIONS : "a"
     PROMPTS ||--o{ CONVERSATIONS : "initialise"
     CONVERSATIONS ||--o{ MESSAGES : "contient"
     CONVERSATIONS ||--o{ CONVERSATIONS_PARTICIPANTS : "associe"
@@ -43,4 +44,11 @@ erDiagram
         string emetteur "utilisateur|ia"
         text contenu
         timestamptz cree_le
+    }
+
+    SESSIONS {
+        int id PK
+        int user_id FK
+        timestamptz connexion
+        timestamptz deconnexion "nullable"
     }
