@@ -1,3 +1,5 @@
+import logging
+
 from psycopg2.extras import RealDictCursor
 
 from src.dao.db_connection import DBConnection
@@ -44,18 +46,31 @@ class SessionDAO:
         int
             L'identifiant de la session nouvellement créée.
         """
-        with DBConnection().connection as conn:
-            with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                cur.execute(
-                    """
-                    INSERT INTO sessions(user_id, connexion, deconnexion)
-                    VALUES (%(uid)s, NOW(), NULL)
-                    RETURNING id;
-                    """,
-                    {"uid": user_id},
-                )
-                row = cur.fetchone()
-                return int(row["id"])
+        logging.debug(
+            f"[SessionDAO] Ouverture d'une session pour user_id={user_id}, device='{device}'"
+        )
+
+        try:
+            with DBConnection().connection as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                    cur.execute(
+                        """
+                        INSERT INTO sessions(user_id, connexion, deconnexion)
+                        VALUES (%(uid)s, NOW(), NULL)
+                        RETURNING id;
+                        """,
+                        {"uid": user_id},
+                    )
+                    row = cur.fetchone()
+                    sid = int(row["id"])
+                    logging.info(f"[SessionDAO] Session ouverte (id={sid}) pour user_id={user_id}")
+                    return sid
+
+        except Exception as e:
+            logging.error(
+                f"[SessionDAO] ERREUR lors de l'ouverture de session user_id={user_id} : {e}"
+            )
+            raise
 
     def fermer_derniere_ouverte(self, user_id: int) -> bool:
         """
@@ -79,21 +94,36 @@ class SessionDAO:
             True si une session a été trouvée et fermée,
             False sinon.
         """
-        with DBConnection().connection as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    UPDATE sessions
-                    SET deconnexion = NOW()
-                    WHERE id = (
-                        SELECT id
-                        FROM sessions
-                        WHERE user_id = %(uid)s
-                        AND deconnexion IS NULL
-                        ORDER BY connexion DESC
-                        LIMIT 1
-                    );
-                    """,
-                    {"uid": user_id},
-                )
-                return cur.rowcount > 0
+        logging.debug(
+            f"[SessionDAO] Tentative de fermeture de la dernière session ouverte pour user_id={user_id}"
+        )
+
+        try:
+            with DBConnection().connection as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """
+                        UPDATE sessions
+                        SET deconnexion = NOW()
+                        WHERE id = (
+                            SELECT id
+                            FROM sessions
+                            WHERE user_id = %(uid)s
+                            AND deconnexion IS NULL
+                            ORDER BY connexion DESC
+                            LIMIT 1
+                        );
+                        """,
+                        {"uid": user_id},
+                    )
+                    closed = cur.rowcount > 0
+        except Exception as e:
+            logging.error(f"[SessionDAO] ERREUR fermeture session user_id={user_id} : {e}")
+            raise
+
+        if closed:
+            logging.info(f"[SessionDAO] Session fermée pour user_id={user_id}")
+        else:
+            logging.info(f"[SessionDAO] Aucune session ouverte trouvée pour user_id={user_id}")
+
+        return closed

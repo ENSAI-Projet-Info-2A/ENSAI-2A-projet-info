@@ -1,3 +1,5 @@
+import logging
+
 from InquirerPy import inquirer
 from InquirerPy.validator import PasswordValidator
 
@@ -9,11 +11,15 @@ class InscriptionVue(VueAbstraite):
     """Vue d'inscription d'un nouvel utilisateur"""
 
     def choisir_menu(self):
+        logging.debug("Affichage InscriptionVue")
+
         # Demande à l'utilisateur de saisir un pseudo
         pseudo = inquirer.text(message="Entrez votre pseudo : ").execute()
+        logging.info("Tentative de création de compte avec pseudo=%r", pseudo)
 
         # Vérifie si le pseudo est déjà utilisé
         if UtilisateurService().pseudo_deja_utilise(pseudo):
+            logging.warning("Création de compte échouée : pseudo déjà utilisé (%r)", pseudo)
             from src.view.accueil.accueil_vue import AccueilVue
 
             return AccueilVue(f"Le pseudo {pseudo} est déjà utilisé.")
@@ -29,16 +35,22 @@ class InscriptionVue(VueAbstraite):
             ),
         ).execute()
 
+        logging.debug("Mot de passe reçu pour pseudo=%r (valeur masquée)", pseudo)
+
         # Appel du service pour créer l'utilisateur
         utilisateur = UtilisateurService().creer_compte(pseudo, mdp)
 
         # Si l'utilisateur a été créé
         if utilisateur:
+            logging.info(
+                "Compte créé avec succès pour pseudo=%r (id=%s)", utilisateur.pseudo, utilisateur.id
+            )
             message = (
                 f"Votre compte {utilisateur.pseudo} a été créé. "
                 "Vous pouvez maintenant vous connecter."
             )
         else:
+            logging.error("Échec création de compte pour pseudo=%r", pseudo)
             message = "Erreur lors de la création du compte (pseudo ou mot de passe invalide)."
 
         from src.view.accueil.accueil_vue import AccueilVue

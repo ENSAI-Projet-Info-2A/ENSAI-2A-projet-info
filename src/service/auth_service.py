@@ -1,3 +1,5 @@
+import logging
+
 from src.dao.utilisateur_dao import UtilisateurDao
 from src.utils.jtw_utils import creer_token
 from src.utils.jtw_utils import verifier_token as verif_token
@@ -19,6 +21,7 @@ class Auth_Service:
     tokens_invalides : set[str]
         Ensemble des tokens invalidés après déconnexion.
     """
+
     def __init__(self, utilisateur_dao: UtilisateurDao):
         """
         Initialise le service avec un DAO utilisateur.
@@ -30,6 +33,7 @@ class Auth_Service:
         """
         self.utilisateur_dao = utilisateur_dao
         self.tokens_invalides = set()  # liste noire des tokens déconnectés
+        logging.debug("Initialisation Auth_Service avec UtilisateurDao=%r", utilisateur_dao)
 
     def se_connecter(self, pseudo: str, mdp: str) -> str:
         """
@@ -55,14 +59,20 @@ class Auth_Service:
         ValueError
             Si l'utilisateur n'existe pas ou si le mot de passe est incorrect.
         """
+        logging.debug("Tentative de connexion pour pseudo=%r", pseudo)
+
         utilisateur = self.utilisateur_dao.trouver_par_pseudo(pseudo)
         if not utilisateur:
+            logging.warning("Connexion échouée : utilisateur %r introuvable.", pseudo)
             raise ValueError("Utilisateur introuvable.")
 
         if not utilisateur.verifier_password(mdp):
+            logging.warning("Connexion échouée : mot de passe incorrect pour pseudo=%r", pseudo)
             raise ValueError("Mot de passe incorrect.")
 
-        return creer_token(utilisateur.id, utilisateur.pseudo)
+        token = creer_token(utilisateur.id, utilisateur.pseudo)
+        logging.info("Connexion réussie pour pseudo=%r (id=%s)", utilisateur.pseudo, utilisateur.id)
+        return token
 
     def se_deconnecter(self, token: str) -> None:
         """
@@ -76,7 +86,11 @@ class Auth_Service:
         token : str
             Token de session à invalider
         """
+        logging.debug("Demande de déconnexion pour token commençant par %r", token[:10])
         self.tokens_invalides.add(token)
+        logging.info(
+            "Token ajouté à la liste noire (nb_tokens_invalides=%s)", len(self.tokens_invalides)
+        )
 
     def verifier_token(self, token: str) -> bool:
         """
@@ -96,11 +110,18 @@ class Auth_Service:
         bool
             True si le token est valide et actif, False sinon
         """
+        logging.debug(
+            "Vérification du token (liste noire contient %s token(s))",
+            len(self.tokens_invalides),
+        )
 
         if token in self.tokens_invalides:
+            logging.info("Token rejeté : présent dans la liste noire.")
             return False
         try:
             verif_token(token)
+            logging.debug("Token valide et non expiré.")
             return True
         except Exception:
+            logging.warning("Token invalide ou expiré.")
             return False

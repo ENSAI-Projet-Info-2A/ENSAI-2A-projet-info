@@ -16,6 +16,8 @@ class ConnexionVue(VueAbstraite):
         self.message = message
 
     def choisir_menu(self):
+        logging.debug("Affichage ConnexionVue (message=%r)", self.message)
+
         if self.message:
             print(self.message + "\n")
 
@@ -23,13 +25,16 @@ class ConnexionVue(VueAbstraite):
         pseudo = inquirer.text(message="Entrez votre pseudo : ").execute()
         mdp = inquirer.secret(message="Entrez votre mot de passe :").execute()
 
+        logging.info("Tentative de connexion pour pseudo=%r", pseudo)
+
         auth_service = Auth_Service(UtilisateurDao())
 
         try:
             # 2) Authentification + token JWT
             token = auth_service.se_connecter(pseudo, mdp)
+            logging.info("Authentification réussie pour pseudo=%r (token généré)", pseudo)
         except ValueError as e:
-            logging.warning(f"[ConnexionVue] Erreur d'authentification : {e}")
+            logging.warning("[ConnexionVue] Erreur d'authentification : %s", e)
             from src.view.accueil.accueil_vue import AccueilVue
 
             return AccueilVue("Erreur de connexion (pseudo ou mot de passe invalide)")
@@ -39,16 +44,26 @@ class ConnexionVue(VueAbstraite):
 
         if not utilisateur:
             logging.error(
-                "[ConnexionVue] Utilisateur authentifié mais non trouvé par UtilisateurService"
+                "[ConnexionVue] Utilisateur authentifié mais non trouvé par UtilisateurService "
+                "(pseudo=%r)",
+                pseudo,
             )
             from src.view.accueil.accueil_vue import AccueilVue
 
             return AccueilVue("Erreur interne : utilisateur authentifié mais non trouvé.")
 
         # 4) On ouvre la session locale + BDD
+        logging.debug(
+            "Ouverture de session pour utilisateur id=%s, pseudo=%r",
+            utilisateur.id,
+            utilisateur.pseudo,
+        )
         Session().connexion(utilisateur, token=token)
 
         message = f"Vous êtes connecté sous le pseudo {utilisateur.pseudo}"
+        logging.info(
+            "ConnexionVue : redirection vers MenuUtilisateurVue pour pseudo=%r", utilisateur.pseudo
+        )
 
         from src.view.menu_utilisateur_vue import MenuUtilisateurVue
 

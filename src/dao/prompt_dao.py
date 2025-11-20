@@ -1,3 +1,5 @@
+import logging
+
 from src.dao.db_connection import DBConnection
 
 
@@ -16,12 +18,13 @@ class PromptDAO:
 
     Table concernée
     ----------------
-    Table : ``prompts``  
+    Table : ``prompts``
     Colonnes utilisées :
     - ``id`` (int)
     - ``nom`` (str)
     - ``contenu`` (str) — peut avoir d'autres variantes selon la structure interne
     """
+
     @staticmethod
     def get_id_by_name(nom: str) -> int | None:
         """
@@ -37,10 +40,22 @@ class PromptDAO:
         int | None
             L'identifiant du prompt si trouvé, sinon ``None``.
         """
-        with DBConnection().connection as conn:
-            with conn.cursor() as cur:
-                cur.execute("SELECT id FROM prompts WHERE nom = %(nom)s;", {"nom": nom})
-                row = cur.fetchone()
+        logging.debug(f"[PromptDAO] Recherche ID pour nom='{nom}'")
+
+        try:
+            with DBConnection().connection as conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT id FROM prompts WHERE nom = %(nom)s;", {"nom": nom})
+                    row = cur.fetchone()
+        except Exception as e:
+            logging.error(f"[PromptDAO] ERREUR get_id_by_name('{nom}') : {e}")
+            raise
+
+        if row:
+            logging.info(f"[PromptDAO] ID trouvé pour '{nom}' : {row['id']}")
+        else:
+            logging.info(f"[PromptDAO] Aucun prompt trouvé pour '{nom}'")
+
         return row["id"] if row else None
 
     @staticmethod
@@ -58,10 +73,19 @@ class PromptDAO:
         bool
             True si le prompt existe, False sinon.
         """
-        with DBConnection().connection as conn:
-            with conn.cursor() as cur:
-                cur.execute("SELECT 1 FROM prompts WHERE id = %(id)s;", {"id": prompt_id})
-                return cur.fetchone() is not None
+        logging.debug(f"[PromptDAO] Vérification de l'existence du prompt_id={prompt_id}")
+
+        try:
+            with DBConnection().connection as conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT 1 FROM prompts WHERE id = %(id)s;", {"id": prompt_id})
+                    exists = cur.fetchone() is not None
+        except Exception as e:
+            logging.error(f"[PromptDAO] ERREUR exists_id({prompt_id}) : {e}")
+            raise
+
+        logging.info(f"[PromptDAO] exists_id({prompt_id}) -> {exists}")
+        return exists
 
     @staticmethod
     def lister_prompts() -> list[dict]:
@@ -76,16 +100,24 @@ class PromptDAO:
         list[dict]
             Liste complète des prompts présents en base.
         """
-        with DBConnection().connection as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    SELECT id, nom
-                    FROM prompts
-                    ORDER BY id;
-                    """
-                )
-                rows = cur.fetchall() or []
+        logging.debug("[PromptDAO] Récupération de la liste des prompts")
+
+        try:
+            with DBConnection().connection as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """
+                        SELECT id, nom
+                        FROM prompts
+                        ORDER BY id;
+                        """
+                    )
+                    rows = cur.fetchall() or []
+        except Exception as e:
+            logging.error("[PromptDAO] ERREUR lister_prompts : %s", e)
+            raise
+
+        logging.info(f"[PromptDAO] {len(rows)} prompts trouvés")
         return rows
 
     @staticmethod
@@ -107,21 +139,31 @@ class PromptDAO:
         str | None
             Le texte du prompt, ou ``None`` s'il n'existe pas en base.
         """
-        with DBConnection().connection as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    SELECT *
-                    FROM prompts
-                    WHERE id = %(id)s;
-                    """,
-                    {"id": prompt_id},
-                )
-                row = cur.fetchone()
+        logging.debug(f"[PromptDAO] Récupération du contenu du prompt_id={prompt_id}")
+
+        try:
+            with DBConnection().connection as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """
+                        SELECT *
+                        FROM prompts
+                        WHERE id = %(id)s;
+                        """,
+                        {"id": prompt_id},
+                    )
+                    row = cur.fetchone()
+        except Exception as e:
+            logging.error(f"[PromptDAO] ERREUR get_prompt_text_by_id({prompt_id}) : {e}")
+            raise
 
         if not row:
+            logging.info(f"[PromptDAO] Aucun prompt trouvé pour id={prompt_id}")
             return None
 
-        # row est un dict-like (RealDictRow)
         texte = row.get("contenu")
+        logging.info(
+            f"[PromptDAO] Contenu récupéré pour id={prompt_id}, "
+            f"{len(texte) if texte else 0} caractères."
+        )
         return texte or None

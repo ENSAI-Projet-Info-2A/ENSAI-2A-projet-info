@@ -8,8 +8,6 @@ from src.business_object.echange import Echange
 from src.dao.conversation_dao import ConversationDAO
 from src.dao.prompt_dao import PromptDAO
 
-logger = logging.getLogger(__name__)
-
 
 class ErreurValidation(Exception):
     """Erreur levée quand les données reçues ne sont pas valides."""
@@ -42,6 +40,8 @@ class ConversationService:
         Texte par défaut à utiliser comme prompt système si aucune personnalisation n’est définie.
     """
 
+    DEFAULT_SYSTEM_PROMPT = "Tu es un assistant utile."  # <- Pour la dernière fonction.
+
     @staticmethod
     def _resolve_prompt_id(personnalisation):
         """
@@ -64,20 +64,27 @@ class ConversationService:
         ErreurValidation
             Si le prompt n’existe pas.
         """
+        logging.debug("Résolution du prompt_id pour personnalisation=%r", personnalisation)
+
         # Accepte None, "", "  "  => pas de prompt
         if personnalisation is None or (
             isinstance(personnalisation, str) and not personnalisation.strip()
         ):
+            logging.debug("Aucune personnalisation fournie, retour None.")
             return None
         # Si int : vérifier qu'il existe
         if isinstance(personnalisation, int):
             if not PromptDAO.exists_id(personnalisation):
+                logging.warning("prompt_id inexistant demandé: %s", personnalisation)
                 raise ErreurValidation(f"prompt_id inexistant: {personnalisation}")
+            logging.debug("Prompt_id %s résolu directement (int).", personnalisation)
             return personnalisation
         # Si str : résoudre le nom -> id
         pid = PromptDAO.get_id_by_name(personnalisation.strip())
         if pid is None:
+            logging.warning("Prompt inexistant demandé par nom: %r", personnalisation)
             raise ErreurValidation(f"Prompt inconnu: '{personnalisation}'")
+        logging.debug("Nom de prompt %r résolu en id=%s", personnalisation, pid)
         return pid
 
     DEFAULT_SYSTEM_PROMPT = "Tu es un assistant utile."
@@ -97,21 +104,50 @@ class ConversationService:
         str
             Texte du prompt système (personnalisé ou par défaut).
         """
+        logging.debug(
+            "Résolution du prompt système pour id_conversation=%r",
+            id_conversation,
+        )
+
         if not id_conversation:
+            logging.debug(
+                "Aucun id_conversation fourni pour le prompt système, utilisation du prompt par défaut."
+            )
             return ConversationService.DEFAULT_SYSTEM_PROMPT
 
         try:
             conv = ConversationDAO.trouver_par_id(id_conv=id_conversation)
             prompt_id = getattr(conv, "personnalisation", None)
             if not prompt_id:
+                logging.debug(
+                    "Conversation %s sans personnalisation, utilisation du prompt par défaut.",
+                    id_conversation,
+                )
                 return ConversationService.DEFAULT_SYSTEM_PROMPT
 
             from src.dao.prompt_dao import PromptDAO
 
             txt = PromptDAO.get_prompt_text_by_id(prompt_id)
+            if txt:
+                logging.debug(
+                    "Prompt système personnalisé récupéré pour conv=%s (prompt_id=%s).",
+                    id_conversation,
+                    prompt_id,
+                )
+            else:
+                logging.debug(
+                    "Prompt_id=%s pour conv=%s sans texte, utilisation du prompt par défaut.",
+                    prompt_id,
+                    id_conversation,
+                )
             return txt or ConversationService.DEFAULT_SYSTEM_PROMPT
 
-        except Exception:
+        except Exception as e:
+            logging.warning(
+                "Impossible de résoudre le prompt système pour conv=%s, utilisation du prompt par défaut. Erreur: %s",
+                id_conversation,
+                e,
+            )
             return ConversationService.DEFAULT_SYSTEM_PROMPT
 
     @staticmethod
@@ -138,6 +174,13 @@ class ConversationService:
         ErreurValidation
             Si le titre est absent ou trop long.
         """
+        logging.debug(
+            "Demande de création de conversation : titre=%r, personnalisation=%r, id_proprietaire=%r",
+            titre,
+            personnalisation,
+            id_proprietaire,
+        )
+
         if not titre or not str(titre).strip():
             raise ErreurValidation("Le titre est nécessaire.")
         if len(titre) > 255:
@@ -159,20 +202,20 @@ class ConversationService:
                     )
                 except Exception as e:
                     # On loggue mais on n’empêche pas la création de la conversation
-                    logger.warning(
+                    logging.warning(
                         "Ajout participant échoué (conv=%s, user=%s) : %s",
                         conv.id,
                         id_proprietaire,
                         e,
                     )
 
-            logger.info("Conversation créée id=%s (prompt_id=%r)", conv.id, conv.personnalisation)
+            logging.info("Conversation créée id=%s (prompt_id=%r)", conv.id, conv.personnalisation)
             return f"Conversation '{conv.nom}' créée (id={conv.id})."
 
         except ValueError as e:
             raise ErreurValidation(str(e)) from e
         except Exception as e:
-            logger.error("Erreur création conversation: %s", e)
+            logging.error("Erreur création conversation: %s", e)
             raise
 
     def acceder_conversation(id_conversation: int):
@@ -196,13 +239,16 @@ class ConversationService:
         ErreurNonTrouvee
             Si la conversation n’existe pas.
         """
+        logging.debug("Accès à la conversation id=%s", id_conversation)
+
         if id_conversation is None:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
         try:
             conversation = ConversationDAO.trouver_par_id(id_conv=id_conversation)
             if conversation is None:
+                logging.warning("Conversation introuvable pour id=%s", id_conversation)
                 raise ErreurNonTrouvee("Conversation introuvable.")
-            logger.info(
+            logging.info(
                 f"conversation d'id = {conversation.id} intitulée {conversation.nom} trouvée",
                 conversation.id,
                 conversation.nom,
@@ -213,7 +259,7 @@ class ConversationService:
         except ErreurValidation:
             raise
         except Exception as e:
-            logger.error(
+            logging.error(
                 "erreur lors de la recherche de la conversation d'id = %s : %s", id_conversation, e
             )
             raise Exception("erreur interne lors de la recherche de la conversation.") from e
@@ -239,6 +285,12 @@ class ConversationService:
         ErreurValidation
             Si les paramètres sont invalides
         """
+        logging.debug(
+            "Demande de renommage de conversation id=%s vers nouveau_titre=%r",
+            id_conversation,
+            nouveau_titre,
+        )
+
         if not id_conversation:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
         if not nouveau_titre or not nouveau_titre.strip():
@@ -247,12 +299,12 @@ class ConversationService:
         try:
             succes = ConversationDAO.renommer_conv(id_conversation, nouveau_titre)
             if succes:
-                logger.info("Conversation %s renommée en '%s'", id_conversation, nouveau_titre)
+                logging.info("Conversation %s renommée en '%s'", id_conversation, nouveau_titre)
             else:
-                logger.warning("Aucune conversation trouvée pour id=%s", id_conversation)
+                logging.warning("Aucune conversation trouvée pour id=%s", id_conversation)
             return succes
         except Exception as e:
-            logger.error("Erreur lors du renommage de la conversation %s : %s", id_conversation, e)
+            logging.error("Erreur lors du renommage de la conversation %s : %s", id_conversation, e)
             raise
 
     def supprimer_conversation(id_conversation: int, id_demandeur: int) -> bool:
@@ -274,23 +326,34 @@ class ConversationService:
         ErreurValidation
             Si l’id est manquant
         """
+        logging.debug(
+            "Demande de suppression de conversation id=%s par utilisateur id=%s",
+            id_conversation,
+            id_demandeur,
+        )
+
         if not id_conversation:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
         if not ConversationDAO.est_proprietaire(id_conversation, id_demandeur):
+            logging.warning(
+                "Tentative de suppression par un utilisateur non propriétaire (conv=%s, user=%s).",
+                id_conversation,
+                id_demandeur,
+            )
             raise ErreurValidation(
                 "Seul le propriétaire de la conversation peut gérer les participants."
             )
         try:
             succes = ConversationDAO.supprimer_conv(id_conv=id_conversation)
             if succes:
-                logger.info("Conversation %s supprimée avec succès", id_conversation)
+                logging.info("Conversation %s supprimée avec succès", id_conversation)
             else:
-                logger.warning(
+                logging.warning(
                     "Aucune conversation trouvée à supprimer pour id=%s", id_conversation
                 )
             return succes
         except Exception as e:
-            logger.error(
+            logging.error(
                 "Erreur lors de la suppression de la conversation %s : %s", id_conversation, e
             )
             raise
@@ -316,6 +379,12 @@ class ConversationService:
         ErreurValidation
             Si id_utilisateur manquant ou limite invalide
         """
+        logging.debug(
+            "Liste des conversations demandée pour utilisateur id=%s avec limite=%r",
+            id_utilisateur,
+            limite,
+        )
+
         if id_utilisateur is None:
             raise ErreurValidation("L'identifiant de l'utilisateur est requis.")
         if limite is not None and limite < 1:
@@ -323,6 +392,12 @@ class ConversationService:
 
         try:
             res = ConversationDAO.lister_conversations(id_user=id_utilisateur, n=limite)
+            nb = len(res) if res else 0
+            logging.info(
+                "Liste des conversations récupérée pour utilisateur id=%s (nb=%s)",
+                id_utilisateur,
+                nb,
+            )
             # Si la DAO renvoie une liste, on la passe telle quelle
             return res or []
         except Exception as e:
@@ -330,9 +405,13 @@ class ConversationService:
             # On transforme proprement en liste vide pour la vue.
             msg = str(e).lower()
             if "aucune conversation trouvée" in msg or "aucune conversation" in msg:
+                logging.info(
+                    "Aucune conversation trouvée pour utilisateur id=%s, retour liste vide.",
+                    id_utilisateur,
+                )
                 return []
             # Autre erreur = vraie erreur
-            logger.error(
+            logging.error(
                 "Erreur lors de la récupération des conversations de l'utilisateur %s : %s",
                 id_utilisateur,
                 e,
@@ -364,6 +443,13 @@ class ConversationService:
         ErreurValidation
             Si id_utilisateur manquant
         """
+        logging.debug(
+            "Recherche de conversations pour utilisateur id=%s avec mot_cle=%r et date_recherche=%r",
+            id_utilisateur,
+            mot_cle,
+            date_recherche,
+        )
+
         if id_utilisateur is None:
             raise ErreurValidation("L'identifiant de l'utilisateur est requis.")
 
@@ -378,24 +464,32 @@ class ConversationService:
                 res = ConversationDAO.rechercher_conv_mot_et_date(
                     id_user=id_utilisateur, mot_cle=mot_cle, date=date_recherche
                 )
-                logger.info("Recherche combinée par mot-clé et date effectuée.")
+                logging.info("Recherche combinée par mot-clé et date effectuée.")
             elif mot_cle is not None:
                 res = ConversationDAO.rechercher_mot_clef(id_user=id_utilisateur, mot_clef=mot_cle)
-                logger.info("Recherche par mot-clé effectuée.")
+                logging.info("Recherche par mot-clé effectuée.")
             elif date_recherche is not None:
                 res = ConversationDAO.rechercher_date(id_user=id_utilisateur, date=date_recherche)
-                logger.info("Recherche par date effectuée.")
+                logging.info("Recherche par date effectuée.")
             else:
                 res = ConversationDAO.lister_conversations(id_user=id_utilisateur)
-                logger.info("Aucun critère fourni, listing général.")
+                logging.info("Aucun critère fourni, listing général.")
 
+            nb = len(res) if res else 0
+            logging.debug("Résultat de recherche : %s conversations trouvées.", nb)
             return res or []
 
         except Exception as e:
             msg = str(e).lower()
             if "aucune conversation" in msg or "pas de messages" in msg:
+                logging.info(
+                    "Aucun résultat pour la recherche de conversations (user=%s, mot_cle=%r, date=%r).",
+                    id_utilisateur,
+                    mot_cle,
+                    date_recherche,
+                )
                 return []
-            logger.error("Erreur lors de la recherche des conversations : %s", e)
+            logging.error("Erreur lors de la recherche des conversations : %s", e)
             raise
 
     @staticmethod
@@ -422,6 +516,13 @@ class ConversationService:
         ErreurValidation
             Si id_conversation manquant
         """
+        logging.debug(
+            "Lecture du fil de conversation id=%s avec decalage=%r et limite=%r",
+            id_conversation,
+            decalage,
+            limite,
+        )
+
         if id_conversation is None:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
 
@@ -433,9 +534,17 @@ class ConversationService:
             limit = max(1, int(limite))
 
         try:
-            return ConversationDAO.lire_echanges(id_conversation, offset=offset, limit=limit) or []
+            echanges = (
+                ConversationDAO.lire_echanges(id_conversation, offset=offset, limit=limit) or []
+            )
+            logging.debug(
+                "Lecture du fil terminée (conv=%s, nb_messages=%s)",
+                id_conversation,
+                len(echanges),
+            )
+            return echanges
         except Exception as e:
-            logger.error(
+            logging.error(
                 "Erreur lors de la lecture du fil de la conversation %s : %s",
                 id_conversation,
                 e,
@@ -464,6 +573,13 @@ class ConversationService:
         ErreurValidation
             Si paramètres manquants
         """
+        logging.debug(
+            "Recherche de messages dans conv=%s avec mot_cle=%r et date_recherche=%r",
+            id_conversation,
+            mot_cle,
+            date_recherche,
+        )
+
         if id_conversation is None:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
         if not mot_cle and not date_recherche:
@@ -471,16 +587,16 @@ class ConversationService:
         try:
             res = ConversationDAO.rechercher_echange(id_conversation, mot_cle, date_recherche)
             if res:
-                logger.info(
+                logging.info(
                     f"Messages trouvés dans la conversation {id_conversation} (mot-clé: {mot_cle})"
                 )
                 return res
             else:
-                logger.warning(
+                logging.warning(
                     f"Aucun message trouvé dans la conversation {id_conversation} avec les critères donnés."
                 )
         except Exception as e:
-            logger.error(
+            logging.error(
                 "Erreur lors de la recherche de messages dans la conversation %s : %s",
                 id_conversation,
                 e,
@@ -513,6 +629,14 @@ class ConversationService:
         ErreurValidation
             Si paramètres manquants
         """
+        logging.debug(
+            "Demande d'ajout utilisateur=%s dans conv=%s avec role=%r par demandeur=%s",
+            id_utilisateur,
+            id_conversation,
+            role,
+            id_demandeur,
+        )
+
         if not id_conversation or not id_utilisateur or not role:
             raise ErreurValidation(
                 "Les champs id_conversation, id_utilisateur et rôle sont requis."
@@ -526,16 +650,16 @@ class ConversationService:
         try:
             res = ConversationDAO.ajouter_participant(id_conversation, id_utilisateur, role)
             if res:
-                logger.info(
+                logging.info(
                     f"Utilisateur {id_utilisateur} ajouté à la conversation {id_conversation} avec le rôle {role}"
                 )
                 return res
             else:
-                logger.warning(
+                logging.warning(
                     f"Échec de l’ajout de l’utilisateur {id_utilisateur} à la conversation {id_conversation}"
                 )
         except Exception as e:
-            logger.error(
+            logging.error(
                 "Erreur lors de l’ajout de l’utilisateur %s à la conversation %s : %s",
                 id_utilisateur,
                 id_conversation,
@@ -566,6 +690,13 @@ class ConversationService:
         ErreurValidation
             Si paramètres manquants
         """
+        logging.debug(
+            "Demande de retrait utilisateur=%s de conv=%s par demandeur=%s",
+            id_utilisateur,
+            id_conversation,
+            id_demandeur,
+        )
+
         if not id_conversation or not id_utilisateur:
             raise ErreurValidation("Les champs id_conversation et id_utilisateur sont requis.")
 
@@ -577,16 +708,16 @@ class ConversationService:
         try:
             res = ConversationDAO.retirer_participant(id_conversation, id_utilisateur)
             if res:
-                logger.info(
+                logging.info(
                     f"Utilisateur {id_utilisateur} retiré de la conversation {id_conversation}"
                 )
                 return res
             else:
-                logger.warning(
+                logging.warning(
                     f"Aucun utilisateur {id_utilisateur} trouvé dans la conversation {id_conversation}"
                 )
         except Exception as e:
-            logger.error(
+            logging.error(
                 "Erreur lors du retrait de l’utilisateur %s de la conversation %s : %s",
                 id_utilisateur,
                 id_conversation,
@@ -614,6 +745,12 @@ class ConversationService:
         ErreurValidation
             Si paramètres manquants ou prompt inconnu
         """
+        logging.debug(
+            "Mise à jour de la personnalisation de conv=%s avec personnalisation=%r",
+            id_conversation,
+            personnalisation,
+        )
+
         if not id_conversation:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
         if personnalisation is None:
@@ -623,14 +760,14 @@ class ConversationService:
             print(prompt_id)
             succes = ConversationDAO.mettre_a_j_preprompt_id(id_conversation, prompt_id)
             if succes:
-                logger.info(
+                logging.info(
                     "Personnalisation mise à jour (prompt_id=%s) pour la conversation %s",
                     prompt_id,
                     id_conversation,
                 )
             return succes
         except Exception as e:
-            logger.error("Erreur lors de la mise à jour de la personnalisation : %s", e)
+            logging.error("Erreur lors de la mise à jour de la personnalisation : %s", e)
             raise
 
     def exporter_conversation(self, id_conversation: int, format_: str) -> bool:
@@ -654,6 +791,12 @@ class ConversationService:
         ErreurValidation
             Si format non supporté ou paramètres invalides
         """
+        logging.debug(
+            "Demande d'export de la conversation id=%s au format %r",
+            id_conversation,
+            format_,
+        )
+
         if not id_conversation:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
         if format_ not in ("json", "txt"):
@@ -670,6 +813,12 @@ class ConversationService:
                 offset=0,
                 limit=None,  # None = toute la conversation
             )
+
+            if not echanges:
+                logging.info(
+                    "Export demandé pour conv=%s mais aucun échange trouvé.",
+                    id_conversation,
+                )
 
             if format_ == "json":
                 import json
@@ -728,7 +877,7 @@ class ConversationService:
 
                         fichier.write(ligne + "\n")
 
-            logger.info(
+            logging.info(
                 "Conversation %s exportée en %s dans %s",
                 id_conversation,
                 format_,
@@ -736,14 +885,12 @@ class ConversationService:
             )
             return True
         except Exception as e:
-            logger.error(
+            logging.error(
                 "Erreur lors de l'exportation de la conversation %s : %s",
                 id_conversation,
                 e,
             )
             raise
-
-    DEFAULT_SYSTEM_PROMPT = "Tu es un assistant utile."  # <- pas très propre mais, on le laisse là
 
     @staticmethod
     def demander_assistant(
@@ -791,19 +938,27 @@ class ConversationService:
             except ImportError:
                 from src.client.llm_client import LLM_API
         except Exception as imp_err:
-            logger.error("Impossible de charger LLM_API: %s", imp_err)
+            logging.error("Impossible de charger LLM_API: %s", imp_err)
             raise
 
         if not message or not message.strip():
             raise ErreurValidation("Le message est requis.")
 
-        logger.info("Assistant appelé avec le message : %s", message[:200])
+        logging.info("Assistant appelé avec le message : %s", message[:200])
 
         # Hyperparamètres avec valeurs par défaut
         temperature = float(options.get("temperature", 0.7)) if options else 0.7
         top_p = float(options.get("top_p", 1.0)) if options else 1.0
         max_tokens = int(options.get("max_tokens", 1024)) if options else 1024
         stop = options.get("stop") if options and "stop" in options else None
+
+        logging.debug(
+            "Appel LLM avec options : temperature=%s, top_p=%s, max_tokens=%s, stop=%r",
+            temperature,
+            top_p,
+            max_tokens,
+            stop,
+        )
 
         # 1) Prompt système (non persisté en BDD)
         try:
@@ -828,12 +983,18 @@ class ConversationService:
                     contenu = getattr(e, "message", getattr(e, "contenu", "")) or ""
                     history.append({"role": role, "content": contenu})
             except Exception as e:
-                logger.warning(
+                logging.warning(
                     "Impossible de récupérer l'historique (conv=%s) : %s", id_conversation, e
                 )
 
         # 3) Ajoute le message utilisateur courant à l'historique d'appel LLM
         history.append({"role": "user", "content": message})
+
+        logging.debug(
+            "Historique envoyé au LLM (conv=%r) : %s messages.",
+            id_conversation,
+            len(history),
+        )
 
         # 4) Appel LLM (le client attend une liste d'Echange(agent, message))
         client = LLM_API()
@@ -855,6 +1016,11 @@ class ConversationService:
             date_msg=Date.today(),
         )
 
+        logging.debug(
+            "Réponse assistant générée (longueur message=%s caractères).",
+            len(echange_assistant_vue.message or ""),
+        )
+
         # 6) Persistance BDD (si id_conversation connu et méthode DAO présente)
         if id_conversation and hasattr(ConversationDAO, "ajouter_echange"):
             try:
@@ -874,11 +1040,11 @@ class ConversationService:
                 ConversationDAO.ajouter_echange(id_conversation, e_user_db)
                 ConversationDAO.ajouter_echange(id_conversation, e_assistant_db)
             except Exception as e:
-                logger.warning(
+                logging.warning(
                     "Échec de la persistance des échanges (conv=%s) : %s", id_conversation, e
                 )
         else:
-            logger.info(
+            logging.info(
                 "Historique non persisté (pas d'id_conversation ou DAO sans ajouter_echange)."
             )
 

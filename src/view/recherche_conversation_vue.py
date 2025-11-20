@@ -16,12 +16,23 @@ class RechercheConversationVue(VueAbstraite):
         self.message = message
 
     def choisir_menu(self):
+        logging.debug("Entrée dans RechercheConversationVue (message=%r)", self.message)
+
         # 1) Sécurité : utilisateur connecté
         utilisateur = Session().utilisateur
         if utilisateur is None:
+            logging.warning(
+                "[RechercheConversationVue] Accès sans utilisateur connecté → retour AccueilVue"
+            )
             from src.view.accueil.accueil_vue import AccueilVue
 
             return AccueilVue("Veuillez vous connecter pour rechercher des conversations.")
+
+        logging.debug(
+            "[RechercheConversationVue] Recherche demandée par user_id=%s, pseudo=%r",
+            utilisateur.id,
+            utilisateur.pseudo,
+        )
 
         print("\n" + "-" * 50)
         print("Rechercher une conversation")
@@ -31,14 +42,19 @@ class RechercheConversationVue(VueAbstraite):
             print(self.message + "\n")
 
         try:
-            # 2) Saisie des critères (facultatifs)
+            # 2) Saisie des critères
             mot_cle = inquirer.text(
                 message="Mot-clé (laisser vide si aucun) : ", default=""
             ).execute()
-
             date_str = inquirer.text(
                 message="Date (YYYY-MM-DD, laisser vide si aucune) : ", default=""
             ).execute()
+
+            logging.debug(
+                "[RechercheConversationVue] Critères saisis : mot_cle=%r, date_raw=%r",
+                mot_cle,
+                date_str,
+            )
 
             mot_cle = (mot_cle or "").strip() or None
             date_recherche = None
@@ -47,10 +63,24 @@ class RechercheConversationVue(VueAbstraite):
             if (date_str or "").strip():
                 try:
                     dt = datetime.strptime(date_str.strip(), "%Y-%m-%d")
+                    logging.debug(
+                        "[RechercheConversationVue] Date parsée : %s (mot_cle=%r)",
+                        dt,
+                        mot_cle,
+                    )
                 except ValueError:
+                    logging.warning(
+                        "[RechercheConversationVue] Format date invalide : %r", date_str
+                    )
                     return RechercheConversationVue("Format de date invalide. Utilisez YYYY-MM-DD.")
-                # Service : date vs datetime selon présence mot_cle (on garde ta logique)
                 date_recherche = dt.date() if mot_cle else dt
+
+            logging.info(
+                "[RechercheConversationVue] Lancement recherche avec mot_cle=%r, date=%r, user_id=%s",
+                mot_cle,
+                date_recherche,
+                utilisateur.id,
+            )
 
             # 4) Appel service
             resultats = ConversationService.rechercher_conversations(
@@ -59,15 +89,24 @@ class RechercheConversationVue(VueAbstraite):
                 date_recherche=date_recherche,
             )
 
+            logging.info(
+                "[RechercheConversationVue] %s conversation(s) trouvée(s) pour user_id=%s",
+                len(resultats),
+                utilisateur.id,
+            )
+
             # 5) Si aucun résultat
             if not resultats:
                 from src.view.menu_utilisateur_vue import MenuUtilisateurVue
 
+                logging.info(
+                    "[RechercheConversationVue] Aucun résultat pour user_id=%s",
+                    utilisateur.id,
+                )
                 return MenuUtilisateurVue("Aucune conversation ne correspond à vos critères.")
 
-            # 6) Menu Select pour choisir la conversation
+            # 6) Affichage liste
             def fmt(conv) -> str:
-                # robustesse sur la date
                 try:
                     d = conv.date_creation.strftime("%Y-%m-%d %H:%M")
                 except Exception:
@@ -76,24 +115,39 @@ class RechercheConversationVue(VueAbstraite):
                 return f"[#{conv.id}] {nom}  —  créée le {d}"
 
             choices = [{"name": fmt(c), "value": c} for c in resultats]
-            # Option retour
             choices.append({"name": "↩  Retour", "value": None})
+
+            logging.debug(
+                "[RechercheConversationVue] Affichage des résultats (%s items)",
+                len(choices) - 1,
+            )
 
             selection = inquirer.select(
                 message="Choisissez une conversation :",
                 choices=choices,
-                default=choices[0]["value"],  # premier résultat par défaut
+                default=choices[0]["value"],
             ).execute()
 
+            logging.info(
+                "[RechercheConversationVue] Conversation sélectionnée : %r",
+                selection.id if selection else None,
+            )
+
             if selection is None:
+                logging.info("[RechercheConversationVue] Retour au MenuUtilisateurVue")
                 from src.view.menu_utilisateur_vue import MenuUtilisateurVue
 
                 return MenuUtilisateurVue()
 
-            # 7) Ouvrir la vue de reprise de la conversation sélectionnée
+            # 7) Ouvrir la conversation choisie
+            logging.info(
+                "[RechercheConversationVue] Ouverture conversation conv_id=%s",
+                selection.id,
+            )
             return ReprendreConversationVue(selection)
 
         except ErreurValidation as e:
+            logging.warning("[RechercheConversationVue] Erreur validation : %s", e)
             return RechercheConversationVue(f"{e}")
 
         except Exception as e:

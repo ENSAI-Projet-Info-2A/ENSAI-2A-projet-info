@@ -1,3 +1,5 @@
+import logging
+
 from src.business_object.utilisateur import Utilisateur
 from src.dao.utilisateur_dao import UtilisateurDao
 from src.utils.log_decorator import log
@@ -47,6 +49,7 @@ class UtilisateurService:
         Authentifie un utilisateur avec un pseudo et un mot de passe.
         Retourne l'utilisateur si l'authentification réussit, None sinon.
     """
+
     @staticmethod
     def _norm_pseudo(pseudo: str | None) -> str | None:
         """
@@ -65,6 +68,8 @@ class UtilisateurService:
         str | None
             Le pseudo normalisé ou None si le pseudo est vide ou None.
         """
+        logging.debug("Normalisation du pseudo %r", pseudo)
+
         if pseudo is None:
             return None
         p = pseudo.strip()
@@ -93,12 +98,25 @@ class UtilisateurService:
         """
         pseudo_n = self._norm_pseudo(pseudo)
         if not pseudo_n or not mdp:
+            logging.warning(
+                "Échec création compte : pseudo ou mot de passe invalide (pseudo=%r).",
+                pseudo,
+            )
             return None
         if self.pseudo_deja_utilise(pseudo_n):
+            logging.info("Échec création compte : pseudo déjà utilisé (%r).", pseudo_n)
             return None
 
         user = Utilisateur(id=None, pseudo=pseudo_n, password_hash=hash_password(mdp, pseudo_n))
         created = UtilisateurDao().creer_utilisateur(user)
+
+        if isinstance(created, Utilisateur):
+            logging.info("Compte utilisateur créé (id=%s, pseudo=%r).", created.id, created.pseudo)
+        elif created:
+            logging.info("Compte utilisateur créé (sans objet retourné, pseudo=%r).", pseudo_n)
+        else:
+            logging.warning("Échec création compte pour pseudo=%r sans message d'erreur.", pseudo_n)
+
         return created if isinstance(created, Utilisateur) else (user if created else None)
 
     @log
@@ -153,8 +171,10 @@ class UtilisateurService:
         """
         users = UtilisateurDao().lister_tous()
         if inclure_hash:
+            logging.info("Liste des utilisateurs récupérée (nb=%s, avec hash).", len(users))
             return users
         # renvoyer des copies pour ne pas écraser les objets originaux (On ne sait jamais)
+        logging.info("Liste des utilisateurs récupérée (nb=%s, hash masqué).", len(users))
         return [Utilisateur(id=u.id, pseudo=u.pseudo, password_hash=None) for u in users]
 
     @log
@@ -172,7 +192,18 @@ class UtilisateurService:
         bool
             True si la suppression a réussi, False sinon.
         """
-        return UtilisateurDao().supprimer(utilisateur)
+        resultat = UtilisateurDao().supprimer(utilisateur)
+        if resultat:
+            logging.info(
+                "Utilisateur supprimé (id=%s, pseudo=%r).", utilisateur.id, utilisateur.pseudo
+            )
+        else:
+            logging.warning(
+                "Échec suppression utilisateur (id=%s, pseudo=%r).",
+                getattr(utilisateur, "id", None),
+                getattr(utilisateur, "pseudo", None),
+            )
+        return resultat
 
     @log
     def pseudo_deja_utilise(self, pseudo: str) -> bool:
@@ -190,9 +221,11 @@ class UtilisateurService:
             True si le pseudo est déjà utilisé, False sinon.
         """
         pseudo_n = self._norm_pseudo(pseudo)
-        return (
+        existe = (
             False if not pseudo_n else (UtilisateurDao().trouver_par_pseudo(pseudo_n) is not None)
         )
+        logging.debug("Vérification pseudo déjà utilisé (%r) -> %s", pseudo_n, existe)
+        return existe
 
     @log
     def se_connecter(self, pseudo: str, mdp: str) -> Utilisateur | None:
@@ -216,10 +249,20 @@ class UtilisateurService:
         """
         pseudo_n = self._norm_pseudo(pseudo)
         if not pseudo_n or not mdp:
+            logging.warning(
+                "Tentative de connexion avec données invalides (pseudo=%r).",
+                pseudo,
+            )
             return None
 
         u = UtilisateurDao().trouver_par_pseudo(pseudo_n)
         if not u:
+            logging.info("Connexion échouée : utilisateur %r introuvable.", pseudo_n)
             return None
 
-        return u if u.verifier_password(mdp) else None
+        if u.verifier_password(mdp):
+            logging.info("Connexion réussie pour pseudo=%r (id=%s).", u.pseudo, u.id)
+            return u
+
+        logging.info("Connexion échouée : mot de passe incorrect pour pseudo=%r.", pseudo_n)
+        return None

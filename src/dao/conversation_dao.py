@@ -1,4 +1,5 @@
 import datetime
+import logging
 import re
 from collections import Counter
 from typing import List
@@ -34,6 +35,13 @@ class ConversationDAO:
         ValueError
             Si le titre est vide ou si la personnalisation (prompt) est invalide.
         """
+        logging.debug(
+            "Création conversation : nom=%r, proprietaire_id=%r, personnalisation=%r",
+            getattr(conversation, "nom", None),
+            proprietaire_id,
+            getattr(conversation, "personnalisation", None),
+        )
+
         # Vérification / nettoyage du titre
         titre = (conversation.nom or "").strip()
         if not titre:
@@ -91,10 +99,22 @@ class ConversationDAO:
                         {"cid": conversation.id, "uid": proprietaire_id},
                     )
 
+        logging.info(
+            "Conversation créée (id=%s, titre=%r, prompt_id=%r, proprietaire_id=%r)",
+            conversation.id,
+            conversation.nom,
+            conversation.personnalisation,
+            getattr(conversation, "proprietaire_id", None),
+        )
         return conversation
 
     @staticmethod
     def est_proprietaire(conversation_id: int, utilisateur_id: int) -> bool:
+        logging.debug(
+            "Vérification propriétaire : conv_id=%s, user_id=%s",
+            conversation_id,
+            utilisateur_id,
+        )
         with DBConnection().connection as conn:
             with conn.cursor() as cur:
                 cur.execute(
@@ -106,7 +126,14 @@ class ConversationDAO:
                     """,
                     {"cid": conversation_id, "uid": utilisateur_id},
                 )
-                return cur.fetchone() is not None
+                res = cur.fetchone() is not None
+        logging.debug(
+            "Résultat vérification propriétaire (conv_id=%s, user_id=%s) -> %s",
+            conversation_id,
+            utilisateur_id,
+            res,
+        )
+        return res
 
     @staticmethod
     def trouver_par_id(id_conv: int) -> Conversation:
@@ -128,6 +155,7 @@ class ConversationDAO:
         Exception
             Si aucune conversation ne correspond à cet ID.
         """
+        logging.debug("Recherche conversation par id=%s", id_conv)
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
@@ -140,7 +168,14 @@ class ConversationDAO:
                 )
                 conv = cursor.fetchone()
         if not conv:
+            logging.warning("Aucune conversation trouvée avec id=%s", id_conv)
             raise Exception(f"Aucune conversation trouvée avec id={id_conv}")
+        logging.info(
+            "Conversation trouvée (id=%s, titre=%r, prompt_id=%r)",
+            conv["id"],
+            conv["titre"],
+            conv["prompt_id"],
+        )
         return Conversation(
             id=conv["id"],
             nom=conv["titre"],
@@ -171,6 +206,11 @@ class ConversationDAO:
         Exception
             Si l'id est invalide ou si la modification échoue.
         """
+        logging.debug(
+            "Renommage conversation demandé (id=%s -> nouveau_nom=%r)",
+            id_conv,
+            nouveau_nom,
+        )
         if not isinstance(id_conv, int):
             raise Exception(f"l'id {id_conv} est invalide et doit être un entier naturel")
         with DBConnection().connection as conn:
@@ -185,8 +225,10 @@ class ConversationDAO:
                 )
                 count = cursor.rowcount
         if count > 0:
+            logging.info("Titre conversation modifié avec succès (id=%s)", id_conv)
             return "titre modifié avec succès"
         else:
+            logging.warning("Aucune conversation renommée (id_conv=%s, rowcount=0)", id_conv)
             raise Exception(f"Erreur dans la modification du titre pour id_conv = {id_conv}")
 
     @staticmethod
@@ -209,6 +251,7 @@ class ConversationDAO:
         Exception
             Si l'id est invalide ou si aucune conversation n'a été supprimée.
         """
+        logging.debug("Suppression conversation demandée (id=%s)", id_conv)
         if not isinstance(id_conv, int):
             raise Exception(f"l'id {id_conv} est invalide et doit être un entier naturel")
         with DBConnection().connection as conn:
@@ -222,8 +265,10 @@ class ConversationDAO:
                 )
             count = cursor.rowcount
         if count > 0:
+            logging.info("Conversation supprimée (id=%s)", id_conv)
             return f"la conversation d'id={id_conv} a bien été supprimée"
         else:
+            logging.warning("Échec suppression conversation (id=%s, rowcount=0)", id_conv)
             raise Exception(f"echec de la suppression de la conversation d'identifiant {id_conv}")
 
     @staticmethod
@@ -244,6 +289,11 @@ class ConversationDAO:
         list[Conversation]
             Liste des conversations trouvées.
         """
+        logging.debug(
+            "Listing conversations pour user_id=%s avec limite=%r",
+            id_user,
+            n,
+        )
         query = """
 
             SELECT c.*, MAX(m.cree_le) AS dernier_message
@@ -264,6 +314,11 @@ class ConversationDAO:
             with conn.cursor() as cursor:
                 cursor.execute(query, params)
                 rows = cursor.fetchall() or []
+        logging.info(
+            "Conversations listées pour user_id=%s (nb=%s)",
+            id_user,
+            len(rows),
+        )
         return [
             Conversation(
                 id=row["id"],
@@ -298,6 +353,11 @@ class ConversationDAO:
         None
             Une liste vide est retournée si aucun résultat.
         """
+        logging.debug(
+            "Recherche conversations par mot-clé pour user_id=%s, mot_clef=%r",
+            id_user,
+            mot_clef,
+        )
         if not isinstance(mot_clef, str) or not mot_clef.strip():
             return []
         pattern = f"%{mot_clef.strip()}%"
@@ -321,6 +381,12 @@ class ConversationDAO:
                     {"uid": id_user, "pattern": pattern},
                 )
                 rows = cur.fetchall()
+        logging.info(
+            "Recherche mot-clé pour user_id=%s, mot_clef=%r -> %s conversation(s)",
+            id_user,
+            mot_clef,
+            len(rows),
+        )
         return [
             Conversation(
                 id=r["id"],
@@ -354,6 +420,11 @@ class ConversationDAO:
         Exception
             Si le format de la date est invalide.
         """
+        logging.debug(
+            "Recherche conversations par date pour user_id=%s, date=%r",
+            id_user,
+            date,
+        )
         # Normalisation du paramètre "date" en début/fin de journée
         if isinstance(date, datetime.date) and not isinstance(date, datetime.datetime):
             d0 = datetime.datetime(date.year, date.month, date.day)
@@ -382,6 +453,12 @@ class ConversationDAO:
                 cur.execute(sql, {"uid": id_user, "start": d0, "end": d1})
                 rows = cur.fetchall() or []
 
+        logging.info(
+            "Recherche par date pour user_id=%s, date=%s -> %s conversation(s)",
+            id_user,
+            d0.date(),
+            len(rows),
+        )
         return [
             Conversation(
                 id=r["id"],
@@ -417,6 +494,12 @@ class ConversationDAO:
         Exception
             Si la date n'est pas un objet datetime.date.
         """
+        logging.debug(
+            "Recherche conversations mot+date (user_id=%s, mot_cle=%r, date=%r)",
+            id_user,
+            mot_cle,
+            date,
+        )
         if not isinstance(date, datetime.date):
             raise Exception(f"la date {date} n'est pas au format date")
         if not isinstance(mot_cle, str) or not mot_cle.strip():
@@ -440,6 +523,13 @@ class ConversationDAO:
                     {"uid": id_user, "d": date, "pattern": pattern},
                 )
                 rows = cur.fetchall() or []
+        logging.info(
+            "Recherche mot+date pour user_id=%s, mot_cle=%r, date=%s -> %s conversation(s)",
+            id_user,
+            mot_cle,
+            date,
+            len(rows),
+        )
         return [
             Conversation(
                 id=r["id"],
@@ -474,6 +564,12 @@ class ConversationDAO:
         ------
         None
         """
+        logging.debug(
+            "Lecture échanges pour conv_id=%s (offset=%s, limit=%r)",
+            id_conv,
+            offset,
+            limit,
+        )
         # Normalisation de offset
         if offset is None or offset < 0:
             offset = 0
@@ -551,6 +647,11 @@ class ConversationDAO:
         if limit is not None:
             echanges.reverse()
 
+        logging.info(
+            "Lecture échanges terminée pour conv_id=%s (nb_messages=%s)",
+            id_conv,
+            len(echanges),
+        )
         return echanges
 
     def rechercher_echange(
@@ -578,6 +679,12 @@ class ConversationDAO:
         Exception
             Si aucun échange ne correspond aux critères.
         """
+        logging.debug(
+            "Recherche échanges pour conv_id=%s, mot_clef=%r, date=%r",
+            conversation_id,
+            mot_clef,
+            date,
+        )
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
@@ -593,6 +700,12 @@ class ConversationDAO:
                 res = cursor.fetchall()
 
             if not res:
+                logging.warning(
+                    "Aucun échange trouvé (conv_id=%s, mot_clef=%r, date=%s)",
+                    conversation_id,
+                    mot_clef,
+                    date,
+                )
                 raise Exception(
                     f"Aucun échange trouvé pour la conversation {conversation_id} avec le mot-clé '{mot_clef}' à la date {date}"
                 )
@@ -608,6 +721,11 @@ class ConversationDAO:
                     )
                 )
 
+            logging.info(
+                "Recherche échanges terminée (conv_id=%s, nb=%s)",
+                conversation_id,
+                len(liste_echanges),
+            )
             return liste_echanges
 
     def ajouter_participant(conversation_id: int, id_user: int, role: str) -> bool:
@@ -633,6 +751,12 @@ class ConversationDAO:
         Exception
             Si l'utilisateur est déjà présent ou si l'insertion échoue.
         """
+        logging.debug(
+            "Ajout participant demandé (conv_id=%s, user_id=%s, role=%r)",
+            conversation_id,
+            id_user,
+            role,
+        )
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
                 #
@@ -648,6 +772,11 @@ class ConversationDAO:
                 existe = cursor.fetchone()["count"]
 
                 if existe > 0:
+                    logging.warning(
+                        "Ajout participant impossible : user_id=%s déjà dans conv_id=%s",
+                        id_user,
+                        conversation_id,
+                    )
                     raise Exception(
                         f"L'utilisateur {id_user} est déjà participant de la conversation {conversation_id}"
                     )
@@ -662,8 +791,18 @@ class ConversationDAO:
                 count = cursor.rowcount
 
             if count > 0:
+                logging.info(
+                    "Participant ajouté (conv_id=%s, user_id=%s)",
+                    conversation_id,
+                    id_user,
+                )
                 return True
             else:
+                logging.warning(
+                    "Ajout participant échoué (conv_id=%s, user_id=%s, rowcount=0)",
+                    conversation_id,
+                    id_user,
+                )
                 raise Exception(
                     f"Erreur lors de l'ajout de l'utilisateur {id_user} à la conversation {conversation_id}"
                 )
@@ -690,6 +829,11 @@ class ConversationDAO:
             Si la conversation n’a qu’un seul participant
             ou si l’utilisateur n’est pas présent.
         """
+        logging.debug(
+            "Retrait participant demandé (conv_id=%s, user_id=%s)",
+            conversation_id,
+            id_user,
+        )
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
                 #
@@ -704,6 +848,10 @@ class ConversationDAO:
                 nb_participants = cursor.fetchone()["count"]
 
                 if nb_participants <= 1:
+                    logging.warning(
+                        "Impossible de retirer le dernier participant (conv_id=%s)",
+                        conversation_id,
+                    )
                     raise Exception(
                         f"Impossible de retirer le dernier participant de la conversation {conversation_id}"
                     )
@@ -719,8 +867,18 @@ class ConversationDAO:
                 count = cursor.rowcount
 
         if count > 0:
+            logging.info(
+                "Participant retiré (conv_id=%s, user_id=%s)",
+                conversation_id,
+                id_user,
+            )
             return True
         else:
+            logging.warning(
+                "Retrait participant échoué : user_id=%s non trouvé dans conv_id=%s",
+                id_user,
+                conversation_id,
+            )
             raise Exception(
                 f"L'utilisateur {id_user} n'est pas participant de la conversation {conversation_id}"
             )
@@ -755,11 +913,20 @@ class ConversationDAO:
         contenu = getattr(echange, "contenu", None) or getattr(echange, "message", None)
         utilisateur_id = getattr(echange, "utilisateur_id", None)
 
+        logging.debug(
+            "Ajout échange (conv_id=%s, emetteur=%r, utilisateur_id=%r)",
+            id_conv,
+            emetteur,
+            utilisateur_id,
+        )
+
         if emetteur not in ("utilisateur", "ia"):
+            logging.error("emetteur invalide pour ajout échange : %r", emetteur)
             raise Exception(f"emetteur invalide: {emetteur!r} (attendu 'utilisateur' ou 'ia')")
 
         # Contrainte fonctionnelle cohérente avec le CHECK de la table
         if emetteur == "utilisateur" and utilisateur_id is None:
+            logging.error("utilisateur_id manquant pour ajout échange (emetteur='utilisateur')")
             raise Exception("utilisateur_id requis quand emetteur='utilisateur'")
 
         with DBConnection().connection as conn:
@@ -778,6 +945,12 @@ class ConversationDAO:
                     },
                 )
                 echange.id = cursor.fetchone()["id"]
+        logging.info(
+            "Échange ajouté (conv_id=%s, message_id=%s, emetteur=%r)",
+            id_conv,
+            getattr(echange, "id", None),
+            emetteur,
+        )
         return True
 
     @staticmethod
@@ -802,6 +975,11 @@ class ConversationDAO:
         Exception
             Si la mise à jour n'a pas modifié de ligne.
         """
+        logging.debug(
+            "Mise à jour prompt_id (conv_id=%s -> prompt_id=%s)",
+            conversation_id,
+            prompt_id,
+        )
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
@@ -814,8 +992,17 @@ class ConversationDAO:
                 )
                 count = cursor.rowcount
         if count > 0:
+            logging.info(
+                "Personnalisation mise à jour (conv_id=%s, prompt_id=%s)",
+                conversation_id,
+                prompt_id,
+            )
             return "personnalité modifié avec succès"
         else:
+            logging.warning(
+                "Aucune ligne modifiée pour mise à jour prompt (conv_id=%s)",
+                conversation_id,
+            )
             raise Exception(
                 f"Erreur dans la modification de la personnalisation pour conversation_id = {conversation_id}"
             )
@@ -835,8 +1022,15 @@ class ConversationDAO:
         int
             Nombre total de conversations.
         """
+        logging.debug("Comptage conversations pour user_id=%s", id_user)
         liste_CONV = ConversationDAO.lister_conversations(id_user=id_user)
-        return len(liste_CONV)
+        total = len(liste_CONV)
+        logging.info(
+            "Nombre total de conversations pour user_id=%s : %s",
+            id_user,
+            total,
+        )
+        return total
 
     @staticmethod
     def compter_message_user(id_user: int) -> int:
@@ -853,6 +1047,7 @@ class ConversationDAO:
         int
             Nombre total de messages envoyés par l'utilisateur.
         """
+        logging.debug("Comptage messages utilisateur pour user_id=%s", id_user)
         with DBConnection().connection as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
@@ -867,9 +1062,19 @@ class ConversationDAO:
                 row = cursor.fetchone()  # row est un dict avec RealDictCursor, ex: {"nb": 12}
 
         if not row or row["nb"] is None:
+            logging.info(
+                "Aucun message trouvé pour user_id=%s (count=0)",
+                id_user,
+            )
             return 0
 
-        return int(row["nb"])
+        total = int(row["nb"])
+        logging.info(
+            "Nombre de messages utilisateur pour user_id=%s : %s",
+            id_user,
+            total,
+        )
+        return total
 
     @staticmethod
     def sujets_plus_frequents(id_user: int, k: int) -> list[tuple[str, int]]:
@@ -893,6 +1098,11 @@ class ConversationDAO:
         Exception
             Si l'utilisateur n'a aucune conversation.
         """
+        logging.debug(
+            "Calcul sujets plus fréquents pour user_id=%s (top k=%s)",
+            id_user,
+            k,
+        )
         query = """
             SELECT c.titre
             FROM conversations c
@@ -906,6 +1116,10 @@ class ConversationDAO:
                 titres = [row["titre"] for row in cursor.fetchall()]
 
         if not titres:
+            logging.warning(
+                "Aucune conversation trouvée pour sujets fréquents (user_id=%s)",
+                id_user,
+            )
             raise Exception(f"Aucune conversation trouvée pour l'utilisateur {id_user}")
 
         # Liste de mots à ignorer (articles, prépositions courantes, etc.)
@@ -951,4 +1165,9 @@ class ConversationDAO:
         compteur = Counter(mots)
         sujets_frequents = compteur.most_common(k)
 
+        logging.info(
+            "Sujets les plus fréquents pour user_id=%s : %r",
+            id_user,
+            sujets_frequents,
+        )
         return sujets_frequents

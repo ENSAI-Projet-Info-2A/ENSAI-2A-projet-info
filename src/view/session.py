@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from src.dao.session_dao import SessionDAO
@@ -15,20 +16,26 @@ class Session(metaclass=Singleton):
 
     def connexion(self, utilisateur, token: str | None = None):
         """Enregistre la session et crée la ligne en base."""
+        logging.debug(f"[Session] connexion() utilisateur={getattr(utilisateur, 'id', None)}")
         self.utilisateur = utilisateur
         self.debut_connexion = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         try:
             self.session_db_id = SessionDAO().ouvrir(utilisateur.id)
-        except Exception:
-            # On ne casse pas l'UX si la BDD plante : on loguera côté main
+            logging.info(f"[Session] Session ouverte en BDD (id={self.session_db_id})")
+        except Exception as e:
+            logging.error(f"[Session] ERREUR lors de l'ouverture de session BDD : {e}")
             self.session_db_id = None
         self.token = token
 
     def deconnexion(self):
         """Ferme la session locale + met à jour la BDD si possible."""
+        logging.debug("[Session] deconnexion() appelée")
         try:
             if self.utilisateur:
                 SessionDAO().fermer_derniere_ouverte(self.utilisateur.id)
+                logging.info("[Session] Session BDD fermée avec succès")
+        except Exception as e:
+            logging.error(f"[Session] ERREUR fermeture session BDD : {e}")
         finally:
             self.utilisateur = None
             self.debut_connexion = None
