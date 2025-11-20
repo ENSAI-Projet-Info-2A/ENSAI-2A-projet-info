@@ -89,6 +89,7 @@ class ConversationsVue(VueAbstraite):
                     "Reprendre la discussion",
                     "Renommer",
                     "Supprimer",
+                    "Exporter (.txt)",
                     "↩︎ Retour à la liste",
                 ],
                 cycle=True,
@@ -133,6 +134,20 @@ class ConversationsVue(VueAbstraite):
                     except Exception as e:
                         logging.error(f"[ConversationsVue] Erreur suppression conv={conv.id} : {e}")
                         return ConversationsVue("Échec de la suppression, veuillez réessayer.")
+
+                case "Exporter (.txt)":
+                    try:
+                        # On utilise la méthode d'export du service
+                        service = ConversationService()
+                        service.exporter_conversation(conv.id, "txt")
+                        return ConversationsVue(
+                            f"Conversation exportée dans le fichier 'conversation_{conv.id}.txt'."
+                        )
+                    except ErreurValidation as e:
+                        return ConversationsVue(str(e))
+                    except Exception as e:
+                        logging.error(f"[ConversationsVue] Erreur export conv={conv.id} : {e}")
+                        return ConversationsVue("Échec de l'export, veuillez réessayer.")
 
                 case "↩︎ Retour à la liste":
                     return ConversationsVue()

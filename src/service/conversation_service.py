@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime as Date
+from pathlib import Path
 from typing import List
 
 from src.business_object.conversation import Conversation
@@ -634,13 +635,14 @@ class ConversationService:
 
     def exporter_conversation(self, id_conversation: int, format_: str) -> bool:
         """
-        Exporte une conversation dans un fichier (actuellement JSON uniquement).
+        Exporte une conversation dans un fichier.
 
         Parameters
         ----------
         id_conversation : int
+            Identifiant de la conversation
         format_ : str
-            Format d’export (actuellement uniquement "json")
+            Format d’export ("json" ou "txt")
 
         Returns
         -------
@@ -654,25 +656,94 @@ class ConversationService:
         """
         if not id_conversation:
             raise ErreurValidation("L'identifiant de la conversation est requis.")
-        if format_ not in ("json",):
+        if format_ not in ("json", "txt"):
             raise ErreurValidation("Format non supporté.")
+
         try:
-            echanges = ConversationDAO.lire_echanges(id_conversation, offset=0, limit=10000)
+            # Dossier d’export (relatif au répertoire où est lancée l’appli)
+            export_dir = Path("exports")
+            export_dir.mkdir(parents=True, exist_ok=True)
+
+            # On récupère tous les échanges de la conversation
+            echanges = ConversationDAO.lire_echanges(
+                id_conversation,
+                offset=0,
+                limit=None,  # None = toute la conversation
+            )
+
             if format_ == "json":
                 import json
 
-                with open(f"conversation_{id_conversation}.json", "w", encoding="utf-8") as fichier:
-                    json.dump([e.__dict__ for e in echanges], fichier, ensure_ascii=False, indent=2)
+                filename = export_dir / f"conversation_{id_conversation}.json"
+                with filename.open("w", encoding="utf-8") as fichier:
+                    json.dump(
+                        [e.__dict__ for e in echanges],
+                        fichier,
+                        ensure_ascii=False,
+                        indent=2,
+                    )
 
-            logger.info("Conversation %s exportée en %s", id_conversation, format_)
+            elif format_ == "txt":
+                # On récupère les métadonnées de la conversation
+                try:
+                    conv = ConversationDAO.trouver_par_id(id_conversation)
+                    titre = conv.nom
+                    date_creation = conv.date_creation
+                except Exception:
+                    conv = None
+                    titre = f"Conversation #{id_conversation}"
+                    date_creation = None
+
+                filename = export_dir / f"conversation_{id_conversation}.txt"
+                with filename.open("w", encoding="utf-8") as fichier:
+                    # En-tête visuel propre
+                    titre_affiche = titre.upper()
+                    fichier.write("=" * 60 + "\n")
+                    fichier.write(f"   CONVERSATION : {titre_affiche}\n")
+                    fichier.write("=" * 60 + "\n")
+
+                    if date_creation is not None:
+                        fichier.write(f"Créée le : {date_creation:%Y-%m-%d %H:%M:%S}\n")
+
+                    fichier.write(f"ID : {id_conversation}\n")
+                    fichier.write("\n" + "-" * 60 + "\n\n")
+
+                    # Corps de la conversation
+                    for e in echanges:
+                        if hasattr(e, "afficher_echange"):
+                            ligne = e.afficher_echange()
+                        else:
+                            date_msg = getattr(e, "date_msg", None)
+                            agent_name = getattr(e, "agent_name", getattr(e, "agent", ""))
+                            message = getattr(e, "message", "")
+                            if date_msg is not None:
+                                try:
+                                    ligne = (
+                                        f"[{date_msg:%Y-%m-%d %H:%M:%S}] {agent_name}: {message}"
+                                    )
+                                except Exception:
+                                    ligne = f"{agent_name}: {message}"
+                            else:
+                                ligne = f"{agent_name}: {message}"
+
+                        fichier.write(ligne + "\n")
+
+            logger.info(
+                "Conversation %s exportée en %s dans %s",
+                id_conversation,
+                format_,
+                export_dir,
+            )
             return True
         except Exception as e:
             logger.error(
-                "Erreur lors de l'exportation de la conversation %s : %s", id_conversation, e
+                "Erreur lors de l'exportation de la conversation %s : %s",
+                id_conversation,
+                e,
             )
             raise
 
-    DEFAULT_SYSTEM_PROMPT = "Tu es un assistant utile."
+    DEFAULT_SYSTEM_PROMPT = "Tu es un assistant utile."  # <- pas très propre mais, on le laisse là
 
     @staticmethod
     def demander_assistant(

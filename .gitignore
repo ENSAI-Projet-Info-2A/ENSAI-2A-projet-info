@@ -72,6 +72,9 @@ coverage.xml
 *.log
 logs/
 
+# Fichiers exportés par l'application
+exports/
+
 # ----------------------------------------
 # Databases
 # ----------------------------------------
