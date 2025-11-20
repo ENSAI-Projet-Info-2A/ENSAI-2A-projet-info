@@ -1,0 +1,41 @@
+
+@startuml
+start
+
+group Recherche conversations
+
+if (id_utilisateur fourni ?) then (Non)
+  :Erreur : id_utilisateur requis;
+  stop
+else (Oui)
+endif
+
+:Saisir mot_cle;
+
+if (mot_cle vide ?) then (Oui)
+  :mot_cle ← null;
+else (Non)
+  :Conserver mot_cle;
+endif
+
+switch (Critères de recherche ?)
+case (mot_cle ET date)
+  :Rechercher par mot et date;
+case (mot_cle seulement)
+  :Rechercher par mot-clé;
+case (date seulement)
+  :Rechercher par date;
+case (aucun critère)
+  :Lister toutes les conversations;
+endswitch
+
+if (Résultats trouvés ?) then (Oui)
+  :Retourner la liste des conversations;
+else (Non)
+  :Retourner liste vide;
+endif
+
+end group
+
+stop
+@enduml

@@ -1,0 +1,19 @@
+@startuml
+start
+
+group Utilisateur connecté
+  :Saisir le titre;
+  
+  if (Titre valide ?) then (Non)
+    :Erreur de validation;
+    stop
+  else (Oui)
+    :Normaliser les paramètres;
+    :Créer la conversation;
+    :Ajouter l'utilisateur comme propriétaire;
+    :Retourner message de confirmation;
+  endif
+end group
+
+stop
+@enduml
