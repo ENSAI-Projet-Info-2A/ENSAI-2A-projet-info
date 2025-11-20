@@ -1,50 +1,54 @@
 ```mermaid
 
 erDiagram
-    USERS ||--o{ SENDERS : "peut être"
-    SENDERS ||--o{ MESSAGES : "envoie"
-    CONVERSATIONS ||--o{ MESSAGES : "contient"
-    CONVERSATIONS ||--o{ CONVERSATION_PARTICIPANTS : "associe"
-    SENDERS ||--o{ CONVERSATION_PARTICIPANTS : "participe"
+    UTILISATEURS ||--o{ CONVERSATIONS : "propriétaire"
+    UTILISATEURS ||--o{ CONVERSATIONS_PARTICIPANTS : "participe"
+    UTILISATEURS ||--o{ MESSAGES : "envoie"
+    UTILISATEURS ||--o{ SESSIONS : "a"
     PROMPTS ||--o{ CONVERSATIONS : "initialise"
+    CONVERSATIONS ||--o{ MESSAGES : "contient"
+    CONVERSATIONS ||--o{ CONVERSATIONS_PARTICIPANTS : "associe"
 
-    USERS {
+    UTILISATEURS {
         int id PK
-        string username
-        string email
-        string password_hash
-        datetime created_at
+        string pseudo UK
+        string mot_de_passe
+        time temps_utilisation
+        timestamptz cree_le
     }
 
-    SENDERS {
+    PROMPTS {
         int id PK
-        enum type "user | ai"
-        int user_id FK "nullable"
-     }
+        string nom UK
+        text contenu
+        int version
+    }
 
     CONVERSATIONS {
         int id PK
-        string title
-        datetime created_at
+        string titre
+        int proprietaire_id FK "nullable"
+        int prompt_id FK "nullable"
+        timestamptz cree_le
     }
 
-    CONVERSATION_PARTICIPANTS {
-        int id PK
-        int conversation_id FK
-        int sender_id FK
+    CONVERSATIONS_PARTICIPANTS {
+        int conversation_id PK,FK
+        int utilisateur_id PK,FK
     }
 
     MESSAGES {
         int id PK
         int conversation_id FK
-        int sender_id FK
-        text content
-        datetime created_at
+        int utilisateur_id FK "nullable"
+        string emetteur "utilisateur|ia"
+        text contenu
+        timestamptz cree_le
     }
 
-    PROMPTS{
+    SESSIONS {
         int id PK
-        string nom 
-        text content
-        datetime created_at
+        int user_id FK
+        timestamptz connexion
+        timestamptz deconnexion "nullable"
     }
