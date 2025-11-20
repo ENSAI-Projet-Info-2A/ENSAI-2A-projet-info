@@ -245,14 +245,26 @@ class ReprendreConversationVue(VueAbstraite):
         if not confirm:
             return ReprendreConversationVue(
                 self.conv,
-                id_demandeur=Session().utilisateur.id,
+                "Suppression annulée.",
             )
 
+        # Récupérer l'utilisateur courant
+        utilisateur = Session().utilisateur
+        if utilisateur is None:
+            # Au choix : tu peux interdire la suppression si pas connecté
+            return ReprendreConversationVue(self.conv, "Vous devez être connecté pour supprimer.")
+
         try:
-            ConversationService.supprimer_conversation(self.conv.id)
+            ConversationService.supprimer_conversation(
+                id_conversation=self.conv.id,
+                id_demandeur=utilisateur.id,
+            )
             from src.view.conversations_vue import ConversationsVue
 
             return ConversationsVue("Conversation supprimée.")
+        except ErreurValidation as e:
+            # Erreur "propriétaire" ou autre validation
+            return ReprendreConversationVue(self.conv, f"Erreur : {e}")
         except Exception as e:
             logging.error(
                 f"[ReprendreConversationVue] Erreur suppression conv={self.conv.id} : {e}"

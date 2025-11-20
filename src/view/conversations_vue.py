@@ -32,7 +32,10 @@ class ConversationsVue(VueAbstraite):
         # 3) Charger la liste des conversations
         try:
             conversations = (
-                ConversationService.lister_conversations(id_utilisateur=utilisateur.id, limite=None)
+                ConversationService.lister_conversations(
+                    id_utilisateur=utilisateur.id,
+                    limite=None,
+                )
                 or []
             )
         except Exception as e:
@@ -97,7 +100,6 @@ class ConversationsVue(VueAbstraite):
 
             match action:
                 case "Reprendre la discussion":
-                    # On bascule vers la vue détaillée qui gère l'affichage + envoi de messages, etc.
                     from src.view.reprendre_conversation_vue import ReprendreConversationVue
 
                     return ReprendreConversationVue(conv)
@@ -111,9 +113,7 @@ class ConversationsVue(VueAbstraite):
                             invalid_message="Le titre ne doit pas être vide et ≤ 255 caractères.",
                         ).execute()
                         ConversationService.renommer_conversation(conv.id, nouveau.strip())
-                        return ConversationsVue(
-                            f"Titre modifié en « {nouveau.strip()} »."
-                        )  # refresh
+                        return ConversationsVue(f"Titre modifié en « {nouveau.strip()} ».")
                     except ErreurValidation as e:
                         return ConversationsVue(str(e))
                     except Exception as e:
@@ -129,15 +129,20 @@ class ConversationsVue(VueAbstraite):
                         return ConversationsVue()
 
                     try:
-                        ConversationService.supprimer_conversation(conv.id)
+                        ConversationService.supprimer_conversation(
+                            id_conversation=conv.id,
+                            id_demandeur=utilisateur.id,
+                        )
                         return ConversationsVue("Conversation supprimée.")
+                    except ErreurValidation as e:
+                        # Par ex. utilisateur non propriétaire
+                        return ConversationsVue(f"Erreur : {e}")
                     except Exception as e:
                         logging.error(f"[ConversationsVue] Erreur suppression conv={conv.id} : {e}")
                         return ConversationsVue("Échec de la suppression, veuillez réessayer.")
 
                 case "Exporter (.txt)":
                     try:
-                        # On utilise la méthode d'export du service
                         service = ConversationService()
                         service.exporter_conversation(conv.id, "txt")
                         return ConversationsVue(
