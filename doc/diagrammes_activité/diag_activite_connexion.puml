@@ -1,0 +1,32 @@
+
+@startuml
+start
+group Utilisateur
+:Accueil;
+
+switch (Action choisie ?)
+case (Créer un compte)
+  :Saisie des informations\nde compte;
+  
+  while (Saisie valide ?) is (non)
+    :Saisie des informations\nde compte;
+  endwhile (oui)
+  
+  :Création du compte réussie;
+
+case (Se connecter)
+  :Saisie des identifiants;
+  
+  while (Identifiants corrects ?) is (non)
+    :Saisie des identifiants;
+  endwhile (oui)
+  
+  :Connexion réussie;
+
+case (Quitter)
+  end
+
+endswitch
+
+stop
+@enduml
