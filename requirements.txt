@@ -1,5 +1,4 @@
 # --- Dépendances applicatives ---
-fastapi
 uvicorn
 psycopg2-binary          # ou psycopg2
 InquirerPy
