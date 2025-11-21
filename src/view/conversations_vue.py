@@ -131,6 +131,7 @@ class ConversationsVue(VueAbstraite):
                     "Renommer",
                     "Supprimer",
                     "Exporter (.txt)",
+                    "Exporter (.json)",
                     "↩︎ Retour à la liste",
                 ],
                 cycle=True,
@@ -255,6 +256,32 @@ class ConversationsVue(VueAbstraite):
                         utilisateur.id,
                     )
                     return ConversationsVue()
+
+                case "Exporter (.json)":
+                    logging.info(
+                        "[ConversationsVue] Demande d'export .json pour conv_id=%s",
+                        conv.id,
+                    )
+                    try:
+                        service = ConversationService()
+                        service.exporter_conversation(conv.id, "json")
+                        logging.info(
+                            "[ConversationsVue] Export .json réussi pour conv_id=%s",
+                            conv.id,
+                        )
+                        return ConversationsVue(
+                            f"Conversation exportée dans le fichier 'conversation_{conv.id}.json'."
+                        )
+                    except ErreurValidation as e:
+                        logging.warning(
+                            "[ConversationsVue] Erreur validation export conv_id=%s : %s",
+                            conv.id,
+                            e,
+                        )
+                        return ConversationsVue(str(e))
+                    except Exception as e:
+                        logging.error(f"[ConversationsVue] Erreur export conv={conv.id} : {e}")
+                        return ConversationsVue("Échec de l'export, veuillez réessayer.")
 
         except Exception as e:
             logging.error(f"[ConversationsVue] Erreur : {e}")

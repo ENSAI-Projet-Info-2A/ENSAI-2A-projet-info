@@ -830,6 +830,7 @@ class ConversationService:
                         fichier,
                         ensure_ascii=False,
                         indent=2,
+                        default=str,
                     )
 
             elif format_ == "txt":
