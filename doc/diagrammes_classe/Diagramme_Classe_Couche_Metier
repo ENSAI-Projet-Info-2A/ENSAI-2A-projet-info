@@ -6,50 +6,62 @@ config:
 ---
 classDiagram
 direction TB
+
     class Statistiques {
-	    +nb_conversations : int
-	    +nb_messages : int
-	    +heures_utilisation : double
-	    +sujets_plus_frequents : list~string~
+        +nb_conversations : int
+        +nb_messages : int
+        +heures_utilisation : float
+        +sujets_plus_frequents : list~string~
+        -_sujet_counts : Counter
+        +ajouter_sujet(sujet: str) : None
+        +ajouter_sujets(sujets: Iterable[str]) : None
+        +recalculer_sujets(k: int) : list~string~
     }
+
     class Conversation {
-	    +id : int
-	    +nom : string
-	    +date_creation : datetime
-	    +personnalisation : string
-	    +echanges : list~Echange~
-	    +participants : list~Participant~
-	    +afficher_conv() : string
+        +id : int
+        +nom : str
+        +date_creation : datetime
+        +personnalisation : str
+        +echanges : list~Echange~
+        +ajouter_echange(e: Echange) : None
+        +afficher_conv() : str
     }
+
     class Utilisateur {
-	    +id : int
-	    +pseudo : string
-	    -password_hash : string
-	    +conversations : list~Conversation~
-	    +afficher_utilisateur() : string
+        +id : int
+        +pseudo : str
+        -password_hash : str
+        +conversations : list~Conversation~
+        +set_password(mdp: str) : None
+        +verifier_password(mdp: str) : bool
+        +ajouter_conversation(c: Conversation) : None
+        +supprimer_conversation(c: Conversation) : None
+        +afficher_utilisateur() : str
+        +from_plain_password(pseudo: str, mdp: str, id: int) : Utilisateur
     }
+
     class Echange {
-	    +id : int
-	    +agent : string
-	    +message : string
-	    +date_msg : datetime
-	    +agent_name : string
-	    +afficher_echange() : string
-    }
-    class Participant {
-	    +user_id : int
-	    +conv_id : int
-	    +role : string
-	    +date_joined : datetime
+        +id : int
+        +agent : str
+        +message : str
+        +date_msg : datetime
+        +agent_name : str
+        +afficher_echange() : string
     }
 
-    Utilisateur "0..*" -- "0..*" Conversation : "via Participation"
+    %%==========================
+    %% RELATIONS
+    %%==========================
+
+    Utilisateur "1" o-- "0..*" Conversation : possède
     Conversation "1" o-- "0..*" Echange : contient
-    Participant "0..*" --> "1" Utilisateur : concerne
-    Participant "0..*" --> "1" Conversation : concerne
 
-	style Statistiques fill:#ffffff,stroke:#333,stroke-width:2px
-	style Conversation fill:#ffffff,stroke:#333,stroke-width:2px
-	style Utilisateur fill:#ffffff,stroke:#333,stroke-width:2px
-	style Echange fill:#ffffff,stroke:#333,stroke-width:2px
-	style Participant fill:#ffffff,stroke:#333,stroke-width:2px
+    %%==========================
+    %% STYLES
+    %%==========================
+
+    style Statistiques fill:#ffffff,stroke:#333,stroke-width:2px
+    style Conversation fill:#ffffff,stroke:#333,stroke-width:2px
+    style Utilisateur fill:#ffffff,stroke:#333,stroke-width:2px
+    style Echange fill:#ffffff,stroke:#333,stroke-width:2px
