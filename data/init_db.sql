@@ -26,15 +26,17 @@ CREATE TABLE IF NOT EXISTS prompts (
 -----------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS conversations (
-  id          SERIAL PRIMARY KEY,
-  titre       TEXT NOT NULL,
+  id              SERIAL PRIMARY KEY,
+  titre           TEXT NOT NULL,
   proprietaire_id INT NULL,
-  prompt_id   INT NULL,  -- optionnel : la conversation peut être sans pré-prompt
-  cree_le     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  prompt_id       INT NULL,  -- optionnel : la conversation peut être sans pré-prompt
+  cree_le         TIMESTAMPTZ NOT NULL DEFAULT now(),
   
   CONSTRAINT titre_non_vide CHECK (length(trim(titre)) > 0),
+
   CONSTRAINT fk_conversations_prompt
     FOREIGN KEY (prompt_id) REFERENCES prompts(id) ON DELETE SET NULL,
+
   CONSTRAINT fk_conversations_proprietaire
      FOREIGN KEY (proprietaire_id) REFERENCES utilisateurs(id) ON DELETE CASCADE
 );
@@ -78,6 +80,7 @@ CREATE TABLE IF NOT EXISTS messages (
   -- Si utilisateur_id est renseigné, il doit être participant à la conversation
   FOREIGN KEY (conversation_id, utilisateur_id)
     REFERENCES conversations_participants(conversation_id, utilisateur_id)
+    ON DELETE CASCADE
     DEFERRABLE INITIALLY DEFERRED
 );
 
@@ -98,6 +101,7 @@ CREATE TABLE IF NOT EXISTS sessions (
 -- (Permet de faire des lien directe entre les tables 
 --  donc des recherches PLUS RAPIDE)
 -----------------------------------------------------
+
 CREATE INDEX IF NOT EXISTS idx_messages_conv_cree
   ON messages (conversation_id, cree_le);
 
