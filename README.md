@@ -13,8 +13,8 @@
 - [Prérequis](#-prérequis)
 - [Installation](#-installation)
 - [Configuration](#-configuration)
-- [Initialisation de la base de données](#-initialisation-de-la-base-de-données)
-- [Lancement de l'application](#-lancement-de-l'application)
+- [Initialisation de la base de données](#initialisation-de-la-base-de-données)
+- [Lancement de l'application](#lancement-de-lapplication)
 - [Tests et qualité](#-tests-et-qualité)
 - [Dépannage](#-dépannage)
 - [Licence](#-licence)
@@ -197,7 +197,7 @@ L'application charge alors :
 - le menu d’accueil dans le terminal.
 
 
-## Tests et qualité
+## 🧪 Tests et qualité
 
 ### Lancer tous les tests :
 
