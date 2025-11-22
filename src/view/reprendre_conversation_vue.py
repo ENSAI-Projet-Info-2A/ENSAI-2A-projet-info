@@ -3,6 +3,7 @@ import logging
 from InquirerPy import inquirer
 
 from src.dao.prompt_dao import PromptDAO
+from src.dao.utilisateur_dao import UtilisateurDao
 from src.service.conversation_service import ConversationService, ErreurValidation
 from src.view.session import Session
 from src.view.vue_abstraite import VueAbstraite
@@ -242,19 +243,37 @@ class ReprendreConversationVue(VueAbstraite):
             "[ReprendreConversationVue] Ajout participant demandé pour conv_id=%s",
             getattr(self.conv, "id", None),
         )
-        try:
-            id_user = int(
-                inquirer.text(message="ID de l'utilisateur à ajouter :", default="")
-                .execute()
-                .strip()
-            )
-        except ValueError:
-            logging.warning(
-                "[ReprendreConversationVue] ID invalide saisi pour ajout participant (conv_id=%s)",
-                self.conv.id,
-            )
-            return ReprendreConversationVue(self.conv, "ID invalide.")
 
+        # 1) Récupération brute de la saisie
+        saisie = (
+            inquirer.text(message="ID ou pseudo de l'utilisateur à ajouter :", default="")
+            .execute()
+            .strip()
+        )
+
+        if not saisie:
+            return ReprendreConversationVue(self.conv, "Entrée vide.")
+
+        # 2) Déterminer si on a un ID (entier) ou un pseudo
+        id_user = None
+
+        # Tentative : est-ce un entier ?
+        try:
+            id_user = int(saisie)
+        except ValueError:
+            # Pas un entier alors on traite comme pseudo
+            from src.dao.utilisateur_dao import UtilisateurDao
+
+            utilisateur = UtilisateurDao().trouver_par_pseudo(saisie)
+            if utilisateur is None:
+                logging.warning(
+                    "[ReprendreConversationVue] Aucun utilisateur trouvé avec le pseudo '%s'",
+                    saisie,
+                )
+                return ReprendreConversationVue(self.conv, "Utilisateur inconnu.")
+            id_user = utilisateur.id
+
+        # 3) Maintenant que id_user est sécurisé, on appelle le service
         try:
             ConversationService.ajouter_utilisateur(
                 id_conversation=self.conv.id,
@@ -268,6 +287,7 @@ class ReprendreConversationVue(VueAbstraite):
                 id_user,
             )
             return ReprendreConversationVue(self.conv, f"Utilisateur {id_user} ajouté.")
+
         except Exception as e:
             logging.error(f"[ReprendreConversationVue] Erreur ajout participant : {e}")
             return ReprendreConversationVue(self.conv, "Échec de l’ajout du participant.")
@@ -277,19 +297,67 @@ class ReprendreConversationVue(VueAbstraite):
             "[ReprendreConversationVue] Retrait participant demandé pour conv_id=%s",
             getattr(self.conv, "id", None),
         )
+
+        # 1) Saisie : ID ou pseudo
+        saisie = (
+            inquirer.text(
+                message="ID ou pseudo de l'utilisateur à retirer :",
+                default="",
+            )
+            .execute()
+            .strip()
+        )
+
+        if not saisie:
+            logging.warning(
+                "[ReprendreConversationVue] Entrée vide pour retrait participant (conv_id=%s)",
+                getattr(self.conv, "id", None),
+            )
+            return ReprendreConversationVue(self.conv, "Entrée vide.")
+
+        # 2) Essayer comme ID
+        id_user = None
         try:
-            id_user = int(
-                inquirer.text(message="ID de l'utilisateur à retirer :", default="")
-                .execute()
-                .strip()
+            id_user = int(saisie)
+            logging.debug(
+                "[ReprendreConversationVue] Interprétation de %r comme id_user=%s",
+                saisie,
+                id_user,
             )
         except ValueError:
-            logging.warning(
-                "[ReprendreConversationVue] ID invalide saisi pour retrait participant (conv_id=%s)",
-                self.conv.id,
-            )
-            return ReprendreConversationVue(self.conv, "ID invalide.")
+            # 3) Sinon, traiter comme pseudo → DAO pour le résoudre
+            pseudo = saisie
+            logging.debug("[ReprendreConversationVue] Interprétation de %r comme pseudo", pseudo)
 
+            try:
+                utilisateur = UtilisateurDao().trouver_par_pseudo(pseudo)
+            except Exception as e:
+                logging.error(
+                    "[ReprendreConversationVue] Erreur lors de la recherche du pseudo %r : %s",
+                    pseudo,
+                    e,
+                )
+                return ReprendreConversationVue(
+                    self.conv,
+                    "Erreur lors de la recherche de l'utilisateur.",
+                )
+
+            if utilisateur is None:
+                logging.warning(
+                    "[ReprendreConversationVue] Aucun utilisateur trouvé pour pseudo=%r (conv_id=%s)",
+                    pseudo,
+                    getattr(self.conv, "id", None),
+                )
+                return ReprendreConversationVue(self.conv, f"Utilisateur inconnu : {pseudo}")
+
+            id_user = utilisateur.id
+            logging.info(
+                "[ReprendreConversationVue] Résolution pseudo=%r -> id_user=%s",
+                pseudo,
+                id_user,
+            )
+
+        # 4) Appel du service métier pour retirer
         try:
             ConversationService.retirer_utilisateur(
                 id_conversation=self.conv.id,
@@ -302,6 +370,7 @@ class ReprendreConversationVue(VueAbstraite):
                 id_user,
             )
             return ReprendreConversationVue(self.conv, f"Utilisateur {id_user} retiré.")
+
         except Exception as e:
             logging.error(f"[ReprendreConversationVue] Erreur retrait participant : {e}")
             return ReprendreConversationVue(self.conv, "Échec du retrait du participant.")
