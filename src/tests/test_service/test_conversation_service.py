@@ -227,13 +227,13 @@ def test_retirer_utilisateur_invalide():
 
 def test_mettre_a_jour_personnalisation_ok():
     # GIVEN
-    PromptDAO.get_id_by_name = MagicMock(return_value=123)
+    PromptDAO.obtenir_id_par_nom = MagicMock(return_value=123)
     ConversationDAO.mettre_a_j_preprompt_id = MagicMock(return_value=True)
     service = ConversationService()
 
     # WHEN/THEN
     assert service.mettre_a_jour_personnalisation(1, "NouveauProfil") is True
-    PromptDAO.get_id_by_name.assert_called_once_with("NouveauProfil")
+    PromptDAO.obtenir_id_par_nom.assert_called_once_with("NouveauProfil")
     ConversationDAO.mettre_a_j_preprompt_id.assert_called_once_with(1, 123)
 
 
