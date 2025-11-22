@@ -16,7 +16,7 @@
 - [Installation](#-installation)
 - [Configuration](#-configuration)
 - [Initialisation de la base de données](#-initialisation-de-la-base-de-données)
-- [Lancement de l'application](#-lancement-de-l-application)
+- [Lancement de l'application](#-lancement-de-lapplication)
 - [Tests et qualité](#-tests-et-qualité)
 - [Dépannage](#-dépannage)
 - [Licence](#-licence)
@@ -184,7 +184,7 @@ Cela va :
 - préremplir la base (pop_db.sql).
 
 
-### ▶️ Lancement de l application
+### ▶️ Lancement de l'application
 
 À la racine :
 
