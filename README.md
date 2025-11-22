@@ -1,6 +1,6 @@
 ![Made with Python](https://img.shields.io/badge/Made%20with-Python-3776AB?logo=python&logoColor=white)
 
-# <EnsaiGPT> 
+# 🤖 EnsaiGPT © 2025 🤖
 
 > Application en ligne de commande pour gérer des conversations avec un LLM (type ChatGPT)
 > avec authentification, historique et statistiques d’utilisation.
