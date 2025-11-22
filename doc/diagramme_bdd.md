@@ -52,3 +52,4 @@ erDiagram
         timestamptz connexion
         timestamptz deconnexion "nullable"
     }
+```
