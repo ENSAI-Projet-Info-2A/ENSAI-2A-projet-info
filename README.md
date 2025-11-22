@@ -129,7 +129,7 @@ Activer l’environnement :
 source .venv/bin/activate
 ```
 
-### :arrow_forward: Installation des dépendances 
+### Installation des dépendances 
 
 - [ ] Dans Git Bash, exécute les commandes suivantes pour :
   - installer tous les packages à partir du fichier `requirements.txt` ;
@@ -140,7 +140,7 @@ pip install -r requirements.txt
 pip list
 ```
 
-### :arrow_forward: Variables d’environnement
+### Variables d’environnement
 
 L'application utilise des variables d’environnement pour se connecter :
 
@@ -184,7 +184,7 @@ Cela va :
 - préremplir la base (pop_db.sql).
 
 
-### :arrow_forward: Lancement de l application
+### ▶️ Lancement de l application
 
 À la racine :
 
