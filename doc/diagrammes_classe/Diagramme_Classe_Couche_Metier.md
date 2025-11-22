@@ -1,3 +1,4 @@
+```mermaid
 ---
 config:
   theme: default
@@ -56,3 +57,4 @@ direction LR
 	style Conversation fill:#ffffff,stroke:#333,stroke-width:2px
 	style Utilisateur fill:#ffffff,stroke:#333,stroke-width:2px
 	style Echange fill:#ffffff,stroke:#333,stroke-width:2px
+```
