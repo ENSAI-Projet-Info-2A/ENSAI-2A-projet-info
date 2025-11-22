@@ -1,5 +1,5 @@
 import os
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -51,6 +51,22 @@ def test_trouver_par_pseudo_existant():
     assert utilisateur.id == 2
 
 
+def test_trouver_par_pseudo_exception_sql():
+    """simulateur d'erreur SQL via mock sur cursor.execute"""
+
+    faux_cursor = MagicMock()
+    faux_cursor.execute.side_effect = Exception("SQL ERROR")
+
+    faux_conn = MagicMock()
+    faux_conn.cursor.return_value.__enter__.return_value = faux_cursor
+
+    with patch("src.dao.utilisateur_dao.DBConnection") as MockDB:
+        MockDB.return_value.connection.__enter__.return_value = faux_conn
+
+        with pytest.raises(Exception):
+            UtilisateurDao().trouver_par_pseudo("abc")
+
+
 def test_trouver_par_pseudo_non_existant():
     """Recherche par pseudo d'un utilisateur n'existant pas"""
     # GIVEN
@@ -66,9 +82,7 @@ def test_creer_utilisateur_ok():
     # GIVEN
     utilisateur = Utilisateur(pseudo="nouveau_user_test", password_hash="password123")
     # WHEN
-    creation_ok = UtilisateurDao().creer_utilisateur(
-        utilisateur
-    )
+    creation_ok = UtilisateurDao().creer_utilisateur(utilisateur)
     # THEN
     assert creation_ok
     assert utilisateur is not None
@@ -82,6 +96,20 @@ def test_creer_utilisateur_ko():
     creation_ok = UtilisateurDao().creer_utilisateur(utilisateur)
     # THEN
     assert not creation_ok
+
+
+def test_lister_tous_exception_sql():
+    faux_cursor = MagicMock()
+    faux_cursor.execute.side_effect = Exception("FAIL SELECT")
+
+    faux_conn = MagicMock()
+    faux_conn.cursor.return_value.__enter__.return_value = faux_cursor
+
+    with patch("src.dao.utilisateur_dao.DBConnection") as MockDB:
+        MockDB.return_value.connection.__enter__.return_value = faux_conn
+
+        with pytest.raises(Exception):
+            UtilisateurDao().lister_tous()
 
 
 def test_supprimer_ok():
@@ -107,6 +135,22 @@ def test_supprimer_ko():
     assert not suppression_ok
 
 
+def test_supprimer_exception_sql():
+    utilisateur = Utilisateur(id=1, pseudo="x")
+
+    faux_cursor = MagicMock()
+    faux_cursor.execute.side_effect = Exception("DELETE FAIL")
+
+    faux_conn = MagicMock()
+    faux_conn.cursor.return_value.__enter__.return_value = faux_cursor
+
+    with patch("src.dao.utilisateur_dao.DBConnection") as MockDB:
+        MockDB.return_value.connection.__enter__.return_value = faux_conn
+
+        with pytest.raises(Exception):
+            UtilisateurDao().supprimer(utilisateur)
+
+
 def test_heures_utilisation_avec_sessions():
     """Calcul des heures d'utilisation pour un utilisateur avec des sessions"""
     # GIVEN
@@ -126,6 +170,40 @@ def test_heures_utilisation_sans_sessions():
     heures = UtilisateurDao().heures_utilisation(id_utilisateur)
     # THEN
     assert heures == 0.0
+
+
+def test_heures_utilisation_exception_sql():
+    faux_cursor = MagicMock()
+    faux_cursor.execute.side_effect = Exception("BAD QUERY")
+
+    faux_conn = MagicMock()
+    faux_conn.cursor.return_value.__enter__.return_value = faux_cursor
+
+    with patch("src.dao.utilisateur_dao.DBConnection") as MockDB:
+        MockDB.return_value.connection.__enter__.return_value = faux_conn
+
+        with pytest.raises(Exception):
+            UtilisateurDao().heures_utilisation(99)
+
+
+def test_heures_utilisation_incl_courante_ok():
+    heures = UtilisateurDao().heures_utilisation_incl_courante(1)
+    assert isinstance(heures, float)
+    assert heures >= 0.0
+
+
+def test_heures_utilisation_incl_courante_exception_sql():
+    faux_cursor = MagicMock()
+    faux_cursor.execute.side_effect = Exception("NOW() FAIL")
+
+    faux_conn = MagicMock()
+    faux_conn.cursor.return_value.__enter__.return_value = faux_cursor
+
+    with patch("src.dao.utilisateur_dao.DBConnection") as MockDB:
+        MockDB.return_value.connection.__enter__.return_value = faux_conn
+
+        with pytest.raises(Exception):
+            UtilisateurDao().heures_utilisation_incl_courante(1)
 
 
 if __name__ == "__main__":

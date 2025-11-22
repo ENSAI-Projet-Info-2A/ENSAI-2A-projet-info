@@ -14,6 +14,22 @@ liste_utilisateurs = [
 # ===================== CREATION =====================
 
 
+def test_normaliser_pseudo_none():
+    """_normaliser_pseudo(None) doit renvoyer None."""
+    assert UtilisateurService._norm_pseudo(None) is None
+
+
+def test_normaliser_pseudo_blanc():
+    """_normaliser_pseudo avec un pseudo vide ou espaces doit renvoyer None."""
+    assert UtilisateurService._norm_pseudo("") is None
+    assert UtilisateurService._norm_pseudo("   ") is None
+
+
+def test_normaliser_pseudo_trim_lower():
+    """_normaliser_pseudo doit trimmer et passer en minuscules."""
+    res = UtilisateurService._norm_pseudo("  Alice  ")
+    assert res == "alice"
+
 def test_creer_compte_ok():
     """Création d'utilisateur réussie"""
     pseudo, mdp = "alice", "1234"
@@ -53,6 +69,14 @@ def test_creer_compte_echec_dao():
         mock_dao.trouver_par_pseudo.assert_called_once_with(pseudo)
         mock_dao.creer_utilisateur.assert_called_once()
 
+def test_creer_compte_pseudo_vide():
+    """Création échouée : pseudo vide → DAO ne doit même pas être appelé."""
+    with patch("src.service.utilisateur_service.UtilisateurDao") as MockDao:
+        user = UtilisateurService().creer_compte("   ", "mdp")
+
+        assert user is None
+        # On vérifie que le DAO n'a pas été utilisé
+        MockDao.assert_not_called()
 
 def test_creer_compte_pseudo_deja_utilise():
     """Création échouée : pseudo déjà présent en BDD"""
@@ -237,7 +261,14 @@ def test_se_connecter_pseudo_inconnu():
         assert res is None
         mock_dao.trouver_par_pseudo.assert_called_once_with("ghost")
 
+def test_se_connecter_pseudo_vide():
+    """Connexion échouée : pseudo vide → DAO ne doit pas être appelé."""
+    with patch("src.service.utilisateur_service.UtilisateurDao") as MockDao:
+        res = UtilisateurService().se_connecter("   ", "secret")
 
+        assert res is None
+        MockDao.assert_not_called()
+        
 # Point d'entrée local
 if __name__ == "__main__":
     import pytest

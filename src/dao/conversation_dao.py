@@ -54,12 +54,12 @@ class ConversationDAO:
         if isinstance(perso, str):
             perso = perso.strip()
             if perso:
-                pid = PromptDAO.get_id_by_name(perso)
+                pid = PromptDAO.obtenir_id_par_nom(perso)
                 if pid is None:
                     raise ValueError(f"Prompt inconnu : '{perso}'")
                 prompt_id = pid
         elif isinstance(perso, int):
-            if not PromptDAO.exists_id(perso):
+            if not PromptDAO.existe_id(perso):
                 raise ValueError(f"prompt_id inexistant: {perso}")
             prompt_id = perso
         else:
