@@ -160,6 +160,7 @@ POSTGRES_PORT=5432
 POSTGRES_DATABASE=
 POSTGRES_USER=
 POSTGRES_PASSWORD=
+POSTGRES_SCHEMA=public
 
 # --- Configuration JWT ---
 # IMPORTANT : Choisir une chaîne longue, aléatoire et privée.

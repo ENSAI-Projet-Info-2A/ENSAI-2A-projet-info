@@ -4,11 +4,11 @@ import dotenv
 
 from src.dao.utilisateur_dao import UtilisateurDao
 from src.service.auth_service import Auth_Service
+from src.utils.log_init import initialiser_logs
+from src.view.accueil.accueil_vue import AccueilVue
 
 # Ajouts pour la déconnexion si l'utilisateur fait un ctrl+c
 from src.view.session import Session
-from utils.log_init import initialiser_logs
-from view.accueil.accueil_vue import AccueilVue
 
 if __name__ == "__main__":
     # On charge les variables d'environnement
