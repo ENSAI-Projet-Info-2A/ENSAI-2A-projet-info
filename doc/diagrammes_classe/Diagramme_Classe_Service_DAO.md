@@ -1,3 +1,4 @@
+```mermaid
 ---
 config:
   flowchart:
@@ -95,3 +96,4 @@ direction TB
     Conversation_Service ..> PromptDAO : "appelle"
     Conversation_Service ..> LLM_API : "appelle"
     Statistiques_Service ..> Conversation_DAO : "agrégations"
+```
