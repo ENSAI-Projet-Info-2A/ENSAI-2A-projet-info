@@ -1,7 +1,6 @@
----
-config:
-  layout: dagre
----
+```mermaid
+%%{init: {'flowchart': {'curve': 'basis'}}}%%
+
 classDiagram
 direction LR
     class Utilisateur_Service {
@@ -10,6 +9,7 @@ direction LR
 	    +trouver_par_pseudo(pseudo: string) : Utilisateur
 			+lister_tous(): list~Utilisateur~
 	    +supprimer(user_id: int) : bool
+			+pseudo_deja_utilise(self, pseudo: str):bool
     }
 
     class Auth_Service {
@@ -36,7 +36,6 @@ direction LR
 
     class Statistiques_Service {
 	    +stats_utilisateur(id_user: int) : Statistiques
-	    +stats_conversation(id_conv: int) : Statistiques
     }
 
     class Utilisateur_DAO {
@@ -51,6 +50,7 @@ direction LR
 
     class Conversation_DAO {
 	    +creer_conv(titre: string, personnalisation: string, owner_id: int) : Conversation
+			+est_proprietaire(conversation_id: int, utilisateur_id: int):bool
 	    +trouver_par_id(id_conv: int) : Conversation
 	    +renommer_conv(id_conv: int, nouveau_nom: string) : bool
 	    +supprimer_conv(id_conv: int) : bool
@@ -73,10 +73,21 @@ direction LR
     class LLM_API {
 	    +generate(history: List~Echange~, temperature: double, top_p: double, max_tokens: int, stop: List) : Echange
     }
+    class PromptDAO{
+		+get_id_by_name(nom: str):int | None
+		+exists_id(prompt_id: int): bool
+		+lister_prompts() :list[dict]
+		+get_prompt_text_by_id(prompt_id: int):str
+		}
+    class sessionDAO{
+		+ouvrir(self, user_id: int, device: str | None = "cli"):int
+		fermer_derniere_ouverte(self, user_id: int):bool
+		}
 
     Utilisateur_Service ..> Utilisateur_DAO : "appelle"
     Auth_Service ..> Utilisateur_DAO : "appelle"
     Conversation_Service ..> Conversation_DAO : "appelle"
+		Conversation_Service ..>PromptDAO: "appelle"
     Conversation_Service ..> LLM_API : "appelle"
     Statistiques_Service ..> Conversation_DAO : "agrégations"
 
