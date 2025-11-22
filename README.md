@@ -14,7 +14,7 @@
 - [Installation](#-installation)
 - [Configuration](#-configuration)
 - [Initialisation de la base de données](#-initialisation-de-la-base-de-données)
-- [Lancement de lapplication](#-lancement-de-lapplication)
+- [Lancement de l'application](#-lancement-de-l'application)
 - [Tests et qualité](#-tests-et-qualité)
 - [Dépannage](#-dépannage)
 - [Licence](#-licence)
@@ -107,7 +107,7 @@ git clone <https://github.com/ENSAI-Projet-Info-2A/ENSAI-2A-projet-info.git>
 cd ENSAI-2A-projet-info-main
 ```
 
-### Environnement virtuel
+### 💻 Environnement virtuel
 
 Créer un environnement virtuel :
 
