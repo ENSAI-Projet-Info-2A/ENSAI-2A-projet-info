@@ -26,7 +26,7 @@ class PromptDAO:
     """
 
     @staticmethod
-    def get_id_by_name(nom: str) -> int | None:
+    def obtenir_id_par_nom(nom: str) -> int | None:
         """
         Retourne l'identifiant d'un prompt à partir de son nom.
 
@@ -48,7 +48,7 @@ class PromptDAO:
                     cur.execute("SELECT id FROM prompts WHERE nom = %(nom)s;", {"nom": nom})
                     row = cur.fetchone()
         except Exception as e:
-            logging.error(f"[PromptDAO] ERREUR get_id_by_name('{nom}') : {e}")
+            logging.error(f"[PromptDAO] ERREUR obtenir_id_par_nom ('{nom}') : {e}")
             raise
 
         if row:
@@ -59,7 +59,7 @@ class PromptDAO:
         return row["id"] if row else None
 
     @staticmethod
-    def exists_id(prompt_id: int) -> bool:
+    def existe_id(prompt_id: int) -> bool:
         """
         Vérifie si un prompt existe en base à partir de son identifiant.
 
@@ -121,7 +121,7 @@ class PromptDAO:
         return rows
 
     @staticmethod
-    def get_prompt_text_by_id(prompt_id: int) -> str | None:
+    def obtenir_texte_prompt_par_id(prompt_id: int) -> str | None:
         """
         Renvoie le texte d'un prompt à partir de son identifiant.
 
@@ -154,7 +154,7 @@ class PromptDAO:
                     )
                     row = cur.fetchone()
         except Exception as e:
-            logging.error(f"[PromptDAO] ERREUR get_prompt_text_by_id({prompt_id}) : {e}")
+            logging.error(f"[PromptDAO] ERREUR obtenir_texte_prompt_par_id({prompt_id}) : {e}")
             raise
 
         if not row:

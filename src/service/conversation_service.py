@@ -43,7 +43,7 @@ class ConversationService:
     DEFAULT_SYSTEM_PROMPT = "Tu es un assistant utile."  # <- Pour la dernière fonction.
 
     @staticmethod
-    def _resolve_prompt_id(personnalisation):
+    def _resoudre_id_prompt(personnalisation):
         """
         Résout un identifiant de prompt à partir de différentes entrées possibles.
 
@@ -74,13 +74,13 @@ class ConversationService:
             return None
         # Si int : vérifier qu'il existe
         if isinstance(personnalisation, int):
-            if not PromptDAO.exists_id(personnalisation):
+            if not PromptDAO.existe_id(personnalisation):
                 logging.warning("prompt_id inexistant demandé: %s", personnalisation)
                 raise ErreurValidation(f"prompt_id inexistant: {personnalisation}")
             logging.debug("Prompt_id %s résolu directement (int).", personnalisation)
             return personnalisation
         # Si str : résoudre le nom -> id
-        pid = PromptDAO.get_id_by_name(personnalisation.strip())
+        pid = PromptDAO.obtenir_id_par_nom(personnalisation.strip())
         if pid is None:
             logging.warning("Prompt inexistant demandé par nom: %r", personnalisation)
             raise ErreurValidation(f"Prompt inconnu: '{personnalisation}'")
@@ -90,7 +90,7 @@ class ConversationService:
     DEFAULT_SYSTEM_PROMPT = "Tu es un assistant utile."
 
     @staticmethod
-    def _resolve_system_prompt_for_conv(id_conversation: int | None) -> str:
+    def _resoudre_prompt_systeme_pour_conv(id_conversation: int | None) -> str:
         """
         Retourne le texte du prompt système à utiliser pour un LLM.
 
@@ -127,7 +127,7 @@ class ConversationService:
 
             from src.dao.prompt_dao import PromptDAO
 
-            txt = PromptDAO.get_prompt_text_by_id(prompt_id)
+            txt = PromptDAO.obtenir_texte_prompt_par_id(prompt_id)
             if txt:
                 logging.debug(
                     "Prompt système personnalisé récupéré pour conv=%s (prompt_id=%s).",
@@ -756,7 +756,7 @@ class ConversationService:
         if personnalisation is None:
             raise ErreurValidation("Le champ personnalisation est requis.")
         try:
-            prompt_id = ConversationService._resolve_prompt_id(personnalisation)
+            prompt_id = ConversationService._resoudre_id_prompt(personnalisation)
             print(prompt_id)
             succes = ConversationDAO.mettre_a_j_preprompt_id(id_conversation, prompt_id)
             if succes:
@@ -963,7 +963,7 @@ class ConversationService:
 
         # 1) Prompt système (non persisté en BDD)
         try:
-            system_prompt = ConversationService._resolve_system_prompt_for_conv(id_conversation)
+            system_prompt = ConversationService._resoudre_prompt_systeme_pour_conv(id_conversation)
         except Exception:
             system_prompt = getattr(
                 ConversationService, "DEFAULT_SYSTEM_PROMPT", "Tu es un assistant utile."

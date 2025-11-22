@@ -213,7 +213,7 @@ class ReprendreConversationVue(VueAbstraite):
 
         try:
             svc = ConversationService()
-            # selection est un int (prompt_id) → compatible avec _resolve_prompt_id
+            # selection est un int (prompt_id) → compatible avec _resoudre_id_prompt
             svc.mettre_a_jour_personnalisation(self.conv.id, selection)
             logging.info(
                 "[ReprendreConversationVue] Personnalisation mise à jour conv_id=%s -> prompt_id=%s",
