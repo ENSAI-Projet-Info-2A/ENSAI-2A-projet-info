@@ -16,7 +16,7 @@
 - [Installation](#-installation)
 - [Configuration](#-configuration)
 - [Initialisation de la base de données](#-initialisation-de-la-base-de-données)
-- [Lancement de l'application](#-lancement-de-lapplication)
+- [Lancement de l'application](#-lancement-de-l-application)
 - [Tests et qualité](#-tests-et-qualité)
 - [Dépannage](#-dépannage)
 - [Licence](#-licence)
@@ -168,7 +168,8 @@ SECRET_KEY=
 
 - Voir aussi le .env.exemple
 
-### Initialisation de la base de données (Optionnel, car faisable dans l'application)
+### 💾 Initialisation de la base de données 
+(Optionnel, car faisable dans l'application)
 
 Avant de démarrer l'application, initialiser la base :
 
@@ -183,7 +184,7 @@ Cela va :
 - préremplir la base (pop_db.sql).
 
 
-### ▶️ Lancement de l'application
+### :arrow_forward: Lancement de l application
 
 À la racine :
 
