@@ -1,0 +1,44 @@
+sequenceDiagram
+    actor U as Utilisateur
+    participant V as Vue (Conversation)
+    participant CS as ConversationService
+    participant CDAO as ConversationDAO
+    participant LLM as LLM_API
+
+    autonumber
+
+    U ->> V: Envoie un message
+    V ->> CS: demander_assistant(message, options, id_conversation, id_user)
+
+    alt message vide
+        CS -->> V: ErreurValidation("Le message est requis")
+        V -->> U: Affiche l'erreur
+    else message valide
+        CS ->> CS: Préparation des paramètres LLM
+        CS ->> CS: Récupère le prompt système
+
+        CS ->> CS: Initialise l'historique (system)
+
+        %% Chargement de l'historique existant
+        CS ->> CDAO: lire_echanges(id_conversation)
+        CDAO -->> CS: Liste des anciens échanges
+        CS ->> CS: Ajout des anciens échanges à l'historique
+
+        %% Ajout du message utilisateur
+        CS ->> CS: Ajoute {role: user, content: message} à l'historique
+
+        %% Appel au LLM
+        CS ->> LLM: generate(historique, options LLM)
+        LLM -->> CS: Réponse de l'assistant
+
+        %% Création de la réponse pour la vue
+        CS ->> CS: Crée Echange(agent="assistant", message)
+
+        %% Persistance des deux messages
+        CS ->> CDAO: ajouter_echange(id_conversation, message utilisateur)
+        CS ->> CDAO: ajouter_echange(id_conversation, message assistant)
+
+        %% Retour à la vue
+        CS -->> V: Echange de l'assistant
+        V -->> U: Affiche la réponse de l'assistant
+    end
