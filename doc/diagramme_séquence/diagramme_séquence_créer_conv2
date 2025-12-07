@@ -1,0 +1,57 @@
+sequenceDiagram
+  actor U as Utilisateur
+  participant V as NouvelleConversationVue
+  participant S as Session
+  participant CS as ConversationService
+  participant CDAO as ConversationDAO
+  participant PDAO as PromptDAO
+
+  autonumber
+
+  U ->> V: Accès au menu "Nouvelle conversation"
+  V ->> S: utilisateur = Session().utilisateur
+
+  alt Aucun utilisateur connecté
+    S -->> V: None
+    V ->> U: "Veuillez vous connecter pour créer une conversation."
+    Note right of V: Retourne AccueilVue(message)
+  else Utilisateur connecté
+    S -->> V: Utilisateur(id, pseudo)
+
+    V ->> U: Demande titre et personnalisation (InquirerPy)
+    U -->> V: Saisit titre, personnalisation
+    V ->> V: Normalise personnalisation (\"\" → None)
+
+    V ->>+ CS: creer_conv(titre, personnalisation, id_proprietaire=utilisateur.id)
+
+    CS ->> CS: Valide titre (non vide, ≤ 255)\nNormalise personnalisation (\"\" → None)
+    CS ->>+ CDAO: creer_conversation(Conversation(nom, personnalisation), proprietaire_id)
+
+    alt personnalisation fournie
+      CDAO ->> PDAO: obtenir_id_par_nom(...) / existe_id(...)
+      PDAO -->> CDAO: prompt_id (ou erreur)
+    else aucune personnalisation
+      Note right of CDAO: prompt_id = NULL
+    end
+
+    CDAO -->>- CS: Conversation(id, titre, prompt_id, date_creation, proprietaire_id)
+
+    opt id_proprietaire non None
+      CS ->>+ CDAO: ajouter_participant(conversation_id, id_user, role="proprietaire")
+      alt déjà participant ou erreur
+        CDAO -->> CS: Exception
+        Note right of CS: Exception capturée, juste logguée
+      else ajout réussi
+        CDAO -->>- CS: True
+      end
+    end
+
+    CS -->>- V: "Conversation 'X' créée (id=Y)."
+
+    V ->> U: Retour MenuUtilisateurVue(msg)
+  end
+
+  %% Gestion des erreurs de validation et autres
+  rect rgba(255, 230, 230, 0.4)
+    Note over V: Si ErreurValidation dans creer_conv\n→ NouvelleConversationVue(message erreur)\nSi autre Exception\n→ NouvelleConversationVue(\"Une erreur est survenue...\")
+  end
