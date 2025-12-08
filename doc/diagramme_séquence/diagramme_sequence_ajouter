@@ -1,0 +1,39 @@
+sequenceDiagram
+    actor U as Utilisateur (propriétaire)
+    participant V as ReprendreConversationVue
+    participant UDAO as UtilisateurDao
+    participant S as Session
+    participant CS as ConversationService
+    participant CDAO as ConversationDAO
+
+    autonumber
+
+    U ->> V: Choisit "Ajouter un participant"
+    V ->> U: Demande "ID ou pseudo de l'utilisateur"
+    U -->> V: Saisit ID ou pseudo
+
+    alt saisie est un entier
+        V ->> V: id_user = int(saisie)
+    else saisie est un pseudo
+        V ->> UDAO: trouver_par_pseudo(pseudo)
+        UDAO -->> V: utilisateur (id)
+        V ->> V: id_user = utilisateur.id
+    end
+
+    V ->> S: utilisateur_courant = Session().utilisateur
+    S -->> V: utilisateur_courant (id)
+
+    V ->> CS: ajouter_utilisateur(id_conversation, id_user, role="participant", id_demandeur=utilisateur_courant.id)
+
+    CS ->> CDAO: est_proprietaire(id_conversation, id_demandeur)
+    CDAO -->> CS: True ou False
+
+    alt demandeur non propriétaire
+        CS -->> V: ErreurValidation
+        V -->> U: Affiche "Seul le propriétaire peut gérer les participants"
+    else demandeur propriétaire
+        CS ->> CDAO: ajouter_participant(id_conversation, id_user, role)
+        CDAO -->> CS: True ou Exception
+        CS -->> V: Résultat (succès ou erreur)
+        V -->> U: Affiche le message (participant ajouté ou échec)
+    end
