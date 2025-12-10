@@ -523,7 +523,7 @@ class ReprendreConversationVue(VueAbstraite):
                 return self._renommer()
             case "Supprimer la conversation":
                 return self._supprimer()
-            case "↩︎ Retour à lgit pa liste des conversations":
+            case "↩︎ Retour à la liste des conversations":
                 from src.view.conversations_vue import ConversationsVue
 
                 return ConversationsVue()

@@ -10,7 +10,7 @@ VALUES
   (1, 'geraldine', 'b740ae7c854841f4e2b030d04ce42dc07558a3f03c7b2e66710a46d28693494c', NULL),
 
   -- Mot de passe en clair : "Belote&2025"
-  (2, 'gilbert',   'cc10b1ca8100d06380d3aa3746a9d0d751ebea7d97c06b92caf63296a2a06557', NULL),
+  (2, 'gilbert',   '8d9ab1d2175a0807069a00c9fb364f2ac7487c752d4d9b19600e722f6e611af1', NULL),
 
   -- Mot de passe en clair : "FilleGeraldine2025"
   (3, 'chantal',   '2ec08dfe48dc0f6efced9ade809d43e4905ba5a7551c02e3e2d8c1a33e0ec382', NULL)
